@@ -1,10 +1,108 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #242424;
-  color: rgba(255, 255, 255, 0.87);
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-surface-variant: #dce3f0;
+  --color-primary-fixed: #ffdbd0;
+  --color-on-tertiary-fixed: #002109;
+  --color-on-error: #ffffff;
+  --color-on-secondary: #ffffff;
+  --color-secondary-fixed-dim: #bdc7d9;
+  --color-on-tertiary-fixed-variant: #005321;
+  --color-inverse-on-surface: #eaf1fe;
+  --color-primary-container: #ff5a1f;
+  --color-on-tertiary: #ffffff;
+  --color-on-primary-fixed-variant: #852400;
+  --color-on-primary: #ffffff;
+  --color-on-secondary-container: #596373;
+  --color-tertiary-fixed-dim: #4ae176;
+  --color-surface: #f8f9ff;
+  --color-on-error-container: #93000a;
+  --color-surface-dim: #d4dae7;
+  --color-on-secondary-fixed-variant: #3d4756;
+  --color-inverse-primary: #ffb59e;
+  --color-surface-bright: #f8f9ff;
+  --color-on-primary-fixed: #3a0b00;
+  --color-surface-container-high: #e2e8f5;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-secondary-fixed: #121c2a;
+  --color-surface-tint: #ae3200;
+  --color-surface-container-low: #eef4ff;
+  --color-on-surface: #151c25;
+  --color-tertiary: #006e2f;
+  --color-error: #ba1a1a;
+  --color-secondary: #555f6f;
+  --color-on-surface-variant: #5b4038;
+  --color-primary-fixed-dim: #ffb59e;
+  --color-background: #f8f9ff;
+  --color-surface-container-highest: #dce3f0;
+  --color-on-primary-container: #541400;
+  --color-tertiary-container: #00a84c;
+  --color-error-container: #ffdad6;
+  --color-secondary-container: #d6e0f3;
+  --color-outline-variant: #e4beb3;
+  --color-tertiary-fixed: #6bff8f;
+  --color-inverse-surface: #2a313b;
+  --color-primary: #ae3200;
+  --color-on-tertiary-container: #003212;
+  --color-secondary-fixed: #d9e3f6;
+  --color-on-background: #151c25;
+  --color-outline: #8f7067;
+  --color-surface-container: #e7eefb;
+
+  /* Border Radius */
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --spacing-base: 8px;
+  --spacing-margin_mobile: 16px;
+  --spacing-stack_md: 16px;
+  --spacing-container_max: 1280px;
+  --spacing-margin_desktop: 40px;
+  --spacing-stack_lg: 32px;
+  --spacing-gutter: 24px;
+  --spacing-stack_sm: 8px;
+
+  /* Typography Fonts */
+  --font-h3: "Inter", sans-serif;
+  --font-h2-mobile: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-h1: "Inter", sans-serif;
+  --font-h1-mobile: "Inter", sans-serif;
+  --font-button: "Inter", sans-serif;
+  --font-small: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+  --font-h2: "Inter", sans-serif;
+
+  /* Typography sizes are defined explicitly in @layer utilities to preserve exact weights */
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .material-symbols-outlined.fill {
+    font-variation-settings: 'FILL' 1;
+  }
+
+
+  /* Exact Typography Classes translated from v3 config */
+  .text-h1 { font-size: 48px; line-height: 120%; letter-spacing: -0.02em; font-weight: 700; }
+  .text-h1-mobile { font-size: 32px; line-height: 120%; letter-spacing: -0.01em; font-weight: 700; }
+  .text-h2 { font-size: 36px; line-height: 130%; font-weight: 700; }
+  .text-h2-mobile { font-size: 28px; line-height: 130%; font-weight: 700; }
+  .text-h3 { font-size: 24px; line-height: 140%; font-weight: 600; }
+  .text-body { font-size: 16px; line-height: 160%; font-weight: 400; }
+  .text-button { font-size: 16px; line-height: 100%; font-weight: 600; }
+  .text-small { font-size: 14px; line-height: 150%; font-weight: 400; }
+  .text-label { font-size: 12px; line-height: 100%; letter-spacing: 0.05em; font-weight: 600; }
 }
