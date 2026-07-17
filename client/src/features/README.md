@@ -1,0 +1,1 @@
+Feature-based modules containing everything related to a specific feature (Auth, Cart, Orders, Menu, Reviews, etc.)

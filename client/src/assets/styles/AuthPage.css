@@ -1,0 +1,7 @@
+.form-transition {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bg-blur {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}

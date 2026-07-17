@@ -1,0 +1,1 @@
+Static files served directly (favicon, robots.txt, manifest, static images)

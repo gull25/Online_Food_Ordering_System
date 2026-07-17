@@ -1,0 +1,1 @@
+Complete page layouts (MainLayout, AuthLayout, AdminLayout, DashboardLayout, etc.)

@@ -1,0 +1,816 @@
+import React, { useState, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+
+const INITIAL_ORDERS = [
+  {
+    id: '#FD-8291',
+    customer: 'Mark Jensen',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuByF1rl9zCgSVHW_4EeJNf0OuePeD4MmxLbS9l4pL46P4ZJUyFheFK_tBFwHTuBavlUMi8d4sxUJCs9dbuM2Kos4MbF6kSCtNXCGV9AD_9jlA2WVwrNpZvtl-FpAIMGPMaAiisrf9d1JDBSabq6r3VX-KtZARZvOatXisyvhAR6h7_t9vk063TmFA_xMyrMvaHn8qL8OcIi5Hyj2yUWxd0Tp83S16P7jpe5gMwZIdqLrNrzCehRBIzJpg',
+    itemsCount: 3,
+    amount: 42.50,
+    status: 'DELIVERED',
+  },
+  {
+    id: '#FD-8292',
+    customer: 'Sarah Chen',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCiZqH-_kUyiSbC387bTJJHK05ipV2hpj_A_oHNBiXJ6S8zBktqa646qfE8qFjf9t7wMV5vcocdybRmSIoJPvo2QTjV0uFpOUuB7Ng_U9VGQGVNv7brcyABDPAjBWo6Ba-gAFsuxMOZ_jiRj9uIW-2yMBeHZg9FxWryyJyy1wpLdt8NinZLQPu3db_T-StfdOLy0yaxPzxT1lxmD1onflq9G07e0KBnCtgCV7KsUOWx5NjTEd5TJ0zFGA',
+    itemsCount: 1,
+    amount: 18.90,
+    status: 'PREPARING',
+  },
+  {
+    id: '#FD-8293',
+    customer: 'James Wilson',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIpJpn0ONEjnBQyYP5_jYWDDEnklzUa7FzXXmwoAETqFG2qxvoPHTN7QaRj2NfkASP9RYA0A2wPowjVlpVKN0FRQw8fOTCUkBtRMsm2z3QVzh7O-7pR1NGSDS3HPcWLYw8CnXbXac0Eho8sbQoYJv5iwcmI5lCCoEEpGItzz7nYSD36Do-6TgLUpQbtLB1gskYXk3IbQYTcECvlE68936-xYrrugxyzFOK0hzeZ0tORDBrg6DFhdYo1Q',
+    itemsCount: 5,
+    amount: 112.00,
+    status: 'PENDING',
+  },
+];
+
+const CHART_DATA_SET = {
+  '30': {
+    linePath: 'M0,250 Q100,180 200,210 T400,120 T600,150 T800,80 T1000,100',
+    areaPath: 'M0,250 Q100,180 200,210 T400,120 T600,150 T800,80 T1000,100 V300 H0 Z',
+    points: [
+      { cx: 200, cy: 210, value: '$4,289.00', date: 'Oct 07' },
+      { cx: 400, cy: 120, value: '$6,832.00', date: 'Oct 14' },
+      { cx: 800, cy: 80, value: '$9,210.00', date: 'Oct 24' },
+    ],
+  },
+  '90': {
+    linePath: 'M0,220 Q100,140 200,180 T400,240 T600,90 T800,130 T1000,70',
+    areaPath: 'M0,220 Q100,140 200,180 T400,240 T600,90 T800,130 T1000,70 V300 H0 Z',
+    points: [
+      { cx: 200, cy: 180, value: '$12,430.00', date: 'Sep 2024' },
+      { cx: 600, cy: 90, value: '$18,920.00', date: 'Oct 2024' },
+      { cx: 800, cy: 130, value: '$15,480.00', date: 'Nov 2024' },
+    ],
+  },
+  'year': {
+    linePath: 'M0,180 Q100,230 200,130 T400,190 T600,80 T800,210 T1000,110',
+    areaPath: 'M0,180 Q100,230 200,130 T400,190 T600,80 T800,210 T1000,110 V300 H0 Z',
+    points: [
+      { cx: 200, cy: 130, value: '$48,210.00', date: 'Q1 2024' },
+      { cx: 600, cy: 80, value: '$72,940.00', date: 'Q3 2024' },
+      { cx: 800, cy: 210, value: '$38,200.00', date: 'Q4 2024' },
+    ],
+  },
+};
+
+const AdminDashboardPage = () => {
+  const navigate = useNavigate();
+  // Navigation active tab
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Performance Chart Range
+  const [chartRange, setChartRange] = useState('30');
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+
+  // Orders and search states
+  const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
+
+  // Modal State for adding new restaurant
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [restaurantName, setRestaurantName] = useState('');
+  const [cuisineType, setCuisineType] = useState('Italian');
+
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState('');
+
+  // Handle toast trigger
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  // Filter orders by search query
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery.trim()) return orders;
+    return orders.filter(
+      (order) =>
+        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customer.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [orders, searchQuery]);
+
+  // Update order status from action dropdown
+  const handleUpdateStatus = (orderId, newStatus) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+    );
+    setActiveDropdownId(null);
+    showToast(`Order ${orderId} updated to ${newStatus}`);
+  };
+
+  // Add Restaurant form submission
+  const handleAddRestaurant = (e) => {
+    e.preventDefault();
+    if (restaurantName.trim()) {
+      showToast(`Restaurant "${restaurantName}" successfully added!`);
+      setIsModalOpen(false);
+      setRestaurantName('');
+    }
+  };
+
+  // Quick Action simulates
+  const handleQuickAction = (actionName) => {
+    if (actionName === 'report') {
+      showToast('Sales Report download started...');
+    } else if (actionName === 'fleet') {
+      showToast('Connecting with Fleet Manager via live support...');
+    }
+  };
+
+  return (
+    <div className="bg-background font-body text-on-surface antialiased overflow-x-hidden min-h-screen">
+      {/* Dynamic Style injection to guarantee pixel perfection with original mockup classes */}
+      <style>{`
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+          display: inline-block;
+          line-height: 1;
+        }
+        .glass-card {
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+
+      {/* Toast Alert overlay */}
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-[70] bg-inverse-surface text-white px-6 py-4 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="material-symbols-outlined text-primary-fixed">info</span>
+          <span className="font-button text-button text-sm">{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Restaurant Addition Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-container-lowest max-w-md w-full rounded-2xl p-gutter border border-outline-variant/30 shadow-2xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-h3 text-h3 font-bold text-on-surface">Add New Restaurant</h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="w-8 h-8 rounded-full hover:bg-surface-container-high flex items-center justify-center text-secondary"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <form onSubmit={handleAddRestaurant} className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="font-label text-label text-secondary">Restaurant Name</label>
+                <input
+                  value={restaurantName}
+                  onChange={(e) => setRestaurantName(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-outline-variant/30 focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body text-body"
+                  placeholder="e.g. Bella Cucina"
+                  type="text"
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="font-label text-label text-secondary">Cuisine Type</label>
+                <select
+                  value={cuisineType}
+                  onChange={(e) => setCuisineType(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-outline-variant/30 focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body text-body"
+                >
+                  <option value="Italian">Italian</option>
+                  <option value="Burgers">Burgers</option>
+                  <option value="Sushi">Sushi</option>
+                  <option value="Mexican">Mexican</option>
+                </select>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 h-12 rounded-xl border border-outline-variant/30 text-secondary font-button text-button hover:bg-surface-variant/40 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 h-12 rounded-xl bg-primary text-white font-button text-button hover:opacity-90 transition-colors shadow-md"
+                >
+                  Add Restaurant
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Side Navigation Bar */}
+      <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-low flex flex-col z-50 border-r border-outline-variant/30">
+        <div className="px-6 py-10 flex flex-col gap-2">
+          <h1 className="font-h3 text-h3 text-primary font-bold">Foodora Admin</h1>
+          <p className="font-label text-label text-on-secondary-container uppercase tracking-wider">
+            Management Suite
+          </p>
+        </div>
+        <nav className="flex-1 flex flex-col gap-1 overflow-y-auto px-2">
+          <button
+            onClick={() => navigate('/admin')}
+            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-primary font-bold border-r-4 border-primary bg-surface-container-high/50 font-label text-label"
+          >
+            <span className="material-symbols-outlined">dashboard</span>
+            <span>Dashboard</span>
+          </button>
+          <button
+            onClick={() => navigate('/admin/orders')}
+            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-secondary hover:bg-surface-variant/40 font-label text-label"
+          >
+            <span className="material-symbols-outlined">receipt_long</span>
+            <span>Orders</span>
+          </button>
+          <button
+            onClick={() => navigate('/admin/restaurants')}
+            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-secondary hover:bg-surface-variant/40 font-label text-label"
+          >
+            <span className="material-symbols-outlined">storefront</span>
+            <span>Restaurants</span>
+          </button>
+          <button
+            onClick={() => navigate('/admin/menu')}
+            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-secondary hover:bg-surface-variant/40 font-label text-label"
+          >
+            <span className="material-symbols-outlined">restaurant_menu</span>
+            <span>Menu Management</span>
+          </button>
+          <button
+            onClick={() => navigate('/admin/analytics')}
+            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-secondary hover:bg-surface-variant/40 font-label text-label"
+          >
+            <span className="material-symbols-outlined">analytics</span>
+            <span>Analytics</span>
+          </button>
+        </nav>
+        <div className="p-6">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-button text-button hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <span className="material-symbols-outlined">add_circle</span>
+            Add New Restaurant
+          </button>
+        </div>
+        <div className="px-6 py-8 border-t border-outline-variant/30 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
+            <img
+              className="w-full h-full object-cover"
+              alt="Alex Mercer headshot"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXFzmrGv9s3Ato2f9nWAgDsrlUCxvTo6kT4KBKaJD03tN2Azoye3nT9UOMNullVClmnhc2WkAJ7rJud3tnbODMqjZqHzCNmjAj8CZQ8Ska7sMJcIx3ZiPhL7CquHAT9Ko4Qu17ZXSs7e3OmQp4mTJWMDpOWY_HV97e8RWX3K_xQHZOl25WzCBwGMI0htohMFPeOhzIiqQESZenx_Z2mP4Lw_VWuLjRy7RxtvMVQ1LOPizB219JO_zZBA"
+            />
+          </div>
+          <div>
+            <p className="font-label text-label text-on-surface">Alex Mitchell</p>
+            <p className="text-[10px] text-secondary font-semibold uppercase">Super Admin</p>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Canvas */}
+      <main className="ml-64 p-margin_desktop max-w-container_max">
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-gutter mb-stack_lg">
+          <div>
+            <h2 className="font-h2 text-h2 text-on-surface mb-1 font-bold">Welcome back, Alex</h2>
+            <p className="font-body text-body text-secondary">
+              Here's what's happening with Foodora today.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative w-full md:w-80 group">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary transition-colors">
+                search
+              </span>
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-12 pl-12 pr-4 bg-surface-container-low border border-outline-variant/30 rounded-xl font-body text-body focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                placeholder="Search orders, customers..."
+                type="text"
+              />
+            </div>
+            <button
+              onClick={() => showToast('No new notifications')}
+              className="w-12 h-12 flex items-center justify-center bg-surface-container-low border border-outline-variant/30 rounded-xl hover:bg-surface-variant transition-colors relative"
+            >
+              <span className="material-symbols-outlined text-secondary">notifications</span>
+              <span className="absolute top-3 right-3 w-2 h-2 bg-primary rounded-full"></span>
+            </button>
+          </div>
+        </header>
+
+        {/* Metric Cards */}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-stack_lg">
+          {/* Card 1 */}
+          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-primary/5 rounded-xl text-primary flex">
+                <span className="material-symbols-outlined">shopping_bag</span>
+              </div>
+              <span className="flex items-center text-tertiary font-label text-label">
+                <span className="material-symbols-outlined !text-sm mr-1">trending_up</span>
+                +12.5%
+              </span>
+            </div>
+            <p className="font-label text-label text-secondary uppercase tracking-tight mb-1">
+              Total Orders
+            </p>
+            <h3 className="font-h2 text-[28px] text-on-surface font-bold">14,289</h3>
+          </div>
+          {/* Card 2 */}
+          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-tertiary/5 rounded-xl text-tertiary flex">
+                <span className="material-symbols-outlined">payments</span>
+              </div>
+              <span className="flex items-center text-tertiary font-label text-label">
+                <span className="material-symbols-outlined !text-sm mr-1">trending_up</span>
+                +8.2%
+              </span>
+            </div>
+            <p className="font-label text-label text-secondary uppercase tracking-tight mb-1">
+              Total Revenue
+            </p>
+            <h3 className="font-h2 text-[28px] text-on-surface font-bold">$128,430</h3>
+          </div>
+          {/* Card 3 */}
+          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-on-secondary-fixed-variant/5 rounded-xl text-secondary flex">
+                <span className="material-symbols-outlined">group</span>
+              </div>
+              <span className="flex items-center text-tertiary font-label text-label">
+                <span className="material-symbols-outlined !text-sm mr-1">trending_up</span>
+                +2.1%
+              </span>
+            </div>
+            <p className="font-label text-label text-secondary uppercase tracking-tight mb-1">
+              Active Customers
+            </p>
+            <h3 className="font-h2 text-[28px] text-on-surface font-bold">8,432</h3>
+          </div>
+          {/* Card 4 */}
+          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-outline/5 rounded-xl text-on-surface-variant flex">
+                <span className="material-symbols-outlined">restaurant</span>
+              </div>
+              <span className="flex items-center text-primary font-label text-label">
+                +12 new
+              </span>
+            </div>
+            <p className="font-label text-label text-secondary uppercase tracking-tight mb-1">
+              Active Restaurants
+            </p>
+            <h3 className="font-h2 text-[28px] text-on-surface font-bold">412</h3>
+          </div>
+        </section>
+
+        {/* Main Chart Section */}
+        <section className="mb-stack_lg">
+          <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+            <div className="flex items-center justify-between mb-stack_lg">
+              <div>
+                <h3 className="font-h3 text-h3 text-on-surface font-bold">Performance Overview</h3>
+                <p className="font-small text-small text-secondary">
+                  Revenue and orders for the last 30 days
+                </p>
+              </div>
+              <div className="flex items-center gap-2 bg-surface-container-low p-1 rounded-lg">
+                <button
+                  onClick={() => setChartRange('30')}
+                  className={`px-4 py-2 font-label text-label rounded-md transition-all ${
+                    chartRange === '30'
+                      ? 'bg-surface-container-lowest shadow-sm text-on-surface font-semibold'
+                      : 'text-secondary hover:text-on-surface'
+                  }`}
+                >
+                  30 Days
+                </button>
+                <button
+                  onClick={() => setChartRange('90')}
+                  className={`px-4 py-2 font-label text-label rounded-md transition-all ${
+                    chartRange === '90'
+                      ? 'bg-surface-container-lowest shadow-sm text-on-surface font-semibold'
+                      : 'text-secondary hover:text-on-surface'
+                  }`}
+                >
+                  90 Days
+                </button>
+                <button
+                  onClick={() => setChartRange('year')}
+                  className={`px-4 py-2 font-label text-label rounded-md transition-all ${
+                    chartRange === 'year'
+                      ? 'bg-surface-container-lowest shadow-sm text-on-surface font-semibold'
+                      : 'text-secondary hover:text-on-surface'
+                  }`}
+                >
+                  1 Year
+                </button>
+              </div>
+            </div>
+
+            <div className="relative h-[360px] w-full flex items-end justify-between gap-2 pt-10">
+              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+                <div className="border-b border-outline-variant w-full h-px"></div>
+                <div className="border-b border-outline-variant w-full h-px"></div>
+                <div className="border-b border-outline-variant w-full h-px"></div>
+                <div className="border-b border-outline-variant w-full h-px"></div>
+                <div className="border-b border-outline-variant w-full h-px"></div>
+              </div>
+
+              <div className="w-full h-full relative">
+                <svg
+                  className="w-full h-full overflow-visible"
+                  preserveAspectRatio="none"
+                  viewBox="0 0 1000 300"
+                >
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#ae3200" stopOpacity="0.2"></stop>
+                      <stop offset="100%" stopColor="#ae3200" stopOpacity="0"></stop>
+                    </linearGradient>
+                  </defs>
+                  <path
+                    className="transition-all duration-500"
+                    d={CHART_DATA_SET[chartRange].areaPath}
+                    fill="url(#chartGradient)"
+                  ></path>
+                  <path
+                    className="transition-all duration-500"
+                    d={CHART_DATA_SET[chartRange].linePath}
+                    fill="none"
+                    stroke="#ae3200"
+                    strokeLinecap="round"
+                    strokeWidth="4"
+                  ></path>
+                  {CHART_DATA_SET[chartRange].points.map((pt, idx) => (
+                    <circle
+                      key={idx}
+                      onMouseEnter={() => setHoveredPoint(pt)}
+                      onMouseLeave={() => setHoveredPoint(null)}
+                      className="cursor-pointer transition-all hover:r-[10px]"
+                      cx={pt.cx}
+                      cy={pt.cy}
+                      fill="#ae3200"
+                      r="6"
+                    ></circle>
+                  ))}
+                </svg>
+
+                {hoveredPoint && (
+                  <div
+                    className="absolute bg-inverse-surface text-white px-3 py-2 rounded-lg shadow-xl -translate-x-1/2 -translate-y-full flex flex-col z-20 pointer-events-none"
+                    style={{
+                      left: `${hoveredPoint.cx / 10}%`,
+                      top: `${hoveredPoint.cy - 10}px`,
+                    }}
+                  >
+                    <span className="font-label text-[10px] text-surface-variant/70">
+                      {hoveredPoint.date}
+                    </span>
+                    <span className="font-button text-button text-white">
+                      {hoveredPoint.value}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-between mt-4 font-label text-label text-secondary">
+              {chartRange === '30' ? (
+                <>
+                  <span>Oct 01</span>
+                  <span>Oct 07</span>
+                  <span>Oct 14</span>
+                  <span>Oct 21</span>
+                  <span>Oct 28</span>
+                </>
+              ) : chartRange === '90' ? (
+                <>
+                  <span>Aug 24</span>
+                  <span>Sep 24</span>
+                  <span>Oct 24</span>
+                  <span>Nov 24</span>
+                </>
+              ) : (
+                <>
+                  <span>Q1 2024</span>
+                  <span>Q2 2024</span>
+                  <span>Q3 2024</span>
+                  <span>Q4 2024</span>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Orders Table & Quick Actions Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+          {/* Table Container */}
+          <div className="lg:col-span-2 bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="p-gutter flex items-center justify-between border-b border-outline-variant/10">
+              <h3 className="font-h3 text-h3 text-on-surface font-bold">Recent Orders</h3>
+              <button
+                onClick={() => showToast('Loading all orders...')}
+                className="text-primary font-button text-button hover:underline transition-all"
+              >
+                View All
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-surface-container-low/50">
+                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
+                      ORDER ID
+                    </th>
+                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
+                      CUSTOMER
+                    </th>
+                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
+                      ITEMS
+                    </th>
+                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
+                      AMOUNT
+                    </th>
+                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
+                      STATUS
+                    </th>
+                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
+                      ACTION
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant/10 relative">
+                  {filteredOrders.map((order) => (
+                    <tr
+                      key={order.id}
+                      className="hover:bg-surface-container-low/30 transition-colors"
+                    >
+                      <td className="px-6 py-4 font-small text-small font-semibold">
+                        {order.id}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-secondary-fixed overflow-hidden flex-shrink-0">
+                            <img
+                              className="w-full h-full object-cover"
+                              alt={order.customer}
+                              src={order.avatar}
+                            />
+                          </div>
+                          <span className="font-small text-small">{order.customer}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-small text-small text-secondary">
+                        {order.itemsCount} items
+                      </td>
+                      <td className="px-6 py-4 font-small text-small font-semibold">
+                        ${order.amount.toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-3 py-1 rounded-full font-label text-[10px] uppercase font-bold ${
+                            order.status === 'DELIVERED'
+                              ? 'bg-tertiary/10 text-tertiary'
+                              : order.status === 'PREPARING'
+                              ? 'bg-primary-container/20 text-on-primary-container'
+                              : 'bg-surface-container-highest text-secondary'
+                          }`}
+                        >
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 relative">
+                        <button
+                          onClick={() =>
+                            setActiveDropdownId(
+                              activeDropdownId === order.id ? null : order.id
+                            )
+                          }
+                          aria-label="Order actions"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant transition-colors text-secondary cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined">more_vert</span>
+                        </button>
+
+                        {/* Status Change Dropdown Menu */}
+                        {activeDropdownId === order.id && (
+                          <div className="absolute right-12 top-10 bg-white border border-outline-variant/30 rounded-xl shadow-xl z-30 py-1 w-36 animate-in fade-in zoom-in-95">
+                            <button
+                              onClick={() => handleUpdateStatus(order.id, 'DELIVERED')}
+                              className="w-full text-left px-4 py-2 hover:bg-surface-container text-xs font-semibold"
+                            >
+                              Set Delivered
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
+                              className="w-full text-left px-4 py-2 hover:bg-surface-container text-xs font-semibold"
+                            >
+                              Set Preparing
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(order.id, 'PENDING')}
+                              className="w-full text-left px-4 py-2 hover:bg-surface-container text-xs font-semibold"
+                            >
+                              Set Pending
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {filteredOrders.length === 0 && (
+                <div className="py-8 text-center bg-surface-container-lowest">
+                  <span className="material-symbols-outlined text-4xl text-on-secondary-container mb-2">
+                    search_off
+                  </span>
+                  <p className="text-secondary font-body">No matching orders found.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Actions & Top Restaurants */}
+          <div className="flex flex-col gap-gutter">
+            {/* Actions */}
+            <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+              <h3 className="font-h3 text-h3 text-on-surface font-bold mb-stack_md">
+                Quick Actions
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  onClick={() => handleQuickAction('report')}
+                  className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all group w-full cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary">download</span>
+                    <span className="font-button text-button text-on-surface">
+                      Download Sales Report
+                    </span>
+                  </div>
+                  <span className="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
+                    chevron_right
+                  </span>
+                </button>
+
+                <Link
+                  to="/offers"
+                  className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all group w-full text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary">campaign</span>
+                    <span className="font-button text-button text-on-surface">
+                      Create New Promotion
+                    </span>
+                  </div>
+                  <span className="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
+                    chevron_right
+                  </span>
+                </Link>
+
+                <button
+                  onClick={() => handleQuickAction('fleet')}
+                  className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all group w-full cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary">support_agent</span>
+                    <span className="font-button text-button text-on-surface">
+                      Contact Fleet Manager
+                    </span>
+                  </div>
+                  <span className="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
+                    chevron_right
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Top Performing */}
+            <div className="bg-inverse-surface p-gutter rounded-2xl text-on-primary shadow-xl">
+              <h3 className="font-h3 text-h3 text-primary-fixed mb-stack_md font-bold">
+                Top Restaurant
+              </h3>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex-shrink-0">
+                  <img
+                    className="w-full h-full object-cover"
+                    alt="Sushi platter"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7gJU-8rbue0Vlbkm503AErp26ySz58egKGLNlMFlIrl8mhla5my1u45sbyiw-chx_iOx4rE5LK2-0IWp23rKo-oBfmIm6s4xQxq--J4cfBy4Aj6NC8NXW_sVEIMvvxDdJEVChRswoV_019fIWZ8msurh_B5ZYRWXBB0oCBw1B8ImyIPI0Rd0KiTAT9BIh8cpRZi1vIRlyZNFydw8Bz-2oKHuiVagefrfHfi50_phbbxeyN8z_qsh5Nw"
+                  />
+                </div>
+                <div>
+                  <h4 className="font-button text-button text-white font-semibold">
+                    Sakura Zen Kitchen
+                  </h4>
+                  <p className="font-label text-label text-surface-variant/80">
+                    4.9 ★ (1.2k reviews)
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+                  <p className="font-label text-[10px] text-surface-variant uppercase">
+                    Daily Revenue
+                  </p>
+                  <p className="font-button text-button text-white">$2,410</p>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+                  <p className="font-label text-[10px] text-surface-variant uppercase">Growth</p>
+                  <p className="font-button text-button text-tertiary-fixed font-bold">+18%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Floating Action Button (FAB) - For Global Add */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="fixed bottom-10 right-10 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(174,50,0,0.3)] hover:scale-110 active:scale-95 transition-all z-[60] group cursor-pointer border-none"
+      >
+        <span className="material-symbols-outlined">add</span>
+        <span className="absolute right-full mr-4 bg-inverse-surface text-white px-4 py-2 rounded-lg font-label text-label opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-md">
+          Create New
+        </span>
+      </button>
+
+      {/* Footer */}
+      <footer className="ml-64 py-stack_lg px-margin_desktop bg-inverse-surface mt-stack_lg w-[calc(100%-256px)]">
+        <div className="max-w-container_max mx-auto grid grid-cols-1 md:grid-cols-4 gap-gutter">
+          <div className="flex flex-col gap-2">
+            <span className="font-h3 text-h3 text-primary-fixed font-bold">Foodora</span>
+            <p className="font-small text-small text-surface-variant/60">
+              Admin Management Suite v4.2.0
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="font-label text-label text-primary-fixed uppercase tracking-wide">
+              QUICK LINKS
+            </p>
+            <a
+              className="font-small text-small text-surface-variant/80 hover:text-primary-fixed hover:underline transition-all"
+              href="#"
+            >
+              Support Center
+            </a>
+            <a
+              className="font-small text-small text-surface-variant/80 hover:text-primary-fixed hover:underline transition-all"
+              href="#"
+            >
+              Documentation
+            </a>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="font-label text-label text-primary-fixed uppercase tracking-wide">
+              LEGAL
+            </p>
+            <a
+              className="font-small text-small text-surface-variant/80 hover:text-primary-fixed hover:underline transition-all"
+              href="#"
+            >
+              Privacy Policy
+            </a>
+            <a
+              className="font-small text-small text-surface-variant/80 hover:text-primary-fixed hover:underline transition-all"
+              href="#"
+            >
+              Terms of Service
+            </a>
+          </div>
+          <div className="flex flex-col gap-4 items-end justify-between h-full">
+            <p className="font-small text-small text-surface-variant/80">
+              © 2024 Foodora. All rights reserved.
+            </p>
+            <div className="flex gap-4">
+              <span className="material-symbols-outlined text-surface-variant/80 cursor-pointer hover:text-primary-fixed">
+                language
+              </span>
+              <span className="material-symbols-outlined text-surface-variant/80 cursor-pointer hover:text-primary-fixed">
+                settings
+              </span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default AdminDashboardPage;

@@ -1,0 +1,1 @@
+React Context providers for global state (Auth, Cart, Theme, Notifications, etc.)

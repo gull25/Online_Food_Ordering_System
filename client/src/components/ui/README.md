@@ -1,0 +1,1 @@
+Domain-specific UI components (FoodCard, RestaurantCard, CartItem, RatingStars, etc.)
