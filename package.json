@@ -1,0 +1,13 @@
+{
+  "name": "mern-project-root",
+  "version": "1.0.0",
+  "description": "Root package for MERN online food ordering system",
+  "scripts": {
+    "client": "npm run dev --prefix client",
+    "server": "npm run dev --prefix server",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
