@@ -50,3 +50,6 @@ function App() {
 }
 
 export default App;
+
+
+//Root React component containing the application's layout and routing
