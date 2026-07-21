@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AdminSidebar from './components/AdminSidebar';
+import AdminHeader from './components/AdminHeader';
+import StatCard from './components/StatCard';
 
 const METRICS_DATA_SET = {
   'Last 7 Days': {
@@ -195,202 +198,20 @@ const AdminAnalyticsPage = () => {
         </div>
       )}
 
-      {/* SideNavBar Anchor */}
-      <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface-container-low dark:bg-inverse-surface z-50">
-        <div className="px-6 py-8">
-          <h1 className="font-h3 text-h3 text-primary dark:text-primary-fixed font-bold leading-tight">Foodora Admin</h1>
-          <p className="font-label text-label text-secondary opacity-70">Management Suite</p>
-        </div>
-        <nav className="flex-1 mt-4 space-y-1">
-          <button
-            onClick={() => navigate('/admin')}
-            className="flex items-center gap-4 px-6 py-4 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-variant transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined">dashboard</span>
-            <span>Dashboard</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/orders')}
-            className="flex items-center gap-4 px-6 py-4 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-variant transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined">receipt_long</span>
-            <span>Orders</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/restaurants')}
-            className="flex items-center gap-4 px-6 py-4 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-variant transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined">storefront</span>
-            <span>Restaurants</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/menu')}
-            className="flex items-center gap-4 px-6 py-4 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-variant transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined">restaurant_menu</span>
-            <span>Menu Management</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/analytics')}
-            className="flex items-center gap-4 px-6 py-4 text-primary dark:text-primary-fixed font-bold border-r-4 border-primary bg-surface-container transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-              analytics
-            </span>
-            <span>Analytics</span>
-          </button>
-        </nav>
-        <div className="p-6">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-full bg-primary-container text-white font-button text-button py-3 px-4 rounded-xl shadow-sm hover:opacity-90 hover:scale-[1.02] transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-white">add_circle</span>
-            Add New Restaurant
-          </button>
-          <div className="mt-8 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
-              <img
-                className="w-full h-full object-cover"
-                alt="Tech administrator headshot"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAvdb8YS0kJnrv4celmWi8pMTrlJb5J-_Ht1oZQu7t4XhpuNhlE033Wt0IHKVGLZ74YC5tNTui_KNKgtO4P-6g0B1woKQWvjTuZEhTKyvXFECAE6T-AiGJSVYfG0WJl-ozef-Lar-9P1u9ML4lmHEXm0XiIFNfcXU6bXg2Jakw-I0OIT3rmlVtvlxg8_lqtJ95UEte2KWDImZkrA8bQf5vDZS-vNguuXk5rD9B-v-QbNvecemE5D0ARA"
-              />
-            </div>
-            <div>
-              <p className="font-label text-label text-on-surface font-bold">Admin Profile</p>
-              <p className="text-[10px] text-secondary">Chief Operations</p>
-            </div>
-          </div>
-        </div>
-      </aside>
+      {/* Side Navigation Bar */}
+      <AdminSidebar setIsModalOpen={setIsModalOpen} activeTab="analytics" />
 
       {/* Main Content Canvas */}
-      <main className="md:ml-64 flex-1">
+      <main className="ml-64 flex-1">
         {/* Header */}
-        <header className="sticky top-0 w-full h-[72px] z-40 bg-surface-container-lowest shadow-sm flex items-center justify-between px-margin_desktop border-b border-outline-variant/20">
-          <div className="flex flex-col">
-            <h2 className="font-h3 text-h3 text-on-surface font-bold">Analytics Insights</h2>
-          </div>
-          <div className="flex items-center gap-gutter relative">
-            <div className="relative group">
-              <button
-                onClick={() => setIsRangeDropdownOpen(!isRangeDropdownOpen)}
-                className="flex items-center gap-2 bg-surface-container-low border border-outline-variant px-4 py-2 rounded-lg font-button text-label text-on-surface-variant hover:border-primary transition-all cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[20px]">calendar_today</span>
-                <span>{activeRange}</span>
-                <span className="material-symbols-outlined text-[20px]">expand_more</span>
-              </button>
-
-              {/* Time Range Dropdown Selector */}
-              {isRangeDropdownOpen && (
-                <div className="absolute right-0 top-12 bg-white border border-outline-variant/30 rounded-xl shadow-xl z-[50] py-2 w-48 animate-in fade-in zoom-in-95">
-                  {Object.keys(METRICS_DATA_SET).map((range) => (
-                    <button
-                      key={range}
-                      onClick={() => {
-                        setActiveRange(range);
-                        setIsRangeDropdownOpen(false);
-                        showToast(`Range updated to ${range}`);
-                      }}
-                      className="w-full text-left px-4 py-3 hover:bg-surface-container text-xs font-semibold text-on-surface"
-                    >
-                      {range}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => showToast('No notifications')}
-                className="material-symbols-outlined text-secondary hover:text-primary transition-colors cursor-pointer bg-transparent border-none"
-              >
-                notifications
-              </button>
-              <button
-                onClick={() => showToast('Redirecting to settings page...')}
-                className="material-symbols-outlined text-secondary hover:text-primary transition-colors cursor-pointer bg-transparent border-none"
-              >
-                settings
-              </button>
-            </div>
-          </div>
-        </header>
+        <AdminHeader 
+          title="Analytics Overview"
+          subtitle="Comprehensive performance metrics and geographical insights"
+          showToast={showToast}
+        />
 
         {/* Scrollable Body */}
         <div className="p-margin_desktop max-w-container_max mx-auto space-y-stack_lg">
-          
-          {/* 1. Key Metrics Grid */}
-          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-            {/* Total Revenue */}
-            <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:shadow-md transition-shadow group">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-2 bg-primary-fixed rounded-lg text-primary flex">
-                  <span className="material-symbols-outlined">payments</span>
-                </div>
-                <span className="flex items-center text-tertiary font-label text-label">
-                  <span className="material-symbols-outlined text-[16px] mr-1">trending_up</span>
-                  {currentStats.revenueGrowth}
-                </span>
-              </div>
-              <p className="font-label text-label text-secondary mb-1">Total Revenue</p>
-              <h3 className="font-h2 text-h2 text-on-surface group-hover:text-primary transition-colors font-bold">
-                {currentStats.revenue}
-              </h3>
-            </div>
-
-            {/* Average Order Value */}
-            <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:shadow-md transition-shadow group">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-2 bg-secondary-fixed rounded-lg text-secondary flex">
-                  <span className="material-symbols-outlined">shopping_basket</span>
-                </div>
-                <span className="flex items-center text-tertiary font-label text-label">
-                  <span className="material-symbols-outlined text-[16px] mr-1">trending_up</span>
-                  {currentStats.aovGrowth}
-                </span>
-              </div>
-              <p className="font-label text-label text-secondary mb-1">Average Order Value</p>
-              <h3 className="font-h2 text-h2 text-on-surface group-hover:text-primary transition-colors font-bold">
-                {currentStats.aov}
-              </h3>
-            </div>
-
-            {/* Growth Rate */}
-            <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:shadow-md transition-shadow group">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-2 bg-tertiary-fixed rounded-lg text-tertiary flex">
-                  <span className="material-symbols-outlined">insights</span>
-                </div>
-                <span className="flex items-center text-tertiary font-label text-label">
-                  <span className="material-symbols-outlined text-[16px] mr-1">trending_up</span>
-                  {currentStats.growthGrowth}
-                </span>
-              </div>
-              <p className="font-label text-label text-secondary mb-1">Growth Rate</p>
-              <h3 className="font-h2 text-h2 text-on-surface group-hover:text-primary transition-colors font-bold">
-                {currentStats.growth}
-              </h3>
-            </div>
-
-            {/* Active Orders */}
-            <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:shadow-md transition-shadow group">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-2 bg-error-container rounded-lg text-error flex">
-                  <span className="material-symbols-outlined">local_shipping</span>
-                </div>
-                <span className="flex items-center text-error font-label text-label">
-                  <span className="material-symbols-outlined text-[16px] mr-1">trending_down</span>
-                  {currentStats.ordersGrowth}
-                </span>
-              </div>
-              <p className="font-label text-label text-secondary mb-1">Active Orders</p>
-              <h3 className="font-h2 text-h2 text-on-surface group-hover:text-primary transition-colors font-bold">
-                {currentStats.orders}
-              </h3>
-            </div>
-          </section>
 
           {/* 2. Revenue over Time & Distribution (Bento Layout) */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">

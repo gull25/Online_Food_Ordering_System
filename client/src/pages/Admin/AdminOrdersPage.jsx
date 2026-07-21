@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AdminSidebar from './components/AdminSidebar';
+import AdminHeader from './components/AdminHeader';
+import StatCard from './components/StatCard';
 
 const MOCK_ORDERS = [
   {
@@ -331,155 +334,73 @@ const AdminOrdersPage = () => {
       )}
 
       {/* SideNavBar Anchor */}
-      <aside className="bg-surface-container-low dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 flex flex-col h-full z-40">
-        <div className="px-6 py-8">
-          <h1 className="font-h3 text-h3 text-primary dark:text-primary-fixed font-bold">Foodora Admin</h1>
-          <p className="text-secondary dark:text-secondary-fixed-dim font-label text-[10px] tracking-widest uppercase mt-1">
-            Management Suite
-          </p>
-        </div>
-        <nav className="flex-1">
-          <ul className="space-y-1">
-            <li>
-              <button
-                onClick={() => navigate('/admin')}
-                className="text-secondary dark:text-secondary-fixed-dim flex items-center gap-4 px-6 py-4 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-all duration-200 cursor-pointer w-full text-left font-label text-label"
-              >
-                <span className="material-symbols-outlined">dashboard</span>
-                <span>Dashboard</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => navigate('/admin/orders')}
-                className="text-primary dark:text-primary-fixed font-bold border-r-4 border-primary bg-surface-container dark:bg-surface-dim flex items-center gap-4 px-6 py-4 transition-all duration-200 cursor-pointer w-full text-left font-label text-label"
-              >
-                <span className="material-symbols-outlined">receipt_long</span>
-                <span>Orders</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => navigate('/admin/restaurants')}
-                className="text-secondary dark:text-secondary-fixed-dim flex items-center gap-4 px-6 py-4 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-all duration-200 cursor-pointer w-full text-left font-label text-label"
-              >
-                <span className="material-symbols-outlined">storefront</span>
-                <span>Restaurants</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => navigate('/admin/menu')}
-                className="text-secondary dark:text-secondary-fixed-dim flex items-center gap-4 px-6 py-4 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-all duration-200 cursor-pointer w-full text-left font-label text-label"
-              >
-                <span className="material-symbols-outlined">restaurant_menu</span>
-                <span>Menu Management</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => navigate('/admin/analytics')}
-                className="text-secondary dark:text-secondary-fixed-dim flex items-center gap-4 px-6 py-4 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-all duration-200 cursor-pointer w-full text-left font-label text-label"
-              >
-                <span className="material-symbols-outlined">analytics</span>
-                <span>Analytics</span>
-              </button>
-            </li>
-          </ul>
-        </nav>
-        <div className="p-6">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-full bg-primary-container text-on-primary-container font-button text-button py-4 rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2"
-          >
-            <span className="material-symbols-outlined">add</span>
-            Add New Restaurant
-          </button>
-        </div>
-        <div className="p-6 border-t border-outline-variant/30 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
-            <img
-              className="w-full h-full object-cover"
-              alt="Administrator headshot"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtm2OQ9jt8zdcu0ANdVSjs-nsnIRcZJvWDj_B1QBTTjLBrI-WCQmgGXf0vwQh9pimZbWaX5ciVmJ6fbJjJVk6R1UUsAGkM4atZSnpGlaoHTaNDBTn_DQVgnWAL6eLwIOBuAgpGcf9Q55BeC-oTiJ3OqREW3qXfdjbpVXd5I_Q_XOGifDtcTA6IMZQ0tmBMd4dmg2-9imHbsxl-r2HrljyZDiPToyUEKwXNsMr2q2AS6b6XxwNOgYgwjA"
-            />
-          </div>
-          <div>
-            <p className="font-label text-label text-on-surface">Admin Profile</p>
-            <p className="text-[10px] text-secondary">Super Admin</p>
-          </div>
-        </div>
-      </aside>
+      <AdminSidebar setIsModalOpen={setIsModalOpen} activeTab="orders" />
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64 p-margin_desktop">
+      <main className="ml-64 p-margin_desktop flex-1">
         
         {/* Header Section */}
-        <header className="flex justify-between items-end mb-stack_lg">
-          <div>
-            <h2 className="font-h2 text-h2 text-on-surface font-bold">Orders Management</h2>
-            <p className="font-body text-body text-secondary mt-1">
-              Review and manage all incoming and historical customer orders.
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <button
-              onClick={() => showToast('Orders details exported successfully!')}
-              className="bg-white border border-outline-variant px-stack_md py-3 rounded-xl flex items-center gap-2 font-button text-button text-on-surface hover:bg-surface-container-low transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined">download</span>
-              Export Report
-            </button>
-            <button
-              onClick={() => showToast('Orders list refreshed')}
-              className="bg-primary-container text-white px-stack_md py-3 rounded-xl font-button text-button hover:shadow-lg transition-all cursor-pointer"
-            >
-              Refresh Orders
-            </button>
-          </div>
-        </header>
+        <AdminHeader 
+          title="Orders Management"
+          subtitle="Review and manage all incoming and historical customer orders."
+          showToast={showToast}
+          actions={
+            <div className="flex gap-4">
+              <button
+                onClick={() => showToast('Orders details exported successfully!')}
+                className="bg-white border border-outline-variant px-stack_md py-3 rounded-xl flex items-center gap-2 font-button text-button text-on-surface hover:bg-surface-container-low transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined">download</span>
+                Export Report
+              </button>
+              <button
+                onClick={() => showToast('Orders list refreshed')}
+                className="bg-primary-container text-white px-stack_md py-3 rounded-xl font-button text-button hover:shadow-lg transition-all cursor-pointer"
+              >
+                Refresh Orders
+              </button>
+            </div>
+          }
+        />
 
         {/* Metrics Bento Grid */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-stack_lg">
-          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm flex flex-col">
-            <span className="text-secondary font-label text-label mb-2">TOTAL ORDERS TODAY</span>
-            <div className="flex items-center justify-between">
-              <span className="font-h2 text-h2 text-on-surface font-bold">{metrics.totalToday}</span>
-              <div className="bg-tertiary/10 text-tertiary p-2 rounded-lg flex items-center">
-                <span className="material-symbols-outlined text-sm">trending_up</span>
-                <span className="text-xs font-bold ml-1">+12%</span>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm flex flex-col">
-            <span className="text-secondary font-label text-label mb-2">PENDING</span>
-            <div className="flex items-center justify-between">
-              <span className="font-h2 text-h2 text-primary-container font-bold">{metrics.pendingCount}</span>
-              <div className="bg-primary/10 text-primary p-2 rounded-lg flex">
-                <span className="material-symbols-outlined text-sm">schedule</span>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm flex flex-col">
-            <span className="text-secondary font-label text-label mb-2">COMPLETED</span>
-            <div className="flex items-center justify-between">
-              <span className="font-h2 text-h2 text-tertiary font-bold">{metrics.completedCount}</span>
-              <div className="bg-tertiary/10 text-tertiary p-2 rounded-lg flex">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm flex flex-col">
-            <span className="text-secondary font-label text-label mb-2">REVENUE</span>
-            <div className="flex items-center justify-between">
-              <span className="font-h2 text-h2 text-on-surface font-bold">
-                ${metrics.revenueSum.toFixed(2)}
-              </span>
-              <div className="bg-secondary/10 text-secondary p-2 rounded-lg flex">
-                <span className="material-symbols-outlined text-sm">payments</span>
-              </div>
-            </div>
-          </div>
+          <StatCard
+            icon="receipt_long"
+            colorClass="bg-surface-container-low"
+            iconColorClass="text-secondary"
+            trendText="+12%"
+            trendUp={true}
+            title="TOTAL ORDERS TODAY"
+            value={metrics.totalToday}
+          />
+          <StatCard
+            icon="schedule"
+            colorClass="bg-primary/10"
+            iconColorClass="text-primary"
+            trendText={undefined}
+            trendUp={undefined}
+            title="PENDING"
+            value={metrics.pendingCount}
+          />
+          <StatCard
+            icon="check_circle"
+            colorClass="bg-tertiary/10"
+            iconColorClass="text-tertiary"
+            trendText={undefined}
+            trendUp={undefined}
+            title="COMPLETED"
+            value={metrics.completedCount}
+          />
+          <StatCard
+            icon="payments"
+            colorClass="bg-secondary/10"
+            iconColorClass="text-secondary"
+            trendText={undefined}
+            trendUp={undefined}
+            title="REVENUE"
+            value={`$${metrics.revenueSum.toFixed(2)}`}
+          />
         </section>
 
         {/* Filters & Search Bar */}

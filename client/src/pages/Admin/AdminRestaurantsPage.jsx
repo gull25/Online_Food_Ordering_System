@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AdminSidebar from './components/AdminSidebar';
+import AdminHeader from './components/AdminHeader';
+import StatCard from './components/StatCard';
 
 const INITIAL_RESTAURANTS = [
   {
@@ -351,92 +354,22 @@ const AdminRestaurantsPage = () => {
       )}
 
       {/* Admin Side Bar Shell */}
-      <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-low flex flex-col border-r border-outline-variant transition-all duration-200">
-        <div className="px-6 py-8">
-          <h1 className="font-h3 text-h3 text-primary font-bold">Foodora Admin</h1>
-          <p className="font-label text-label text-on-secondary-container mt-1">Management Suite</p>
-        </div>
-        <nav className="flex-1 px-4 space-y-2">
-          <button
-            onClick={() => navigate('/admin')}
-            className="text-secondary flex items-center gap-4 px-6 py-4 hover:bg-surface-variant transition-all duration-200 rounded-lg group w-full text-left font-label text-label uppercase tracking-widest cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-secondary group-hover:text-primary">dashboard</span>
-            <span>Dashboard</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/orders')}
-            className="text-secondary flex items-center gap-4 px-6 py-4 hover:bg-surface-variant transition-all duration-200 rounded-lg group w-full text-left font-label text-label uppercase tracking-widest cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-secondary group-hover:text-primary">receipt_long</span>
-            <span>Orders</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/restaurants')}
-            className="text-primary font-bold border-r-4 border-primary bg-surface-container-high flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left font-label text-label uppercase tracking-widest cursor-pointer"
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>storefront</span>
-            <span>Restaurants</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/menu')}
-            className="text-secondary flex items-center gap-4 px-6 py-4 hover:bg-surface-variant transition-all duration-200 rounded-lg group w-full text-left font-label text-label uppercase tracking-widest cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-secondary group-hover:text-primary">restaurant_menu</span>
-            <span>Menu Management</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/analytics')}
-            className="text-secondary flex items-center gap-4 px-6 py-4 hover:bg-surface-variant transition-all duration-200 rounded-lg group w-full text-left font-label text-label uppercase tracking-widest cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-secondary group-hover:text-primary">analytics</span>
-            <span>Analytics</span>
-          </button>
-        </nav>
-        <div className="p-6 mt-auto border-t border-outline-variant bg-surface-container">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold overflow-hidden shadow-sm flex-shrink-0">
-              <img
-                className="w-full h-full object-cover"
-                alt="Tech administrator headshot"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8FRxvkSHfvpwjOg8F8Zi5w-tfhxxhC6A4eZc4gbgg0zbzFuoDQx3T3sJFaYNHHSQbY7AeEC0KU1RtXGAZS85kuhHpjorYV_b1tAPX5ACaSRn-YOsRRr4UKf6CVV7sfNiv5fccxOVavFaK-P_J2-NKkmxfHalKY9grkeLu8XQBR5U0AqNZrzwhGwwWYKTUPX4tYvt-FoBNy7f-h-0YYc-kGXYTZZWhl_6_M4XPlU4n3J5cetiS7TO-JA"
-              />
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-on-surface font-bold truncate">Admin Profile</p>
-              <p className="text-secondary text-xs truncate">System Controller</p>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <AdminSidebar setIsModalOpen={setIsModalOpen} activeTab="restaurants" />
 
       {/* Main Content Canvas */}
       <main className="ml-64 min-h-screen p-stack_lg bg-background flex-grow">
         
         {/* Header Section */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-gutter mb-stack_lg">
-          <div>
-            <h2 className="font-h2 text-h2 text-on-surface font-bold">Restaurant Management</h2>
-            <p className="text-on-secondary-container mt-1 font-body text-body text-secondary">
-              Configure, monitor, and scale your restaurant partners.
-            </p>
-          </div>
-          <div className="flex items-center gap-stack_md">
-            <div className="relative group">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-secondary-container transition-colors group-focus-within:text-primary">
-                search
-              </span>
-              <input
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="h-12 pl-12 pr-4 rounded-xl border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary w-64 md:w-80 outline-none transition-all font-body text-small"
-                placeholder="Search ID, name, cuisine..."
-                type="text"
-              />
-            </div>
+        <AdminHeader 
+          title="Restaurant Management"
+          subtitle="Configure, monitor, and scale your restaurant partners."
+          searchQuery={searchQuery}
+          setSearchQuery={(val) => {
+            setSearchQuery(val);
+            setCurrentPage(1);
+          }}
+          showToast={showToast}
+          actions={
             <button
               onClick={() => setIsModalOpen(true)}
               className="h-12 px-6 bg-primary-container text-white font-button text-button rounded-xl hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 shadow-md cursor-pointer"
@@ -444,70 +377,47 @@ const AdminRestaurantsPage = () => {
               <span className="material-symbols-outlined text-white">add</span>
               Add New Restaurant
             </button>
-          </div>
-        </header>
+          }
+        />
 
         {/* Quick Stats Grid */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter mb-stack_lg">
-          <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary">restaurant</span>
-              </div>
-              <span className="text-tertiary font-bold text-xs bg-tertiary-fixed px-2 py-1 rounded-full">
-                +4.2%
-              </span>
-            </div>
-            <h4 className="text-on-secondary-container font-label uppercase tracking-widest text-[10px] mb-1">
-              Total Restaurants
-            </h4>
-            <p className="text-h3 font-h3 text-on-surface font-bold">{stats.total}</p>
-          </div>
-
-          <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-lg bg-secondary-fixed flex items-center justify-center">
-                <span className="material-symbols-outlined text-secondary">bolt</span>
-              </div>
-              <span className="text-on-secondary-container font-bold text-[10px] bg-surface-container-high px-2 py-1 rounded-full">
-                Live Now
-              </span>
-            </div>
-            <h4 className="text-on-secondary-container font-label uppercase tracking-widest text-[10px] mb-1">
-              Active Now
-            </h4>
-            <p className="text-h3 font-h3 text-on-surface font-bold">{stats.activeCount}</p>
-          </div>
-
-          <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-lg bg-tertiary-fixed flex items-center justify-center">
-                <span className="material-symbols-outlined text-tertiary">star</span>
-              </div>
-              <span className="text-tertiary-fixed-dim font-bold text-[10px] bg-on-tertiary-fixed px-2 py-1 rounded-full">
-                Top 1%
-              </span>
-            </div>
-            <h4 className="text-on-secondary-container font-label uppercase tracking-widest text-[10px] mb-1">
-              Avg. Rating
-            </h4>
-            <p className="text-h3 font-h3 text-on-surface font-bold">{stats.avgRating}</p>
-          </div>
-
-          <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-lg bg-primary-fixed-dim flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary-container">trending_up</span>
-              </div>
-              <span className="text-primary font-bold text-xs bg-primary-fixed px-2 py-1 rounded-full">
-                Goal Met
-              </span>
-            </div>
-            <h4 className="text-on-secondary-container font-label uppercase tracking-widest text-[10px] mb-1">
-              New This Month
-            </h4>
-            <p className="text-h3 font-h3 text-on-surface font-bold">+42</p>
-          </div>
+          <StatCard
+            icon="restaurant"
+            colorClass="bg-primary-fixed"
+            iconColorClass="text-primary"
+            trendText="+4.2%"
+            trendUp={true}
+            title="Total Restaurants"
+            value={stats.total}
+          />
+          <StatCard
+            icon="bolt"
+            colorClass="bg-secondary-fixed"
+            iconColorClass="text-secondary"
+            trendText="Live Now"
+            trendUp={undefined}
+            title="Active Now"
+            value={stats.activeCount}
+          />
+          <StatCard
+            icon="star"
+            colorClass="bg-tertiary-fixed"
+            iconColorClass="text-tertiary"
+            trendText="Top 1%"
+            trendUp={undefined}
+            title="Avg. Rating"
+            value={stats.avgRating}
+          />
+          <StatCard
+            icon="trending_up"
+            colorClass="bg-primary-fixed-dim"
+            iconColorClass="text-primary-container"
+            trendText="Growth"
+            trendUp={undefined}
+            title="Onboarding"
+            value={Math.floor(stats.total * 0.1)}
+          />
         </section>
 
         {/* Restaurant Data Table */}

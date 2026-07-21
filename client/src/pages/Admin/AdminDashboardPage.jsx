@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AdminSidebar from './components/AdminSidebar';
+import AdminHeader from './components/AdminHeader';
+import StatCard from './components/StatCard';
+import RecentOrdersTable from './components/RecentOrdersTable';
 
 const INITIAL_ORDERS = [
   {
@@ -209,172 +213,57 @@ const AdminDashboardPage = () => {
       )}
 
       {/* Side Navigation Bar */}
-      <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-low flex flex-col z-50 border-r border-outline-variant/30">
-        <div className="px-6 py-10 flex flex-col gap-2">
-          <h1 className="font-h3 text-h3 text-primary font-bold">Foodora Admin</h1>
-          <p className="font-label text-label text-on-secondary-container uppercase tracking-wider">
-            Management Suite
-          </p>
-        </div>
-        <nav className="flex-1 flex flex-col gap-1 overflow-y-auto px-2">
-          <button
-            onClick={() => navigate('/admin')}
-            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-primary font-bold border-r-4 border-primary bg-surface-container-high/50 font-label text-label"
-          >
-            <span className="material-symbols-outlined">dashboard</span>
-            <span>Dashboard</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/orders')}
-            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-secondary hover:bg-surface-variant/40 font-label text-label"
-          >
-            <span className="material-symbols-outlined">receipt_long</span>
-            <span>Orders</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/restaurants')}
-            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-secondary hover:bg-surface-variant/40 font-label text-label"
-          >
-            <span className="material-symbols-outlined">storefront</span>
-            <span>Restaurants</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/menu')}
-            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-secondary hover:bg-surface-variant/40 font-label text-label"
-          >
-            <span className="material-symbols-outlined">restaurant_menu</span>
-            <span>Menu Management</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/analytics')}
-            className="flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-secondary hover:bg-surface-variant/40 font-label text-label"
-          >
-            <span className="material-symbols-outlined">analytics</span>
-            <span>Analytics</span>
-          </button>
-        </nav>
-        <div className="p-6">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-button text-button hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
-          >
-            <span className="material-symbols-outlined">add_circle</span>
-            Add New Restaurant
-          </button>
-        </div>
-        <div className="px-6 py-8 border-t border-outline-variant/30 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
-            <img
-              className="w-full h-full object-cover"
-              alt="Alex Mercer headshot"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXFzmrGv9s3Ato2f9nWAgDsrlUCxvTo6kT4KBKaJD03tN2Azoye3nT9UOMNullVClmnhc2WkAJ7rJud3tnbODMqjZqHzCNmjAj8CZQ8Ska7sMJcIx3ZiPhL7CquHAT9Ko4Qu17ZXSs7e3OmQp4mTJWMDpOWY_HV97e8RWX3K_xQHZOl25WzCBwGMI0htohMFPeOhzIiqQESZenx_Z2mP4Lw_VWuLjRy7RxtvMVQ1LOPizB219JO_zZBA"
-            />
-          </div>
-          <div>
-            <p className="font-label text-label text-on-surface">Alex Mitchell</p>
-            <p className="text-[10px] text-secondary font-semibold uppercase">Super Admin</p>
-          </div>
-        </div>
-      </aside>
+      <AdminSidebar setIsModalOpen={setIsModalOpen} activeTab="dashboard" />
 
       {/* Main Content Canvas */}
       <main className="ml-64 p-margin_desktop max-w-container_max">
         {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-gutter mb-stack_lg">
-          <div>
-            <h2 className="font-h2 text-h2 text-on-surface mb-1 font-bold">Welcome back, Alex</h2>
-            <p className="font-body text-body text-secondary">
-              Here's what's happening with Foodora today.
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative w-full md:w-80 group">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary transition-colors">
-                search
-              </span>
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-12 pl-12 pr-4 bg-surface-container-low border border-outline-variant/30 rounded-xl font-body text-body focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-                placeholder="Search orders, customers..."
-                type="text"
-              />
-            </div>
-            <button
-              onClick={() => showToast('No new notifications')}
-              className="w-12 h-12 flex items-center justify-center bg-surface-container-low border border-outline-variant/30 rounded-xl hover:bg-surface-variant transition-colors relative"
-            >
-              <span className="material-symbols-outlined text-secondary">notifications</span>
-              <span className="absolute top-3 right-3 w-2 h-2 bg-primary rounded-full"></span>
-            </button>
-          </div>
-        </header>
+        <AdminHeader 
+          title="Welcome back, Alex"
+          subtitle="Here's what's happening with Foodora today."
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          showToast={showToast}
+        />
 
         {/* Metric Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-stack_lg">
-          {/* Card 1 */}
-          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-primary/5 rounded-xl text-primary flex">
-                <span className="material-symbols-outlined">shopping_bag</span>
-              </div>
-              <span className="flex items-center text-tertiary font-label text-label">
-                <span className="material-symbols-outlined !text-sm mr-1">trending_up</span>
-                +12.5%
-              </span>
-            </div>
-            <p className="font-label text-label text-secondary uppercase tracking-tight mb-1">
-              Total Orders
-            </p>
-            <h3 className="font-h2 text-[28px] text-on-surface font-bold">14,289</h3>
-          </div>
-          {/* Card 2 */}
-          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-tertiary/5 rounded-xl text-tertiary flex">
-                <span className="material-symbols-outlined">payments</span>
-              </div>
-              <span className="flex items-center text-tertiary font-label text-label">
-                <span className="material-symbols-outlined !text-sm mr-1">trending_up</span>
-                +8.2%
-              </span>
-            </div>
-            <p className="font-label text-label text-secondary uppercase tracking-tight mb-1">
-              Total Revenue
-            </p>
-            <h3 className="font-h2 text-[28px] text-on-surface font-bold">$128,430</h3>
-          </div>
-          {/* Card 3 */}
-          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-on-secondary-fixed-variant/5 rounded-xl text-secondary flex">
-                <span className="material-symbols-outlined">group</span>
-              </div>
-              <span className="flex items-center text-tertiary font-label text-label">
-                <span className="material-symbols-outlined !text-sm mr-1">trending_up</span>
-                +2.1%
-              </span>
-            </div>
-            <p className="font-label text-label text-secondary uppercase tracking-tight mb-1">
-              Active Customers
-            </p>
-            <h3 className="font-h2 text-[28px] text-on-surface font-bold">8,432</h3>
-          </div>
-          {/* Card 4 */}
-          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-outline/5 rounded-xl text-on-surface-variant flex">
-                <span className="material-symbols-outlined">restaurant</span>
-              </div>
-              <span className="flex items-center text-primary font-label text-label">
-                +12 new
-              </span>
-            </div>
-            <p className="font-label text-label text-secondary uppercase tracking-tight mb-1">
-              Active Restaurants
-            </p>
-            <h3 className="font-h2 text-[28px] text-on-surface font-bold">412</h3>
-          </div>
+          <StatCard
+            icon="shopping_bag"
+            colorClass="bg-primary/5"
+            iconColorClass="text-primary"
+            trendText="+12.5%"
+            trendUp={true}
+            title="Total Orders"
+            value="14,289"
+          />
+          <StatCard
+            icon="payments"
+            colorClass="bg-tertiary/5"
+            iconColorClass="text-tertiary"
+            trendText="+8.2%"
+            trendUp={true}
+            title="Total Revenue"
+            value="$128,430"
+          />
+          <StatCard
+            icon="group"
+            colorClass="bg-on-secondary-fixed-variant/5"
+            iconColorClass="text-secondary"
+            trendText="+2.1%"
+            trendUp={true}
+            title="Active Customers"
+            value="8,432"
+          />
+          <StatCard
+            icon="restaurant"
+            colorClass="bg-outline/5"
+            iconColorClass="text-on-surface-variant"
+            trendText="+12 new"
+            trendUp={undefined}
+            title="Active Restaurants"
+            value="412"
+          />
         </section>
 
         {/* Main Chart Section */}
@@ -518,133 +407,13 @@ const AdminDashboardPage = () => {
 
         {/* Orders Table & Quick Actions Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-          {/* Table Container */}
-          <div className="lg:col-span-2 bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden">
-            <div className="p-gutter flex items-center justify-between border-b border-outline-variant/10">
-              <h3 className="font-h3 text-h3 text-on-surface font-bold">Recent Orders</h3>
-              <button
-                onClick={() => showToast('Loading all orders...')}
-                className="text-primary font-button text-button hover:underline transition-all"
-              >
-                View All
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-surface-container-low/50">
-                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
-                      ORDER ID
-                    </th>
-                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
-                      CUSTOMER
-                    </th>
-                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
-                      ITEMS
-                    </th>
-                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
-                      AMOUNT
-                    </th>
-                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
-                      STATUS
-                    </th>
-                    <th className="px-6 py-4 font-label text-label text-on-secondary-container">
-                      ACTION
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/10 relative">
-                  {filteredOrders.map((order) => (
-                    <tr
-                      key={order.id}
-                      className="hover:bg-surface-container-low/30 transition-colors"
-                    >
-                      <td className="px-6 py-4 font-small text-small font-semibold">
-                        {order.id}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-secondary-fixed overflow-hidden flex-shrink-0">
-                            <img
-                              className="w-full h-full object-cover"
-                              alt={order.customer}
-                              src={order.avatar}
-                            />
-                          </div>
-                          <span className="font-small text-small">{order.customer}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 font-small text-small text-secondary">
-                        {order.itemsCount} items
-                      </td>
-                      <td className="px-6 py-4 font-small text-small font-semibold">
-                        ${order.amount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full font-label text-[10px] uppercase font-bold ${
-                            order.status === 'DELIVERED'
-                              ? 'bg-tertiary/10 text-tertiary'
-                              : order.status === 'PREPARING'
-                              ? 'bg-primary-container/20 text-on-primary-container'
-                              : 'bg-surface-container-highest text-secondary'
-                          }`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 relative">
-                        <button
-                          onClick={() =>
-                            setActiveDropdownId(
-                              activeDropdownId === order.id ? null : order.id
-                            )
-                          }
-                          aria-label="Order actions"
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant transition-colors text-secondary cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined">more_vert</span>
-                        </button>
-
-                        {/* Status Change Dropdown Menu */}
-                        {activeDropdownId === order.id && (
-                          <div className="absolute right-12 top-10 bg-white border border-outline-variant/30 rounded-xl shadow-xl z-30 py-1 w-36 animate-in fade-in zoom-in-95">
-                            <button
-                              onClick={() => handleUpdateStatus(order.id, 'DELIVERED')}
-                              className="w-full text-left px-4 py-2 hover:bg-surface-container text-xs font-semibold"
-                            >
-                              Set Delivered
-                            </button>
-                            <button
-                              onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
-                              className="w-full text-left px-4 py-2 hover:bg-surface-container text-xs font-semibold"
-                            >
-                              Set Preparing
-                            </button>
-                            <button
-                              onClick={() => handleUpdateStatus(order.id, 'PENDING')}
-                              className="w-full text-left px-4 py-2 hover:bg-surface-container text-xs font-semibold"
-                            >
-                              Set Pending
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {filteredOrders.length === 0 && (
-                <div className="py-8 text-center bg-surface-container-lowest">
-                  <span className="material-symbols-outlined text-4xl text-on-secondary-container mb-2">
-                    search_off
-                  </span>
-                  <p className="text-secondary font-body">No matching orders found.</p>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Recent Orders List */}
+          <RecentOrdersTable 
+            filteredOrders={filteredOrders}
+            activeDropdownId={activeDropdownId}
+            setActiveDropdownId={setActiveDropdownId}
+            handleUpdateStatus={handleUpdateStatus}
+          />
 
           {/* Quick Actions & Top Restaurants */}
           <div className="flex flex-col gap-gutter">

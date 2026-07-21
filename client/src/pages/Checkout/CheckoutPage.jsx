@@ -3,6 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import TopNavBar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import CartItem from '../../components/ui/CartItem/CartItem';
+import CheckoutProgress from './components/CheckoutProgress';
+import DeliveryForm from './components/DeliveryForm';
+import OrderSummary from './components/OrderSummary';
+import PaymentMethods from './components/PaymentMethods';
 
 const INITIAL_CART = [
   {
@@ -129,28 +133,7 @@ const CheckoutPage = () => {
 
       <main className="pt-24 pb-16 px-margin_mobile md:px-margin_desktop max-w-container_max mx-auto flex-grow w-full">
         {/* Progress Indicator */}
-        <div className="flex items-center justify-center mb-stack_lg gap-4 md:gap-12">
-          <div className="flex items-center gap-2 step-active">
-            <span className="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-small border-primary text-primary">
-              1
-            </span>
-            <span className="font-label text-label hidden sm:inline text-primary">Details & Delivery</span>
-          </div>
-          <div className="h-px w-8 md:w-16 bg-outline-variant"></div>
-          <div className="flex items-center gap-2 text-secondary">
-            <span className="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-small">
-              2
-            </span>
-            <span className="font-label text-label hidden sm:inline">Payment Option</span>
-          </div>
-          <div className="h-px w-8 md:w-16 bg-outline-variant"></div>
-          <div className="flex items-center gap-2 text-secondary opacity-50">
-            <span className="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-small">
-              3
-            </span>
-            <span className="font-label text-label hidden sm:inline">Confirmation</span>
-          </div>
-        </div>
+        <CheckoutProgress />
 
         {formError && (
           <div className="max-w-4xl mx-auto p-4 mb-6 bg-error-container text-on-error-container rounded-xl font-body text-small flex items-center gap-2 shadow-sm animate-in fade-in">
@@ -193,111 +176,13 @@ const CheckoutPage = () => {
             </section>
 
             {/* Delivery Details Section */}
-            <section className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant">
-              <h2 className="font-h3 text-h3 mb-6 font-bold text-on-surface">Delivery Details</h2>
-              <form onSubmit={handleSubmitOrder} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="font-label text-label text-secondary">First Name *</label>
-                  <input
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    className="w-full h-12 px-4 rounded-xl border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body"
-                    placeholder="John"
-                    type="text"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="font-label text-label text-secondary">Last Name *</label>
-                  <input
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className="w-full h-12 px-4 rounded-xl border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body"
-                    placeholder="Doe"
-                    type="text"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="font-label text-label text-secondary">Phone Number *</label>
-                  <input
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full h-12 px-4 rounded-xl border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body"
-                    placeholder="+1 (555) 000-0000"
-                    type="tel"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="font-label text-label text-secondary">City *</label>
-                  <input
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="w-full h-12 px-4 rounded-xl border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body"
-                    placeholder="New York"
-                    type="text"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label class="font-label text-label text-secondary">Street Address *</label>
-                  <input
-                    name="streetAddress"
-                    value={formData.streetAddress}
-                    onChange={handleInputChange}
-                    className="w-full h-12 px-4 rounded-xl border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body"
-                    placeholder="123 Gastronomy Lane"
-                    type="text"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="font-label text-label text-secondary">Delivery Instructions (Optional)</label>
-                  <textarea
-                    name="instructions"
-                    value={formData.instructions}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body"
-                    placeholder="Apartment buzzer, gate code, etc."
-                    rows="3"
-                  ></textarea>
-                </div>
-              </form>
-
-              {/* Delivery Preference */}
-              <div className="mt-8">
-                <h4 className="font-bold text-body mb-4 text-on-surface">Delivery Preference</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => setDeliveryPreference('meet')}
-                    className={`flex items-center justify-center gap-3 p-4 border-2 rounded-xl transition-all ${
-                      deliveryPreference === 'meet'
-                        ? 'border-primary bg-primary-fixed text-on-primary-fixed-variant'
-                        : 'border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined">door_front</span>
-                    <span className="font-button text-sm font-semibold">Meet at door</span>
-                  </button>
-                  <button
-                    onClick={() => setDeliveryPreference('leave')}
-                    className={`flex items-center justify-center gap-3 p-4 border-2 rounded-xl transition-all ${
-                      deliveryPreference === 'leave'
-                        ? 'border-primary bg-primary-fixed text-on-primary-fixed-variant'
-                        : 'border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined">package_2</span>
-                    <span className="font-button text-sm font-semibold">Leave at door</span>
-                  </button>
-                </div>
-              </div>
-            </section>
+            <DeliveryForm
+              formData={formData}
+              handleInputChange={handleInputChange}
+              handleSubmitOrder={handleSubmitOrder}
+              deliveryPreference={deliveryPreference}
+              setDeliveryPreference={setDeliveryPreference}
+            />
           </div>
 
           {/* Right Column: Order Summary & Checkout Action */}
@@ -305,133 +190,24 @@ const CheckoutPage = () => {
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant sticky top-24">
               <h2 className="font-h3 text-h3 mb-6 font-bold text-on-surface">Order Summary</h2>
               
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-body">
-                  <span className="text-secondary">Subtotal</span>
-                  <span className="text-on-surface">${subtotal.toFixed(2)}</span>
-                </div>
-
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-body text-tertiary font-medium">
-                    <span>Discount ({discountPercent}%)</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between text-body">
-                  <span className="text-secondary">Delivery Fee</span>
-                  <span className="text-tertiary font-semibold">FREE</span>
-                </div>
-                <div className="flex justify-between text-body">
-                  <span className="text-secondary">Service Fee</span>
-                  <span className="text-on-surface">${serviceFee.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-body">
-                  <span className="text-secondary">Tax (8.7%)</span>
-                  <span className="text-on-surface">${tax.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Promo input code */}
-              <div className="flex flex-col gap-2 mb-6">
-                <div className="flex items-center gap-2 p-1 border border-outline-variant rounded-xl overflow-hidden bg-surface-container-low">
-                  <input
-                    value={promoInput}
-                    onChange={(e) => setPromoInput(e.target.value)}
-                    className="flex-grow px-3 py-2 bg-transparent focus:outline-none font-label text-label outline-none font-body"
-                    placeholder="Promo code (e.g. HELLO50)"
-                    type="text"
-                  />
-                  <button
-                    onClick={handleApplyPromo}
-                    className="px-4 py-2 bg-secondary text-on-secondary rounded-lg font-button text-small hover:bg-on-secondary-fixed-variant transition-colors"
-                  >
-                    Apply
-                  </button>
-                </div>
-                {promoMessage && (
-                  <span
-                    className={`text-xs px-2 font-medium ${
-                      discountPercent > 0 ? 'text-tertiary' : 'text-error'
-                    }`}
-                  >
-                    {promoMessage}
-                  </span>
-                )}
-              </div>
-
-              <div className="border-t border-outline-variant pt-4 mb-8">
-                <div className="flex justify-between items-baseline">
-                  <span className="font-h3 text-h3 font-bold text-on-surface">Total</span>
-                  <span className="text-primary-container font-h2 text-h2-mobile md:text-h2 font-extrabold">
-                    ${total.toFixed(2)}
-                  </span>
-                </div>
-              </div>
+              <OrderSummary
+                subtotal={subtotal}
+                discountAmount={discountAmount}
+                discountPercent={discountPercent}
+                serviceFee={serviceFee}
+                tax={tax}
+                total={total}
+                promoInput={promoInput}
+                setPromoInput={setPromoInput}
+                handleApplyPromo={handleApplyPromo}
+                promoMessage={promoMessage}
+              />
 
               {/* Payment selection methods */}
-              <div className="mb-8">
-                <h4 className="font-bold text-body mb-4 text-on-surface">Payment Method</h4>
-                <div className="space-y-3">
-                  <label
-                    onClick={() => setPaymentMethod('visa')}
-                    className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${
-                      paymentMethod === 'visa'
-                        ? 'border-primary bg-surface-container-low'
-                        : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-secondary">credit_card</span>
-                      <div>
-                        <p className="font-bold text-small text-on-surface">Visa ending in 4421</p>
-                        <p className="text-secondary text-[10px]">Exp 09/26</p>
-                      </div>
-                    </div>
-                    <input
-                      checked={paymentMethod === 'visa'}
-                      onChange={() => setPaymentMethod('visa')}
-                      className="w-5 h-5 text-primary border-outline focus:ring-primary accent-primary"
-                      name="payment"
-                      type="radio"
-                    />
-                  </label>
-
-                  <label
-                    onClick={() => setPaymentMethod('apple')}
-                    className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${
-                      paymentMethod === 'apple'
-                        ? 'border-primary bg-surface-container-low'
-                        : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        alt="Apple Pay"
-                        className="h-4 w-auto"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLcq3l5FEeVSxHCZwmeMz0s37FxVe9xHLFxaIzyWsSFHgGrPR2xef9W-QEarzqGyduN06KkYhmXsEJJZhUycq_cLf4cfFgeLX7fLSQy4KS_CqaLtut6sSyAX4RglBHUX4PgGRj4XjISuEnULd4lgC9t5JrAEz61_ZlQZqD4o3cwf6BKOwgGjYyT3VgGePd37amYWvhoWmhgjMhwbHo-YKxA6ACvS7M4W5d9LPSTKaaQ2kqDjOVDvFQLQ"
-                      />
-                      <span className="font-bold text-small text-on-surface">Apple Pay</span>
-                    </div>
-                    <input
-                      checked={paymentMethod === 'apple'}
-                      onChange={() => setPaymentMethod('apple')}
-                      className="w-5 h-5 text-primary border-outline focus:ring-primary accent-primary"
-                      name="payment"
-                      type="radio"
-                    />
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={() => alert('Adding new payment methods is coming soon!')}
-                    className="w-full flex items-center justify-center gap-2 p-3 border border-dashed border-outline-variant rounded-xl text-secondary hover:text-primary hover:border-primary transition-all group"
-                  >
-                    <span className="material-symbols-outlined text-sm">add_circle</span>
-                    <span className="font-button text-small">Add New Method</span>
-                  </button>
-                </div>
-              </div>
+              <PaymentMethods
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+              />
 
               {/* Submit Checkout Button */}
               <button

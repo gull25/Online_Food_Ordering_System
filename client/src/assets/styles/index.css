@@ -96,13 +96,23 @@
 
 
   /* Exact Typography Classes translated from v3 config */
-  .text-h1 { font-size: 48px; line-height: 120%; letter-spacing: -0.02em; font-weight: 700; }
-  .text-h1-mobile { font-size: 32px; line-height: 120%; letter-spacing: -0.01em; font-weight: 700; }
-  .text-h2 { font-size: 36px; line-height: 130%; font-weight: 700; }
-  .text-h2-mobile { font-size: 28px; line-height: 130%; font-weight: 700; }
-  .text-h3 { font-size: 24px; line-height: 140%; font-weight: 600; }
-  .text-body { font-size: 16px; line-height: 160%; font-weight: 400; }
-  .text-button { font-size: 16px; line-height: 100%; font-weight: 600; }
-  .text-small { font-size: 14px; line-height: 150%; font-weight: 400; }
+  .text-h1 { font-size: 32px; line-height: 120%; letter-spacing: -0.01em; font-weight: 700; }
+  @media (min-width: 768px) { .text-h1 { font-size: 48px; letter-spacing: -0.02em; } }
+  
+  .text-h2 { font-size: 28px; line-height: 130%; font-weight: 700; }
+  @media (min-width: 768px) { .text-h2 { font-size: 36px; } }
+  
+  .text-h3 { font-size: 20px; line-height: 140%; font-weight: 600; }
+  @media (min-width: 768px) { .text-h3 { font-size: 24px; } }
+  
+  .text-body { font-size: 14px; line-height: 160%; font-weight: 400; }
+  @media (min-width: 768px) { .text-body { font-size: 16px; } }
+  
+  .text-button { font-size: 14px; line-height: 100%; font-weight: 600; }
+  @media (min-width: 768px) { .text-button { font-size: 16px; } }
+  
+  .text-small { font-size: 12px; line-height: 150%; font-weight: 400; }
+  @media (min-width: 768px) { .text-small { font-size: 14px; } }
+  
   .text-label { font-size: 12px; line-height: 100%; letter-spacing: 0.05em; font-weight: 600; }
 }

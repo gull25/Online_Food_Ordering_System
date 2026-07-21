@@ -2,7 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import TopNavBar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
-
+import NewsletterSignup from './components/NewsletterSignup';
+import FlashSaleBanner from './components/FlashSaleBanner';
+import OffersFilter from './components/OffersFilter';
+import NewUserDiscounts from './components/NewUserDiscounts';
 
 // Dynamic list of promotions and deals
 const OFFERS_DATA = [
@@ -121,125 +124,17 @@ const OffersPage = () => {
 
       <main className="max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg flex-grow w-full">
         {/* Flash Sale Banner */}
-        <section className="relative w-full rounded-[32px] overflow-hidden mb-stack_lg min-h-[400px] flex items-center shadow-md">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80')",
-            }}
-          ></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent"></div>
-          <div className="relative z-10 p-8 md:p-16 max-w-2xl text-white">
-            <div className="inline-flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-1.5 rounded-full font-label text-label mb-4 animate-pulse">
-              <span className="material-symbols-outlined text-[16px]">bolt</span>
-              FLASH SALE
-            </div>
-            <h1 className="font-h1 text-h1-mobile md:text-h1 mb-4 leading-tight">Today's Top Deals</h1>
-            <p className="font-body text-body text-white/90 mb-8 max-w-md">
-              Satisfy your cravings for less. Exclusive discounts on the city's finest restaurants, only for the next few hours.
-            </p>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-              {/* React-based Countdown Display */}
-              <div className="flex gap-4" id="countdown">
-                <div className="flex flex-col items-center">
-                  <span className="text-h2 font-h2">{formattedTime.hours}</span>
-                  <span className="font-label text-[10px] uppercase opacity-70">Hours</span>
-                </div>
-                <span className="text-h2 font-h2">:</span>
-                <div className="flex flex-col items-center">
-                  <span className="text-h2 font-h2">{formattedTime.minutes}</span>
-                  <span className="font-label text-[10px] uppercase opacity-70">Mins</span>
-                </div>
-                <span className="text-h2 font-h2">:</span>
-                <div className="flex flex-col items-center">
-                  <span className="text-h2 font-h2">{formattedTime.seconds}</span>
-                  <span className="font-label text-[10px] uppercase opacity-70">Secs</span>
-                </div>
-              </div>
-              <button
-                onClick={() => copyPromoCode('FLASH80')}
-                className="bg-primary-container text-white px-8 py-4 rounded-xl font-button text-button hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-2"
-              >
-                <span className="material-symbols-outlined">confirmation_number</span>
-                {copiedCode === 'FLASH80' ? 'Code Copied!' : 'Claim Flash Deal (80% Off)'}
-              </button>
-            </div>
-          </div>
-        </section>
+        <FlashSaleBanner 
+          formattedTime={formattedTime} 
+          copyPromoCode={copyPromoCode} 
+          copiedCode={copiedCode} 
+        />
 
         {/* Search Bar for Offers */}
-        <div className="mb-stack_lg max-w-md">
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-secondary-container">
-              search
-            </span>
-            <input
-              className="w-full h-12 pl-12 pr-4 rounded-12 border border-surface-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body text-body transition-shadow shadow-sm"
-              placeholder="Search deals or restaurants..."
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
+        <OffersFilter searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
         {/* New User Discounts (Bento Style Layout) */}
-        <section className="mb-stack_lg">
-          <div className="flex items-center justify-between mb-stack_md">
-            <h2 className="font-h2 text-h2-mobile md:text-h2 text-on-surface">New User Discounts</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto lg:h-[400px]">
-            {/* Left Bento: 50% Off Welcome Pack */}
-            <div className="md:col-span-8 bg-surface-container-low border border-outline-variant/30 rounded-[24px] p-8 flex flex-col justify-between relative overflow-hidden group shadow-sm">
-              <div className="relative z-10">
-                <span className="bg-tertiary-container text-white px-3 py-1.5 rounded-full font-label text-label mb-4 inline-block">
-                  WELCOME PACK
-                </span>
-                <h3 className="text-[40px] font-extrabold leading-tight mb-2 text-primary">50% OFF</h3>
-                <p className="text-on-surface-variant font-body text-body max-w-xs">
-                  On your first 3 orders. Max discount $15 per order. Use code:{' '}
-                  <span className="font-bold text-on-surface select-all bg-white/60 px-2 py-1 rounded">
-                    HELLO50
-                  </span>
-                </p>
-              </div>
-              <div className="relative z-10 flex gap-4 mt-6">
-                <button
-                  onClick={() => copyPromoCode('HELLO50')}
-                  className="bg-primary text-white px-6 py-3 rounded-xl font-button text-button hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center gap-2"
-                >
-                  <span className="material-symbols-outlined">content_copy</span>
-                  {copiedCode === 'HELLO50' ? 'Copied!' : 'Claim Code'}
-                </button>
-              </div>
-              <div className="absolute right-0 bottom-0 w-1/2 h-full hidden lg:block">
-                <img
-                  className="w-full h-full object-contain object-right-bottom translate-y-8 group-hover:scale-105 transition-transform duration-500"
-                  alt="Healthy Poke bowl mockup"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhjBa9WNpwPTWCPb115FVDOrmq5keeqSge7gVzZqe_Z1yDHMgInyBleGat0YJw9o_mH8tZiFRSjl__7MizThqNKIJrjOC2dky6e4UHamh3lkv4X2raM1Y_5cj8GJWHq6jGCc2nPpb5ewcUxNBUErRRK8lb4Gz-TU2R4cxJf9IcnFH6AEnh3zjPykA6xJPd0Vs7C0vlVRGNZWMv_OyeqkITlR6EUtelNlKnTCWrw-LQCrB1XML-Wjc_2A"
-                />
-              </div>
-            </div>
-            {/* Right Bento: Free Delivery Trial */}
-            <div className="md:col-span-4 bg-primary text-white rounded-[24px] p-8 flex flex-col justify-center items-center text-center relative overflow-hidden shadow-sm">
-              <div className="absolute top-[-20px] right-[-20px] w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-              <span className="material-symbols-outlined text-[64px] mb-4 text-white/90">
-                delivery_dining
-              </span>
-              <h3 className="text-h3 font-h3 mb-2 font-bold">FREE Delivery</h3>
-              <p className="text-white/80 text-small mb-6">
-                No minimum order for your first month. Stay hungry, we've got the gas.
-              </p>
-              <button
-                onClick={() => copyPromoCode('FREEDELIVERY')}
-                className="bg-white text-primary px-6 py-3 rounded-xl font-button text-button hover:bg-surface-bright active:scale-95 transition-all shadow-md"
-              >
-                {copiedCode === 'FREEDELIVERY' ? 'Copied Coupon!' : 'Start Free Trial'}
-              </button>
-            </div>
-          </div>
-        </section>
+        <NewUserDiscounts copyPromoCode={copyPromoCode} copiedCode={copiedCode} />
 
         {/* BOGO & Exclusive Deals Section */}
         <section className="mb-stack_lg">
@@ -399,59 +294,12 @@ const OffersPage = () => {
         </section>
 
         {/* Newsletter Signup */}
-        <section className="bg-inverse-surface rounded-[24px] p-8 md:p-16 text-center relative overflow-hidden shadow-lg">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute bottom-0 right-0 w-64 h-64 bg-tertiary/20 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
-          <div className="relative z-10 max-w-2xl mx-auto">
-            <span className="material-symbols-outlined text-primary-fixed text-[48px] mb-4">
-              mail
-            </span>
-            <h2 className="font-h2 text-h2-mobile md:text-h2 text-white mb-4">
-              Never miss a tasty deal
-            </h2>
-            <p className="text-surface-variant/80 font-body text-body mb-8">
-              Join 50,000+ foodies receiving the best weekly promotions directly in their inbox.
-            </p>
-
-            {newsletterSubscribed ? (
-              <div className="bg-white/10 text-white p-6 rounded-xl border border-white/20 backdrop-blur-sm max-w-lg mx-auto flex items-center justify-center gap-3 animate-in fade-in zoom-in-95">
-                <span className="material-symbols-outlined text-[32px] text-tertiary-fixed">
-                  check_circle
-                </span>
-                <div className="text-left">
-                  <h4 className="font-button text-button">Successfully Subscribed!</h4>
-                  <p className="text-small text-surface-variant/80">
-                    We've sent a welcome email to your inbox.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <form
-                className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto"
-                onSubmit={handleNewsletterSubmit}
-              >
-                <input
-                  className="flex-grow px-6 py-4 rounded-xl border-none focus:ring-2 focus:ring-primary bg-white/10 text-white placeholder-white/50 backdrop-blur-sm outline-none font-body text-body"
-                  placeholder="Enter your email address"
-                  required
-                  type="email"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                />
-                <button
-                  className="bg-primary text-on-primary px-8 py-4 rounded-xl font-button text-button hover:opacity-90 active:scale-95 transition-all shadow-lg whitespace-nowrap"
-                  type="submit"
-                >
-                  Subscribe Now
-                </button>
-              </form>
-            )}
-
-            <p className="mt-4 text-[12px] text-surface-variant/50">
-              By subscribing, you agree to our Terms of Service and Privacy Policy.
-            </p>
-          </div>
-        </section>
+        <NewsletterSignup
+          newsletterSubscribed={newsletterSubscribed}
+          handleNewsletterSubmit={handleNewsletterSubmit}
+          newsletterEmail={newsletterEmail}
+          setNewsletterEmail={setNewsletterEmail}
+        />
       </main>
 
       <Footer />

@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AdminSidebar from './components/AdminSidebar';
+import AdminHeader from './components/AdminHeader';
 
 const INITIAL_REST_DATA = {
   'The Golden Truffle Bistro': {
@@ -462,92 +464,27 @@ const AdminMenuPage = () => {
       )}
 
       {/* SideNavBar Anchor */}
-      <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant/30 flex flex-col z-40">
-        <div className="px-6 py-8">
-          <h1 className="font-h3 text-h3 text-primary dark:text-primary-fixed font-bold leading-tight">Foodora Admin</h1>
-          <p className="font-label text-label text-on-secondary-container mt-1">Management Suite</p>
-        </div>
-        <nav className="flex-1 mt-4">
-          <button
-            onClick={() => navigate('/admin')}
-            className="text-secondary dark:text-secondary-fixed-dim flex items-center gap-4 px-6 py-4 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined">dashboard</span>
-            <span>Dashboard</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/orders')}
-            className="text-secondary dark:text-secondary-fixed-dim flex items-center gap-4 px-6 py-4 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined">receipt_long</span>
-            <span>Orders</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/restaurants')}
-            className="text-secondary dark:text-secondary-fixed-dim flex items-center gap-4 px-6 py-4 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined">storefront</span>
-            <span>Restaurants</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/menu')}
-            className="text-primary dark:text-primary-fixed font-bold border-r-4 border-primary flex items-center gap-4 px-6 py-4 bg-primary-container/10 transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-              restaurant_menu
-            </span>
-            <span>Menu Management</span>
-          </button>
-          <button
-            onClick={() => navigate('/admin/analytics')}
-            className="text-secondary dark:text-secondary-fixed-dim flex items-center gap-4 px-6 py-4 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-all duration-200 w-full text-left font-label text-label cursor-pointer"
-          >
-            <span className="material-symbols-outlined">analytics</span>
-            <span>Analytics</span>
-          </button>
-        </nav>
-        <div className="p-6">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-full bg-primary text-white font-button text-button py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer"
-          >
-            Add New Restaurant
-          </button>
-        </div>
-      </aside>
+      <AdminSidebar setIsModalOpen={setIsModalOpen} activeTab="menu" />
 
       {/* Main Content Area */}
       <main className="ml-64 p-margin_desktop">
         
         {/* Top Navigation / Header */}
-        <header className="flex justify-between items-center mb-stack_lg">
-          <div>
-            <h2 className="font-h2 text-h2 text-on-background font-bold">Menu Management</h2>
-            <p className="font-body text-body text-secondary mt-1">
-              Configure and update culinary offerings for your partners.
-            </p>
-          </div>
-          <div className="flex items-center gap-stack_md">
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-secondary">search</span>
-              </div>
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all w-64 font-body text-small bg-transparent"
-                placeholder="Search food items..."
-                type="text"
-              />
-            </div>
+        <AdminHeader 
+          title="Menu Management"
+          subtitle="Configure and update culinary offerings for your partners."
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          showToast={showToast}
+          actions={
             <div className="flex items-center gap-2 bg-surface-container-highest px-4 py-2 rounded-xl border border-outline-variant">
               <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center">
                 <span className="material-symbols-outlined text-on-primary-container text-sm">person</span>
               </div>
               <span className="font-label text-label text-on-surface">Admin User</span>
             </div>
-          </div>
-        </header>
+          }
+        />
 
         {/* Restaurant Selector */}
         <section className="mb-stack_lg">

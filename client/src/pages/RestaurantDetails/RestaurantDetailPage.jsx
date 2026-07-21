@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import TopNavBar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import FoodCard from '../../components/ui/FoodCard/FoodCard';
+import RestaurantHeader from './components/RestaurantHeader';
+import CategorySidebar from './components/CategorySidebar';
+import MobileCategoryNav from './components/MobileCategoryNav';
+import MenuSection from './components/MenuSection';
+import FloatingCartSummary from './components/FloatingCartSummary';
+import { useCart } from '../../context/CartContext';
 
 // Clean data representation of the menu
 const MENU_CATEGORIES = [
@@ -53,12 +59,98 @@ const MENU_ITEMS = [
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBuliHJnZSMQjZuE_f6BUD7tiE5Ei5WF5GjhmSOI6dp1de7CXKNxtZhiCtYmcd5ecwzFqD0E4GxL1WkHo0V-1xNSj3L0u59fQsE-t_HwnBsvhR9gpE6g8a7OJYeZyklSzQx3p6U_tz8dqprouArg4Q6Za7wrJzUVUD5qpgM39Nm2hIgu4VuGW0I7hU7q1RWfcUc--T0KPQNn79QyIlsLYzYD-qGXLjM5NLX8B3c9eeoIe7gvg_SSlej6Q',
     tag: 'Vegetarian',
   },
+  {
+    id: 'garlic_bread',
+    name: 'Garlic Bread',
+    price: 6.50,
+    description: 'Freshly baked ciabatta bread topped with garlic butter and parsley.',
+    category: 'starters',
+    image: '/garlic_bread.png',
+    tag: 'Vegetarian',
+  },
+  {
+    id: 'bruschetta',
+    name: 'Tomato Bruschetta',
+    price: 8.00,
+    description: 'Toasted bread topped with fresh tomatoes, basil, garlic, and balsamic glaze.',
+    category: 'starters',
+    image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?auto=format&fit=crop&w=1000&q=80',
+    tag: 'Vegan',
+  },
+  {
+    id: 'carbonara',
+    name: 'Spaghetti Carbonara',
+    price: 16.50,
+    description: 'Traditional Roman pasta dish with pancetta, egg yolk, pecorino cheese, and black pepper.',
+    category: 'pasta',
+    image: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?auto=format&fit=crop&w=1000&q=80',
+    tag: 'Popular',
+  },
+  {
+    id: 'arrabbiata',
+    name: 'Penne Arrabbiata',
+    price: 14.50,
+    description: 'Penne pasta in a spicy tomato sauce with garlic and fresh parsley.',
+    category: 'pasta',
+    image: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=1000&q=80',
+    tag: 'Spicy',
+  },
+  {
+    id: 'chicken_parm',
+    name: 'Chicken Parmesan',
+    price: 24.00,
+    description: 'Breaded chicken breast topped with marinara sauce and melted mozzarella, served with a side of spaghetti.',
+    category: 'mains',
+    image: 'https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'salmon',
+    name: 'Grilled Salmon',
+    price: 26.50,
+    description: 'Fresh grilled salmon fillet served with roasted asparagus and lemon butter sauce.',
+    category: 'mains',
+    image: 'https://images.unsplash.com/photo-1485921325833-c519f76c4927?auto=format&fit=crop&w=1000&q=80',
+    tag: 'Healthy',
+  },
+  {
+    id: 'tiramisu',
+    name: 'Classic Tiramisu',
+    price: 9.00,
+    description: 'Espresso-soaked ladyfingers layered with mascarpone cream and dusted with cocoa powder.',
+    category: 'desserts',
+    image: 'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?auto=format&fit=crop&w=1000&q=80',
+    tag: 'Sweet',
+  },
+  {
+    id: 'panna_cotta',
+    name: 'Vanilla Panna Cotta',
+    price: 8.50,
+    description: 'Creamy vanilla dessert served with a mixed berry coulis.',
+    category: 'desserts',
+    image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'italian_soda',
+    name: 'Italian Soda',
+    price: 4.50,
+    description: 'Refreshing sparkling water with a choice of raspberry, peach, or lemon syrup.',
+    category: 'drinks',
+    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'espresso',
+    name: 'Espresso',
+    price: 3.50,
+    description: 'Rich and bold single shot of Italian espresso.',
+    category: 'drinks',
+    image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&w=1000&q=80',
+  }
 ];
 
 const RestaurantDetailPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [cart, setCart] = useState({});
+  const { cart, addToCart, removeFromCart, totalItems: totalCartCount } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
   const [shareText, setShareText] = useState('Share');
   const [activeCategory, setActiveCategory] = useState('popular');
@@ -94,34 +186,6 @@ const RestaurantDetailPage = () => {
     return counts;
   }, []);
 
-  // Cart operations
-  const addToCart = (item) => {
-    setCart((prevCart) => ({
-      ...prevCart,
-      [item.id]: {
-        item,
-        quantity: (prevCart[item.id]?.quantity || 0) + 1,
-      },
-    }));
-  };
-
-  const removeFromCart = (itemId) => {
-    setCart((prevCart) => {
-      const newCart = { ...prevCart };
-      if (!newCart[itemId]) return prevCart;
-      if (newCart[itemId].quantity <= 1) {
-        delete newCart[itemId];
-      } else {
-        newCart[itemId] = {
-          ...newCart[itemId],
-          quantity: newCart[itemId].quantity - 1,
-        };
-      }
-      return newCart;
-    });
-  };
-
-  const totalCartCount = Object.values(cart).reduce((sum, entry) => sum + entry.quantity, 0);
   const totalCartPrice = Object.values(cart).reduce(
     (sum, entry) => sum + entry.item.price * entry.quantity,
     0
@@ -159,120 +223,22 @@ const RestaurantDetailPage = () => {
       <TopNavBar />
 
       {/* Header Section */}
-      <header className="relative w-full h-[300px] md:h-[400px]">
-        <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80')`,
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-        </div>
-        <div className="absolute bottom-0 left-0 w-full px-margin_mobile md:px-margin_desktop pb-stack_lg max-w-container_max mx-auto">
-          <div className="flex flex-col md:flex-row items-start md:items-end gap-stack_md md:gap-gutter text-white relative z-10">
-            {/* Logo */}
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-16 bg-white overflow-hidden shadow-sm border border-surface-variant flex-shrink-0 flex items-center justify-center p-2">
-              <img
-                className="w-full h-full object-contain"
-                alt="Bella Cucina Logo"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCr_PgCupy8gxV-xkmlOvxOHL3--utxFavAEg7w4xpJdmfULAzkNMCU2XEJlw99GTagtpQARK95RNrYOtmOnzOUZPkSl6XY9xdJrEptavcuC56K-iuHnLviG1AI9cmZDfV9AFE7yCHJDorUtfmPiydbHfh8GagagsIUJh8raatKdm7B9K_T2arrM4xtwwckZBTCWKTPrv1tYLoXr5tKfv18y2VGSqRh2gVlttcHcAvFoiVpOy8bYyTuDA"
-              />
-            </div>
-            {/* Details */}
-            <div className="flex-1">
-              <h1 className="font-h1-mobile md:font-h1 text-h1-mobile md:text-h1 text-white mb-2">
-                Bella Cucina Italiana
-              </h1>
-              <div className="flex items-center gap-3 flex-wrap text-surface-container-lowest font-body text-body opacity-90">
-                <span className="flex items-center gap-1">
-                  <span
-                    className="material-symbols-outlined text-lg text-[#FFB59E]"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    star
-                  </span>{' '}
-                  4.8 (500+ ratings)
-                </span>
-                <span className="w-1 h-1 rounded-full bg-surface-container-lowest"></span>
-                <span>$$$</span>
-                <span className="w-1 h-1 rounded-full bg-surface-container-lowest"></span>
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-lg">location_on</span> 123
-                  Culinary Ave, Milano
-                </span>
-                <span className="w-1 h-1 rounded-full bg-surface-container-lowest"></span>
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-lg">schedule</span> 30-45 min
-                </span>
-              </div>
-            </div>
-            {/* Actions */}
-            <div className="hidden md:flex gap-3">
-              <button
-                onClick={handleShare}
-                className="h-12 px-4 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center gap-2 hover:bg-white/30 transition-colors text-white text-sm font-semibold"
-              >
-                <span className="material-symbols-outlined text-white">share</span>
-                {shareText}
-              </button>
-              <button
-                onClick={() => setIsFavorite(!isFavorite)}
-                className={`h-12 w-12 rounded-full backdrop-blur-md flex items-center justify-center transition-colors ${
-                  isFavorite ? 'bg-primary-container text-white' : 'bg-white/20 hover:bg-white/30 text-white'
-                }`}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}
-                >
-                  favorite
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <RestaurantHeader 
+        handleShare={handleShare}
+        shareText={shareText}
+        isFavorite={isFavorite}
+        setIsFavorite={setIsFavorite}
+      />
 
       {/* Main Content */}
       <main className="max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg grid grid-cols-1 md:grid-cols-12 gap-gutter relative">
         {/* Sidebar Categories (Desktop) */}
-        <aside className="md:col-span-3 hidden md:block">
-          <div className="sticky top-[100px] bg-surface-container-lowest rounded-16 p-stack_md border border-surface-variant shadow-sm">
-            <h3 className="font-h3 text-h3 text-on-surface mb-stack_md">Categories</h3>
-            <nav className="flex flex-col gap-2">
-              {MENU_CATEGORIES.map((category) => {
-                const count = categoryCounts[category.id] || 0;
-                const isActive = activeCategory === category.id;
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => scrollToCategory(category.id)}
-                    className={`w-full text-left px-4 py-3 rounded-12 transition-all font-button text-button flex justify-between items-center ${
-                      isActive
-                        ? 'bg-primary/10 text-primary font-bold'
-                        : 'text-on-surface hover:bg-surface-variant'
-                    }`}
-                  >
-                    <span>
-                      {category.name} {category.badge || ''}
-                    </span>
-                    {count > 0 ? (
-                      <span
-                        className={`font-label text-label px-2 py-1 rounded-full ${
-                          isActive ? 'bg-primary text-white' : 'bg-surface text-on-surface-variant'
-                        }`}
-                      >
-                        {count}
-                      </span>
-                    ) : (
-                      <span className="text-on-surface-variant font-small text-small">-</span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </aside>
+        <CategorySidebar 
+          MENU_CATEGORIES={MENU_CATEGORIES}
+          categoryCounts={categoryCounts}
+          activeCategory={activeCategory}
+          scrollToCategory={scrollToCategory}
+        />
 
         {/* Menu Items Content */}
         <div className="md:col-span-9 pb-24 md:pb-0">
@@ -292,109 +258,32 @@ const RestaurantDetailPage = () => {
             </div>
 
             {/* Mobile Categories Scrollbar */}
-            <div className="md:hidden flex overflow-x-auto hide-scrollbar gap-2 pb-2">
-              {MENU_CATEGORIES.map((category) => {
-                const isActive = activeCategory === category.id;
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => scrollToCategory(category.id)}
-                    className={`whitespace-nowrap px-4 py-2 rounded-full font-button text-button border transition-all ${
-                      isActive
-                        ? 'bg-primary text-white border-primary shadow-sm'
-                        : 'bg-surface-container-lowest border-surface-variant text-on-surface'
-                    }`}
-                  >
-                    {category.name} {category.badge || ''}
-                  </button>
-                );
-              })}
-            </div>
+            <MobileCategoryNav 
+              MENU_CATEGORIES={MENU_CATEGORIES}
+              activeCategory={activeCategory}
+              scrollToCategory={scrollToCategory}
+            />
           </div>
 
-          {/* Menu Sections */}
-          <div className="flex flex-col gap-stack_lg">
-            {MENU_CATEGORIES.map((category) => {
-              const categoryItems = itemsByCategory[category.id] || [];
-              if (categoryItems.length === 0) {
-                // If filtering hides all items, skip this section or show empty
-                if (searchQuery.trim()) return null;
-
-                // Otherwise, show standard category but with helper empty state
-                return (
-                  <section key={category.id} id={category.id} className="scroll-mt-24">
-                    <h2 className="font-h2-mobile md:font-h2 text-h2-mobile md:text-h2 text-on-surface mb-stack_md">
-                      {category.name} {category.badge || ''}
-                    </h2>
-                    <div className="bg-surface-container-lowest rounded-16 p-8 text-center border border-surface-variant">
-                      <p className="text-secondary">No items available in this category currently.</p>
-                    </div>
-                  </section>
-                );
-              }
-
-              return (
-                <section key={category.id} id={category.id} className="scroll-mt-24">
-                  <h2 className="font-h2-mobile md:font-h2 text-h2-mobile md:text-h2 text-on-surface mb-stack_md">
-                    {category.name} {category.badge || ''}
-                  </h2>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-stack_md">
-                    {categoryItems.map((item) => (
-                      <FoodCard
-                        key={item.id}
-                        item={item}
-                        cartQty={cart[item.id]?.quantity || 0}
-                        onAdd={addToCart}
-                        onRemove={removeFromCart}
-                      />
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-
-          {/* Empty search state */}
-          {filteredItems.length === 0 && (
-            <div className="bg-surface-container-lowest rounded-16 p-12 text-center border border-surface-variant mt-8">
-              <span className="material-symbols-outlined text-4xl text-on-secondary-container mb-2">
-                search_off
-              </span>
-              <h3 className="font-h3 text-h3 text-on-surface mb-2">No matching dishes found</h3>
-              <p className="text-secondary max-w-md mx-auto">
-                We couldn't find any dishes matching "{searchQuery}". Try checking the spelling or
-                using different terms.
-              </p>
-            </div>
-          )}
+          {/* Menu Sections & Empty State */}
+          <MenuSection 
+            MENU_CATEGORIES={MENU_CATEGORIES}
+            itemsByCategory={itemsByCategory}
+            searchQuery={searchQuery}
+            cart={cart}
+            addToCart={addToCart}
+            removeFromCart={removeFromCart}
+            filteredItems={filteredItems}
+          />
         </div>
       </main>
 
       {/* Floating Cart Summary */}
-      {totalCartCount > 0 && (
-        <div className="fixed bottom-0 md:bottom-8 left-0 w-full px-margin_mobile md:px-0 md:flex md:justify-center z-50 pointer-events-none mb-4 md:mb-0">
-          <div
-            onClick={() => navigate('/checkout')}
-            className="bg-inverse-surface dark:bg-surface-container-lowest text-on-primary dark:text-primary rounded-16 shadow-[0px_10px_30px_rgba(0,0,0,0.08)] p-4 flex items-center justify-between pointer-events-auto w-full md:w-[400px] hover:shadow-lg transition-all cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="bg-primary-container text-white w-10 h-10 rounded-full flex items-center justify-center font-button text-button animate-bounce">
-                {totalCartCount}
-              </div>
-              <div className="max-w-[200px]">
-                <div className="font-button text-button">View Cart</div>
-                <div className="font-small text-small text-surface-variant/80 truncate">
-                  {cartDescription}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="font-h3 text-h3 font-bold">€{totalCartPrice.toFixed(2)}</span>
-              <span className="material-symbols-outlined">chevron_right</span>
-            </div>
-          </div>
-        </div>
-      )}
+      <FloatingCartSummary 
+        totalCartCount={totalCartCount}
+        cartDescription={cartDescription}
+        totalCartPrice={totalCartPrice}
+      />
 
       <Footer />
     </div>

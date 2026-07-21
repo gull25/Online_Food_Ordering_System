@@ -46,10 +46,11 @@ export const useAuthForm = () => {
         setSuccessMsg(data.message || 'User is registered successfully!');
         setFormData({ name: '', phone: '', email: '', password: '' }); // Reset form
       } else {
-        const data = await authService.login({
-          email: formData.email,
-          password: formData.password,
-        });
+        // MOCK LOGIN FOR UI TESTING
+        const data = {
+          token: 'mock-jwt-token',
+          user: { name: 'Alex', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80' }
+        };
 
         // Save Token
         localStorage.setItem('foodoraToken', data.token);
@@ -57,8 +58,8 @@ export const useAuthForm = () => {
         
         setIsSuccess(true);
         setTimeout(() => {
-          navigate('/');
-        }, 1000);
+          navigate('/restaurant/bella-cucina');
+        }, 1500);
       }
       
     } catch (error) {

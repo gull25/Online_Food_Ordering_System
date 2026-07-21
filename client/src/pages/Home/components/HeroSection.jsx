@@ -1,15 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
-const HeroSection = ({ addressInput, setAddressInput }) => {
-  const navigate = useNavigate();
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (addressInput.trim()) {
-      navigate('/restaurant/bella-cucina');
-    }
-  };
+const HeroSection = () => {
 
   return (
     <section className="relative w-full min-h-[600px] flex items-center overflow-hidden animate-section">
@@ -31,25 +22,6 @@ const HeroSection = ({ addressInput, setAddressInput }) => {
           <p className="text-body font-body text-secondary mb-stack_lg max-w-lg">
             Experience the finest culinary delights from your favorite local restaurants. Fast delivery, fresh food, and endless variety.
           </p>
-          <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-0 bg-white p-2 rounded-2xl shadow-lg ring-1 ring-black/5 max-w-xl">
-            <div className="flex-1 flex items-center px-4 border-b md:border-b-0 md:border-r border-outline-variant py-3 md:py-0">
-              <span className="material-symbols-outlined text-primary-container mr-2">location_on</span>
-              <input
-                className="w-full border-none focus:ring-0 text-body bg-transparent outline-none"
-                placeholder="Enter delivery address"
-                type="text"
-                value={addressInput}
-                onChange={(e) => setAddressInput(e.target.value)}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-primary-container text-on-primary-container font-button px-stack_lg py-4 rounded-xl hover:opacity-90 transition-all active:scale-95 m-1"
-            >
-              Find Food
-            </button>
-          </form>
           <div className="mt-stack_lg flex items-center gap-stack_md">
             <div className="flex -space-x-3">
               <div

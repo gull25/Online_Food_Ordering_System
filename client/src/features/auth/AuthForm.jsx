@@ -15,6 +15,8 @@ const AuthForm = () => {
     toggleMode,
   } = useAuthForm();
 
+  const [showPassword, setShowPassword] = React.useState(false);
+
   const inputErrorClass = errorMsg 
     ? 'border-error focus:border-error focus:ring-error/20' 
     : 'border-outline-variant focus:border-primary focus:ring-primary/20';
@@ -93,9 +95,9 @@ const AuthForm = () => {
             )}
           </div>
           <div className="relative">
-            <input name="password" value={formData.password} onChange={handleChange} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${inputErrorClass}`} placeholder="••••••••" type="password" required />
-            <button className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors" type="button">
-              <span className="material-symbols-outlined">visibility</span>
+            <input name="password" value={formData.password} onChange={handleChange} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${inputErrorClass}`} placeholder="••••••••" type={showPassword ? "text" : "password"} required />
+            <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors" type="button">
+              <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
             </button>
           </div>
         </div>
@@ -126,24 +128,7 @@ const AuthForm = () => {
         </div>
       )}
 
-      {/* Divider */}
-      <div className="w-full flex items-center gap-4 my-stack_lg">
-        <div className="h-[1px] flex-1 bg-outline-variant"></div>
-        <span className="font-label text-label text-on-secondary-container">OR CONTINUE WITH</span>
-        <div className="h-[1px] flex-1 bg-outline-variant"></div>
-      </div>
 
-      {/* Social Logins */}
-      <div className="w-full grid grid-cols-2 gap-4">
-        <button type="button" className="flex items-center justify-center gap-3 h-[52px] border border-outline-variant rounded-xl hover:bg-surface-container-low transition-all active:scale-95">
-          <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2H9vjr9Hodh9NfIZxq2c0g7CSBOWsRlB2yRAB-T_QLz4GK9BqudBWwT1OJZu9zUw3qSq1jxVnbjUcNN5RmdT3UYJu9CASXWuzfvOA65a_VIRGozBBLmVRU4v8imb-HbelgZXBV4ryhC5nHYmQNFUon9u6Jqk-YAk3mHahZT-MqHr_Mev05ow57GsXRAhsXlSu8JjqJftv9s0f3whL72n-AVu8f7c6mR7cHOydc9HOiSciGxXvUL84GA" />
-          <span className="font-button text-button text-on-surface">Google</span>
-        </button>
-        <button type="button" className="flex items-center justify-center gap-3 h-[52px] border border-outline-variant rounded-xl hover:bg-surface-container-low transition-all active:scale-95">
-          <span className="material-symbols-outlined text-[24px]">apps</span>
-          <span className="font-button text-button text-on-surface">Apple</span>
-        </button>
-      </div>
 
       {/* Bottom Toggle Link */}
       <p className="mt-stack_lg font-body text-body text-on-secondary-container">
