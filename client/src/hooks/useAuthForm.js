@@ -1,70 +1,83 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginStart, loginSuccess, loginFailure } from '../features/auth/authSlice';
 import authService from '../api/authApi';
+
+const loginSchema = z.object({
+  email: z.string().email({ message: 'Invalid email address' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+});
+
+const registerSchema = loginSchema.extend({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+  phone: z.string().optional(),
+});
 
 export const useAuthForm = () => {
   const [mode, setMode] = useState('login');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const { loading: isSubmitting, error: errorMsg } = useSelector((state) => state.auth);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    password: '',
-  });
-
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const isRegister = mode === 'register';
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (errorMsg) setErrorMsg(''); // Clear error on typing
-    if (successMsg) setSuccessMsg(''); // Clear success on typing
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    clearErrors
+  } = useForm({
+    resolver: zodResolver(isRegister ? registerSchema : loginSchema),
+    mode: 'onTouched'
+  });
 
   const toggleMode = (newMode) => {
     setMode(newMode);
-    setErrorMsg('');
+    dispatch(loginFailure(null)); // Clear global error
     setSuccessMsg('');
+    reset();
+    clearErrors();
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setErrorMsg('');
+  const onSubmit = async (data) => {
+    dispatch(loginStart());
     setSuccessMsg('');
     
     try {
       if (isRegister) {
-        const data = await authService.register(formData);
-        setIsSubmitting(false);
-        setSuccessMsg(data.message || 'User is registered successfully!');
-        setFormData({ name: '', phone: '', email: '', password: '' }); // Reset form
+        const response = await authService.register(data);
+        dispatch(loginFailure(null)); // just to stop loading
+        setSuccessMsg(response?.message || 'User is registered successfully!');
+        reset();
       } else {
-        // MOCK LOGIN FOR UI TESTING
-        const data = {
-          token: 'mock-jwt-token',
-          user: { name: 'Alex', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80' }
-        };
+        // ── Real API login — role comes from the database ──────────────
+        const response = await authService.login({ email: data.email, password: data.password });
 
-        // Save Token
-        localStorage.setItem('foodoraToken', data.token);
-        localStorage.setItem('userInfo', JSON.stringify(data.user));
-        
+        // Persist session
+        localStorage.setItem('foodoraToken', response.token);
+        localStorage.setItem('userInfo', JSON.stringify(response.user));
+
+        // Update Redux — user.role is exactly what the DB returned
+        dispatch(loginSuccess(response.user));
         setIsSuccess(true);
+
+        // All users (customer + admin) land on the restaurant page.
+        // If the user is admin, the Navbar will show "Admin Dashboard"
+        // and they can navigate there whenever they choose.
         setTimeout(() => {
           navigate('/restaurant/bella-cucina');
         }, 1500);
       }
       
     } catch (error) {
-      setIsSubmitting(false);
-      setErrorMsg(error.response?.data?.message || 'Something went wrong');
+      dispatch(loginFailure(error.response?.data?.message || 'Something went wrong'));
     }
   };
 
@@ -75,9 +88,9 @@ export const useAuthForm = () => {
     isSuccess,
     errorMsg,
     successMsg,
-    formData,
-    handleChange,
-    handleSubmit,
+    register,
+    handleSubmit: handleSubmit(onSubmit),
+    errors,
     toggleMode,
   };
 };

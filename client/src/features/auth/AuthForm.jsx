@@ -9,9 +9,9 @@ const AuthForm = () => {
     isSuccess,
     errorMsg,
     successMsg,
-    formData,
-    handleChange,
+    register,
     handleSubmit,
+    errors,
     toggleMode,
   } = useAuthForm();
 
@@ -57,11 +57,11 @@ const AuthForm = () => {
         </button>
       </div>
 
-      {/* Error Message */}
-      {errorMsg && (
+      {/* Error Message from Global State or Form Validation */}
+      {(errorMsg || Object.keys(errors).length > 0) && (
         <div className="w-full p-3 mb-4 bg-error-container text-on-error-container rounded-xl font-body text-small flex items-center gap-2 animate-in fade-in">
           <span className="material-symbols-outlined text-[18px]">error</span>
-          {errorMsg}
+          {typeof errorMsg === 'string' && errorMsg ? errorMsg : Object.values(errors)[0]?.message || 'Please fix the errors below'}
         </div>
       )}
 
@@ -72,11 +72,11 @@ const AuthForm = () => {
           <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex flex-col gap-2">
               <label className="font-label text-label text-on-surface-variant uppercase tracking-wider">Full Name</label>
-              <input name="name" value={formData.name} onChange={handleChange} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${inputErrorClass}`} placeholder="John Doe" type="text" required />
+              <input {...register('name')} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${errors.name ? 'border-error focus:border-error focus:ring-error/20' : inputErrorClass}`} placeholder="John Doe" type="text" required />
             </div>
             <div className="flex flex-col gap-2">
               <label className="font-label text-label text-on-surface-variant uppercase tracking-wider">Phone Number</label>
-              <input name="phone" value={formData.phone} onChange={handleChange} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${inputErrorClass}`} placeholder="+1 (555) 000-0000" type="tel" />
+              <input {...register('phone')} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${errors.phone ? 'border-error focus:border-error focus:ring-error/20' : inputErrorClass}`} placeholder="+1 (555) 000-0000" type="tel" />
             </div>
           </div>
         )}
@@ -84,7 +84,7 @@ const AuthForm = () => {
         {/* Shared Fields */}
         <div className="flex flex-col gap-2">
           <label className="font-label text-label text-on-surface-variant uppercase tracking-wider">Email Address</label>
-          <input name="email" value={formData.email} onChange={handleChange} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${inputErrorClass}`} placeholder="name@example.com" type="email" required />
+          <input {...register('email')} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${errors.email ? 'border-error focus:border-error focus:ring-error/20' : inputErrorClass}`} placeholder="name@example.com" type="email" required />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -95,7 +95,7 @@ const AuthForm = () => {
             )}
           </div>
           <div className="relative">
-            <input name="password" value={formData.password} onChange={handleChange} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${inputErrorClass}`} placeholder="••••••••" type={showPassword ? "text" : "password"} required />
+            <input {...register('password')} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${errors.password ? 'border-error focus:border-error focus:ring-error/20' : inputErrorClass}`} placeholder="••••••••" type={showPassword ? "text" : "password"} required />
             <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors" type="button">
               <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
             </button>

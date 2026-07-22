@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopNavBar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -8,7 +8,8 @@ import CategorySidebar from './components/CategorySidebar';
 import MobileCategoryNav from './components/MobileCategoryNav';
 import MenuSection from './components/MenuSection';
 import FloatingCartSummary from './components/FloatingCartSummary';
-import { useCart } from '../../context/CartContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { addToCart, removeFromCart } from '../../features/cart/cartSlice';
 
 // Clean data representation of the menu
 const MENU_CATEGORIES = [
@@ -150,7 +151,11 @@ const MENU_ITEMS = [
 const RestaurantDetailPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const { cart, addToCart, removeFromCart, totalItems: totalCartCount } = useCart();
+  const dispatch = useDispatch();
+  const { items: cart, totalQuantity: totalCartCount } = useSelector((state) => state.cart);
+
+  const handleAddToCart = useCallback((item) => dispatch(addToCart(item)), [dispatch]);
+  const handleRemoveFromCart = useCallback((itemId) => dispatch(removeFromCart(itemId)), [dispatch]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [shareText, setShareText] = useState('Share');
   const [activeCategory, setActiveCategory] = useState('popular');
@@ -271,8 +276,8 @@ const RestaurantDetailPage = () => {
             itemsByCategory={itemsByCategory}
             searchQuery={searchQuery}
             cart={cart}
-            addToCart={addToCart}
-            removeFromCart={removeFromCart}
+            addToCart={handleAddToCart}
+            removeFromCart={handleRemoveFromCart}
             filteredItems={filteredItems}
           />
         </div>

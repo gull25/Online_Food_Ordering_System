@@ -88,4 +88,4 @@ const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
   );
 };
 
-export default FoodCard;
+export default React.memo(FoodCard);
