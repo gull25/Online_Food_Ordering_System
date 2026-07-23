@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../../features/auth/authSlice';
+import { clearCart } from '../../../features/cart/cartSlice';
 
 /**
  * Navbar — conditionally renders links based on Redux auth state.
@@ -34,6 +35,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('foodoraToken');
     localStorage.removeItem('userInfo');
+    dispatch(clearCart());
     dispatch(logout());
     setIsDropdownOpen(false);
     navigate('/');
@@ -132,7 +134,13 @@ const Navbar = () => {
                 {/* Dropdown */}
                 {isDropdownOpen && (
                   <div className="absolute right-0 top-12 mt-2 w-48 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg z-50 flex flex-col py-2 animate-in fade-in zoom-in-95">
-                    <button className="text-left px-4 py-2 hover:bg-surface-variant font-body text-body text-on-surface transition-colors cursor-pointer">
+                    <button 
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="text-left px-4 py-2 hover:bg-surface-variant font-body text-body text-on-surface transition-colors cursor-pointer"
+                    >
                       Profile Setting
                     </button>
 

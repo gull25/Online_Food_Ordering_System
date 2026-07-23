@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 // ── Route Guards ──────────────────────────────────────────────────────────────
 import ProtectedRoute from './ProtectedRoute';
 import AdminRoute from './AdminRoute';
+import SuperAdminRoute from './SuperAdminRoute';
 import GuestRoute from './GuestRoute';
 
 // ── Layouts ───────────────────────────────────────────────────────────────────
@@ -20,11 +21,13 @@ const RestaurantDetailPage = React.lazy(() => import('../pages/RestaurantDetails
 const OffersPage           = React.lazy(() => import('../pages/Offers/OffersPage'));
 const TrackOrderPage       = React.lazy(() => import('../pages/Orders/TrackOrderPage'));
 const CheckoutPage         = React.lazy(() => import('../pages/Checkout/CheckoutPage'));
+const ProfilePage          = React.lazy(() => import('../pages/Profile/ProfilePage'));
 
 // Admin-facing
 const AdminDashboardPage   = React.lazy(() => import('../pages/Admin/AdminDashboardPage'));
 const AdminOrdersPage      = React.lazy(() => import('../pages/Admin/AdminOrdersPage'));
 const AdminRestaurantsPage = React.lazy(() => import('../pages/Admin/AdminRestaurantsPage'));
+const AdminMyRestaurantPage = React.lazy(() => import('../pages/Admin/AdminMyRestaurantPage'));
 const AdminAnalyticsPage   = React.lazy(() => import('../pages/Admin/AdminAnalyticsPage'));
 
 // Utility
@@ -52,6 +55,7 @@ const AppRoutes = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/track-order"  element={<TrackOrderPage />} />
           <Route path="/checkout"     element={<CheckoutPage />} />
+          <Route path="/profile"      element={<ProfilePage />} />
         </Route>
 
         {/* ── Admin Routes (requires isAuthenticated + role === 'admin') ─── */}
@@ -59,8 +63,11 @@ const AppRoutes = () => {
           <Route element={<AdminLayout />}>
             <Route path="/admin"               element={<AdminDashboardPage />} />
             <Route path="/admin/orders"        element={<AdminOrdersPage />} />
-            <Route path="/admin/restaurants"   element={<AdminRestaurantsPage />} />
             <Route path="/admin/analytics"     element={<AdminAnalyticsPage />} />
+            <Route path="/admin/my-restaurant" element={<AdminMyRestaurantPage />} />
+            <Route element={<SuperAdminRoute />}>
+              <Route path="/admin/restaurants"   element={<AdminRestaurantsPage />} />
+            </Route>
           </Route>
         </Route>
 

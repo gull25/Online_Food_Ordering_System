@@ -69,12 +69,12 @@ export const useAuthForm = () => {
         setIsSuccess(true);
 
         // Admins go straight to their dashboard.
-        // Customers land on the restaurant page.
+        // Customers land on the home page.
         setTimeout(() => {
-          if (response.user.role === 'admin') {
+          if (response.user.role === 'admin' || response.user.role === 'super_admin') {
             navigate('/admin');
           } else {
-            navigate('/restaurant/bella-cucina');
+            navigate('/');
           }
         }, 1500);
       }

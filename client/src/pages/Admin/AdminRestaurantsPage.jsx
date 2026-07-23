@@ -1,82 +1,29 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchRestaurants,
+  createRestaurant,
+  updateRestaurant
+} from '../../features/restaurants/restaurantSlice';
+import toast from 'react-hot-toast';
 import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import StatCard from './components/StatCard';
-
-const INITIAL_RESTAURANTS = [
-  {
-    id: '#RE-4012',
-    name: 'Artisan Pizza Co.',
-    cuisine: 'Italian',
-    location: 'Downtown District, NYC',
-    rating: 4.9,
-    status: 'Online',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC8NbdeshpmXujgSsDJjZfyeJvp95VXx_eveBbHlaOrLZoAaaf3EaIfplAtYO7kUoiPTwt2aKdifaTw0Tq-1Zj97Jxo__-ja7x35D7s3mdWtPff3uesd0vAWgFN7_JphC45ffK3QTtZlPKZaxVv5V_4cJt7Ja86qyiAuygIWAwoeLWskASEPTymWL7hJHGmuLyPv04bNlftNIx4GteuBr-I6qVGyD3amjpvc0zFi0FGXQihVmufUnUeCQ',
-  },
-  {
-    id: '#RE-4015',
-    name: 'Sakura Sushi',
-    cuisine: 'Japanese',
-    location: 'Upper East Side, NYC',
-    rating: 4.7,
-    status: 'Online',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAcR2zgbbUBfVXC6dqpyWSN-mIkwc3HljtWIOC7HM_vJ52JA0fViK0WcnLn_rOYtDHv0tcsS2TBzJwTGYAFfsozowKLklqwQpDUcoVoFYynJ16gJCVafBj8e9Pt8cykhSJI58o_24VwljnFmNV9C5WoeMhssyjidqWr3loE8AQXJkNwQwquaatg8x5dNvjF6AzEfqKTLHP_A0w468VmARQVnPp3ToX5fOtj8oPZFlyLm5us8whFeZw8JQ',
-  },
-  {
-    id: '#RE-4019',
-    name: 'Green Garden Bowl',
-    cuisine: 'Vegan',
-    location: 'Brooklyn Heights, NY',
-    rating: 4.5,
-    status: 'Offline',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCj2LfkE3Jm41j2kku2I9gW1IxAJrkR6xKRAcyX9oBLtI5Wte62kP1bBj1Uq3Pab5Y9VD8_M9MowNPbDSMg1UfdN2sqVhUmn1KMofnorGKvPMg2MV6mnC4Adbwoj-jnYb9lthoNMb7gWH4IlweE3tA53MVo34c4hXwKGwZpNxs8Xy2wOrknbIjey73TwarywZgWtA4n3O7RPMPTDwaH3XvC8eZ65QzT_3haU1D6RQ_IzG9FiiIeAP7rwA',
-  },
-  {
-    id: '#RE-4022',
-    name: 'The Burger Loft',
-    cuisine: 'American',
-    location: 'Chelsea District, NYC',
-    rating: 4.8,
-    status: 'Online',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmHrWO2B8oLuDopl61X1Yupiqu3GF4WkiEuDxLrZLPsLj8bRRwyGGFpsKzRpOVQXizPA5G19GvawhnZmLALVuyTfZDeFZe75yOAH2WaVC5dOeJU5DtEXouk44-eSI9Wslfg8bdB8jTjYDNRQiezalmmoYPmztEqNabPWv23zVHzNRNHF5_sEx2qBc6eA532QzHxGzbOVDvgMYJauX4yzALFqtTakPjFQJi9CqR8bfkRQjm7BpR0_twCA',
-  },
-  {
-    id: '#RE-4023',
-    name: 'Bella Cucina',
-    cuisine: 'Italian',
-    location: 'Soho, NYC',
-    rating: 4.8,
-    status: 'Online',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAGetNiq5A-grFrT7P5I5ItEPizHW1mGULie2XmHLkiLuNgPAmg1jFNOfBVSWVDKqt6Vd_tXngWcGdxqjhqm8g5dyzRp60Pr2J-ZXPxKZUabbCxiyYeyt7R9vrRArTbFXHwNkFHvl8F2bvU7PHBrEbYPFaDWRGBa4L2xpAvjT0kwZLvKha1Xqx7wAUtAaiDWaVQaoxCqrI-Kq1CIAuq3fTfely5J6YiFEyFg9scGh4z7FC6YZddQm9bHg',
-  },
-  {
-    id: '#RE-4024',
-    name: 'Taco Fiesta',
-    cuisine: 'Mexican',
-    location: 'East Village, NYC',
-    rating: 4.4,
-    status: 'Online',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBuliHJnZSMQjZuE_f6BUD7tiE5Ei5WF5GjhmSOI6dp1de7CXKNxtZhiCtYmcd5ecwzFqD0E4GxL1WkHo0V-1xNSj3L0u59fQsE-t_HwnBsvhR9gpE6g8a7OJYeZyklSzQx3p6U_tz8dqprouArg4Q6Za7wrJzUVUD5qpgM39Nm2hIgu4VuGW0I7hU7q1RWfcUc--T0KPQNn79QyIlsLYzYD-qGXLjM5NLX8B3c9eeoIe7gvg_SSlej6Q',
-  },
-  {
-    id: '#RE-4025',
-    name: 'Curry House',
-    cuisine: 'Indian',
-    location: 'Midtown, NYC',
-    rating: 4.6,
-    status: 'Offline',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD7gJU-8rbue0Vlbkm503AErp26ySz58egKGLNlMFlIrl8mhla5my1u45sbyiw-chx_iOx4rE5LK2-0IWp23rKo-oBfmIm6s4xQxq--J4cfBy4Aj6NC8NXW_sVEIMvvxDdJEVChRswoV_019fIWZ8msurh_B5ZYRWXBB0oCBw1B8ImyIPI0Rd0KiTAT9BIh8cpRZi1vIRlyZNFydw8Bz-2oKHuiVagefrfHfi50_phbbxeyN8z_qsh5Nw',
-  },
-];
 
 const ITEMS_PER_PAGE = 4;
 
 const AdminRestaurantsPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  const { restaurants, loading } = useSelector((state) => state.restaurants);
+
+  useEffect(() => {
+    dispatch(fetchRestaurants());
+  }, [dispatch]);
 
   // Selected states
-  const [restaurants, setRestaurants] = useState(INITIAL_RESTAURANTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -89,21 +36,11 @@ const AdminRestaurantsPage = () => {
   // Selected restaurant details for management drawer/modal
   const [managedRestaurant, setManagedRestaurant] = useState(null);
 
-  // Toast notification state
-  const [toastMessage, setToastMessage] = useState('');
-
-  const showToast = (message) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(''), 3000);
-  };
-
   // Add Restaurant form submission
   const handleAddRestaurant = (e) => {
     e.preventDefault();
     if (restaurantName.trim()) {
-      const newId = `#RE-${Math.floor(4000 + Math.random() * 1000)}`;
       const newRestObj = {
-        id: newId,
         name: restaurantName,
         cuisine: cuisineType,
         location: restaurantLocation || 'Downtown District, NYC',
@@ -111,40 +48,34 @@ const AdminRestaurantsPage = () => {
         status: 'Online',
         image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC8NbdeshpmXujgSsDJjZfyeJvp95VXx_eveBbHlaOrLZoAaaf3EaIfplAtYO7kUoiPTwt2aKdifaTw0Tq-1Zj97Jxo__-ja7x35D7s3mdWtPff3uesd0vAWgFN7_JphC45ffK3QTtZlPKZaxVv5V_4cJt7Ja86qyiAuygIWAwoeLWskASEPTymWL7hJHGmuLyPv04bNlftNIx4GteuBr-I6qVGyD3amjpvc0zFi0FGXQihVmufUnUeCQ',
       };
-      setRestaurants((prev) => [newRestObj, ...prev]);
-      showToast(`Restaurant "${restaurantName}" successfully added!`);
-      setIsModalOpen(false);
-      setRestaurantName('');
-      setRestaurantLocation('');
-      setCurrentPage(1);
+      
+      dispatch(createRestaurant(newRestObj)).unwrap().then(() => {
+        toast.success(`Restaurant "${restaurantName}" successfully added!`);
+        setIsModalOpen(false);
+        setRestaurantName('');
+        setRestaurantLocation('');
+        setCurrentPage(1);
+      });
     }
   };
 
   // Toggle restaurant status
-  const handleToggleStatus = (id) => {
-    setRestaurants((prev) =>
-      prev.map((r) => {
-        if (r.id === id) {
-          const nextStatus = r.status === 'Online' ? 'Offline' : 'Online';
-          showToast(`"${r.name}" is now ${nextStatus}`);
-          return { ...r, status: nextStatus };
-        }
-        return r;
-      })
-    );
-    if (managedRestaurant && managedRestaurant.id === id) {
-      setManagedRestaurant((prev) => ({
-        ...prev,
-        status: prev.status === 'Online' ? 'Offline' : 'Online',
-      }));
-    }
+  const handleToggleStatus = (id, currentStatus) => {
+    const nextStatus = currentStatus === 'Online' ? 'Offline' : 'Online';
+    dispatch(updateRestaurant({ id, data: { status: nextStatus } })).unwrap().then((updatedRest) => {
+      toast.success(`Status updated to ${nextStatus}`);
+      if (managedRestaurant && managedRestaurant._id === id) {
+        setManagedRestaurant(updatedRest);
+      }
+    });
   };
 
   // Onboarding verification batch simulation
   const handleStartVerification = () => {
-    showToast('Starting verification batch... processing licenses...');
+    toast.loading('Starting verification batch... processing licenses...');
     setTimeout(() => {
-      showToast('Verification batch completed! 12 restaurants verified.');
+      toast.dismiss();
+      toast.success('Verification batch completed! 12 restaurants verified.');
     }, 1500);
   };
 
@@ -153,10 +84,10 @@ const AdminRestaurantsPage = () => {
     if (!searchQuery.trim()) return restaurants;
     return restaurants.filter(
       (r) =>
-        r.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.cuisine.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.location.toLowerCase().includes(searchQuery.toLowerCase())
+        r.location?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [restaurants, searchQuery]);
 
@@ -203,14 +134,6 @@ const AdminRestaurantsPage = () => {
           -webkit-backdrop-filter: blur(8px);
         }
       `}</style>
-
-      {/* Toast Alert overlay */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-[70] bg-inverse-surface text-white px-6 py-4 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
-          <span className="material-symbols-outlined text-primary-fixed">info</span>
-          <span className="font-button text-button text-sm">{toastMessage}</span>
-        </div>
-      )}
 
       {/* Restaurant Add Form Modal */}
       {isModalOpen && (
@@ -308,7 +231,7 @@ const AdminRestaurantsPage = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-body text-on-surface">{managedRestaurant.name}</h4>
-                  <p className="text-secondary text-small">{managedRestaurant.id}</p>
+                  <p className="text-secondary text-small">#{managedRestaurant._id.substring(managedRestaurant._id.length - 6).toUpperCase()}</p>
                 </div>
               </div>
 
@@ -328,7 +251,7 @@ const AdminRestaurantsPage = () => {
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-secondary text-small">Operating Status:</span>
                   <button
-                    onClick={() => handleToggleStatus(managedRestaurant.id)}
+                    onClick={() => handleToggleStatus(managedRestaurant._id, managedRestaurant.status)}
                     className={`px-4 py-1.5 rounded-full font-label text-[10px] uppercase font-bold cursor-pointer transition-colors ${
                       managedRestaurant.status === 'Online'
                         ? 'bg-tertiary/10 text-tertiary'
@@ -447,8 +370,15 @@ const AdminRestaurantsPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant">
-                {paginatedRestaurants.map((rest) => (
-                  <tr key={rest.id} className="hover:bg-surface transition-colors">
+                {loading && (
+                  <tr>
+                    <td colSpan="6" className="py-8 text-center text-secondary font-body">
+                      Loading restaurants...
+                    </td>
+                  </tr>
+                )}
+                {!loading && paginatedRestaurants.map((rest) => (
+                  <tr key={rest._id} className="hover:bg-surface transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-lg bg-surface-container border border-outline-variant overflow-hidden shrink-0">
@@ -460,7 +390,7 @@ const AdminRestaurantsPage = () => {
                         </div>
                         <div>
                           <p className="font-bold text-on-surface">{rest.name}</p>
-                          <p className="text-small text-on-secondary-container">{rest.id}</p>
+                          <p className="text-small text-on-secondary-container">#{rest._id.substring(rest._id.length - 6).toUpperCase()}</p>
                         </div>
                       </div>
                     </td>
@@ -497,7 +427,7 @@ const AdminRestaurantsPage = () => {
                   </tr>
                 ))}
 
-                {paginatedRestaurants.length === 0 && (
+                {!loading && paginatedRestaurants.length === 0 && (
                   <tr>
                     <td colSpan="6" className="py-8 text-center text-secondary font-body">
                       No matching restaurants found.

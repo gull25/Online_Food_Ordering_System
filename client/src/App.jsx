@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { initializeAuth } from './features/auth/authSlice';
 import AppRoutes from './routes/AppRoutes';
 import api from './api/axios';
+import { Toaster } from 'react-hot-toast';
 
 // Root React component — hydrates auth state from localStorage then renders routes.
 function App() {
@@ -33,7 +34,12 @@ function App() {
     });
   }, [dispatch]);
 
-  return <AppRoutes />;
+  return (
+    <>
+      <Toaster position="top-right" toastOptions={{ className: 'font-body text-small' }} />
+      <AppRoutes />
+    </>
+  );
 }
 
 export default App;

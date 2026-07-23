@@ -27,9 +27,12 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['user', 'admin'],
-            default: 'user'
-
+            enum: ['customer', 'admin', 'super_admin'],
+            default: 'customer'
+        },
+        restaurantId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Restaurant'
         }
     },
     {

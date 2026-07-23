@@ -8,36 +8,42 @@ import DeliveryForm from './components/DeliveryForm';
 import OrderSummary from './components/OrderSummary';
 import PaymentMethods from './components/PaymentMethods';
 
-const INITIAL_CART = [
-  {
-    id: 'truffle-pizza',
-    name: 'Truffle Margherita Pizza',
-    description: 'Traditional wood-fired crust, extra truffle oil',
-    price: 24.00,
-    quantity: 1,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA_mtpk3c8CjM4DIdrJsfRD6y8IK5hXdqUg6jx2jB3qFByY3FF64XLXjqdTknP9EoT2DS8IsGN9msWUlzSIOJLNvFwu4iQ1CGMtH6gAEcpTp9BRyzWdN69Ezj6oX_PF9d_bS4tL8u7H6WYPa9T80EvozPnZQYUluqfrJkG_i94ZoNz60NH2OMBJt6Povq_H-Om8KvbMh_zQbI1jt9c3VBFaw4DIWyVvR-LGE_BPJWOsKxHYGxENOd6i8w',
-  },
-  {
-    id: 'mushroom-risotto',
-    name: 'Wild Mushroom Risotto',
-    description: 'Carnaroli rice, seasonal mushrooms, parmesan',
-    price: 19.00, // $38.00 total for 2 items in initial mockup
-    quantity: 2,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCn8USwOiO0Az5jeLZZm1emlU5-1MCxrhoe4P8BIzqV5GFyX82-K95SAabnmqLu5cLPRhQg1UY3__wY06g_9uIP3gCobSKk5QW4J_x-Uktne15LTwhrTRxdzP3bFwOGdbsgTj99jnlRRh61dlSRJr8zPxhNpHqCeO7qwUQLEU_6S7zCmq46gRvbPBeF1WRVMK7MXLcpCN8gO_Eyi_leHnVL2p2ZJbJgFH1f3CVmSKXYKIxTpMR4f8I1Iw',
-  },
-];
+import { useSelector, useDispatch } from 'react-redux';
+import { clearCart, removeFromCart, addToCart } from '../../features/cart/cartSlice';
+import { createOrderThunk } from '../../features/orders/orderSlice';
+import StripePaymentModal from './components/StripePaymentModal';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+
+// Initialize Stripe outside component to avoid recreating the object on every render
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // Read cart from Redux
+  const cartItemsObj = useSelector((state) => state.cart.items);
+  // Convert { itemId: { item, quantity } } to an array for rendering
+  const cartItems = useMemo(() => {
+    return Object.values(cartItemsObj).map(cartItem => ({
+      ...cartItem.item,
+      quantity: cartItem.quantity
+    }));
+  }, [cartItemsObj]);
 
   // State Management
-  const [cartItems, setCartItems] = useState(INITIAL_CART);
   const [promoInput, setPromoInput] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
   const [promoMessage, setPromoMessage] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('visa');
   const [deliveryPreference, setDeliveryPreference] = useState('meet');
   const [formError, setFormError] = useState('');
+  
+  // Payment Modal State
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [clientSecret, setClientSecret] = useState(null);
+  const [pendingOrderId, setPendingOrderId] = useState(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -55,38 +61,58 @@ const CheckoutPage = () => {
   };
 
   const updateQuantity = (id, delta) => {
-    setCartItems((prevItems) =>
-      prevItems
-        .map((item) => {
-          if (item.id === id) {
-            const nextQty = item.quantity + delta;
-            return { ...item, quantity: nextQty };
-          }
-          return item;
-        })
-        .filter((item) => item.quantity > 0)
-    );
-  };
-
-  const deleteItem = (id) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
-  };
-
-  const handleApplyPromo = () => {
-    const code = promoInput.trim().toUpperCase();
-    if (code === 'HELLO50') {
-      setDiscountPercent(50);
-      setPromoMessage('Promo code HELLO50 applied! 50% discount on subtotal.');
-    } else if (code === 'FLASH80') {
-      setDiscountPercent(80);
-      setPromoMessage('Promo code FLASH80 applied! 80% discount on subtotal.');
+    const cartItem = cartItems.find(i => (i.id || i._id) === id);
+    if (!cartItem) return;
+    
+    if (delta > 0) {
+      dispatch(addToCart(cartItem));
     } else {
-      setDiscountPercent(0);
-      setPromoMessage('Invalid Promo Code.');
+      dispatch(removeFromCart(id));
     }
   };
 
-  const handleSubmitOrder = (e) => {
+  const deleteItem = (id) => {
+    // Hack: Call removeFromCart multiple times or create a new action. 
+    // Since we need to remove the whole item, let's just clear it from Redux.
+    // Wait, removeFromCart handles full deletion if quantity reaches 1, 
+    // but a proper deleteFromCart would be better. For now, we can loop or add a delete action later.
+    // Let's just dispatch removeFromCart until quantity is 0
+    const cartItem = cartItems.find(i => (i.id || i._id) === id);
+    if (cartItem) {
+        for(let i=0; i<cartItem.quantity; i++) {
+           dispatch(removeFromCart(id));
+        }
+    }
+  };
+
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+
+    try {
+      // For legacy test codes, handle them locally if we want, or rely entirely on DB.
+      // We rely entirely on the new DB API.
+      // Note: we need to import api from '../../api/axios';
+      // Wait, is 'api' imported in this file? I should check.
+      // Assuming it's not imported since this is a new API call, I should add the import if needed.
+      // Let's first try just fetch or axios directly if api is not imported. 
+      // Actually, I can just use `fetch` or `axios` or Redux. I'll import `api` at the top of the file.
+      // Let's replace the whole function.
+      setPromoMessage('Validating...');
+      const { default: api } = await import('../../api/axios');
+      const response = await api.get(`/public/offers/validate/${code}`);
+      
+      setDiscountPercent(response.data.data.discountPercentage);
+      setPromoMessage(`Promo code ${code} applied! ${response.data.data.discountPercentage}% discount on subtotal.`);
+    } catch (error) {
+      setDiscountPercent(0);
+      setPromoMessage(error.response?.data?.message || 'Invalid or expired Promo Code.');
+    }
+  };
+
+  const { loading: isSubmitting } = useSelector(state => state.orders);
+
+  const handleSubmitOrder = async (e) => {
     e.preventDefault();
 
     // Basic address form validation
@@ -100,9 +126,54 @@ const CheckoutPage = () => {
       setFormError('Your cart is empty. Please add items to checkout.');
       return;
     }
+    
+    // We assume all cart items are from the same restaurant in this UI flow.
+    const restaurantId = cartItems[0]?.restaurant || cartItems[0]?.restaurantId; // Depends on your MenuItem schema
 
-    // Simulate placing the order and navigate directly to Track Order page!
-    navigate('/track-order');
+    const orderPayload = {
+        restaurant: restaurantId,
+        items: cartItems.map(i => ({
+            menuItem: i._id || i.id,
+            name: i.name,
+            quantity: i.quantity,
+            price: i.price
+        })),
+        totalAmount: total, // Still sent but ignored by backend for security
+        deliveryAddress: formData,
+        paymentMethod,
+        promoCode: promoInput.trim().toUpperCase()
+    };
+
+    try {
+        const resultAction = await dispatch(createOrderThunk(orderPayload)).unwrap();
+        
+        if (resultAction.clientSecret) {
+            // Open the Stripe modal
+            setClientSecret(resultAction.clientSecret);
+            setPendingOrderId(resultAction.order._id);
+            setPaymentModalOpen(true);
+        } else {
+            // Cash on delivery or fully discounted
+            dispatch(clearCart());
+            navigate(`/track-order?orderId=${resultAction.order._id}`);
+        }
+    } catch (err) {
+        setFormError(err || 'Failed to place order.');
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setPaymentModalOpen(false);
+    
+    // In Stripe's redirect='if_required' flow, the webhook will still hit the backend asynchronously.
+    // We just navigate to track order locally.
+    dispatch(clearCart());
+    navigate(`/track-order?orderId=${pendingOrderId}`);
+  };
+
+  const handlePaymentCancel = () => {
+    setPaymentModalOpen(false);
+    setFormError('Payment was cancelled. You can try again.');
   };
 
   // Computations
@@ -152,13 +223,17 @@ const CheckoutPage = () => {
               <h2 className="font-h3 text-h3 mb-6 font-bold text-on-surface">Review Your Order</h2>
               
               {cartItems.length === 0 ? (
-                <div className="py-8 text-center">
-                  <span className="material-symbols-outlined text-4xl text-on-secondary-container mb-2">
-                    shopping_cart_off
-                  </span>
-                  <p className="text-secondary font-body">Your checkout cart is empty.</p>
-                  <Link to="/" className="text-primary font-button hover:underline mt-2 inline-block">
-                    Add delicious food
+                <div className="py-16 flex flex-col items-center justify-center text-center bg-surface-container-lowest rounded-xl">
+                  <div className="w-24 h-24 bg-surface-variant rounded-full flex items-center justify-center mb-6">
+                    <span className="material-symbols-outlined text-5xl text-on-surface-variant">
+                      shopping_cart_off
+                    </span>
+                  </div>
+                  <h3 className="text-h3 font-h3 mb-2 text-on-surface">Your Cart is Empty</h3>
+                  <p className="text-body font-body text-secondary max-w-md mx-auto mb-6">Looks like you haven't added any delicious items to your cart yet.</p>
+                  <Link to="/" className="px-6 h-12 bg-primary text-on-primary rounded-xl font-button text-button flex items-center gap-2 hover:opacity-90 transition-opacity">
+                    <span>Browse Restaurants</span>
+                    <span className="material-symbols-outlined">arrow_forward</span>
                   </Link>
                 </div>
               ) : (
@@ -212,10 +287,11 @@ const CheckoutPage = () => {
               {/* Submit Checkout Button */}
               <button
                 onClick={handleSubmitOrder}
-                className="w-full h-14 bg-primary-container text-white font-button text-button rounded-xl shadow-lg shadow-primary-container/20 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className={`w-full h-14 bg-primary-container text-white font-button text-button rounded-xl shadow-lg shadow-primary-container/20 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                <span>Place Order</span>
-                <span className="material-symbols-outlined">arrow_forward</span>
+                <span>{isSubmitting ? 'Placing Order...' : 'Place Order'}</span>
+                {!isSubmitting && <span className="material-symbols-outlined">arrow_forward</span>}
               </button>
 
               <p className="text-center text-secondary text-[12px] mt-4 px-4">
@@ -232,6 +308,16 @@ const CheckoutPage = () => {
       </main>
 
       <Footer />
+
+      {paymentModalOpen && clientSecret && (
+        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+          <StripePaymentModal 
+            amount={total}
+            onSuccess={handlePaymentSuccess}
+            onCancel={handlePaymentCancel}
+          />
+        </Elements>
+      )}
     </div>
   );
 };

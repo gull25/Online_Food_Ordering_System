@@ -5,7 +5,15 @@ const errorHandler = require("./middlewares/error.middleware");
 const app = express();
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' ? process.env.CLIENT_URL : true,
+  credentials: true,
+};
+app.use(cors(corsOptions));
+
+// Webhook route requires raw body for Stripe signature verification
+app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+
 app.use(express.json());
 
 // Routes

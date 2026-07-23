@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Restaurant = require('../models/Restaurant');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
@@ -19,6 +20,13 @@ const protect = asyncHandler(async (req, res, next) => {
 
             if (!req.user) {
                 throw new ApiError(404, 'User not found');
+            }
+
+            if (req.user.role === 'admin') {
+                const restaurant = await Restaurant.findOne({ owner: req.user._id });
+                if (restaurant) {
+                    req.user.restaurantId = restaurant._id.toString();
+                }
             }
 
             next();

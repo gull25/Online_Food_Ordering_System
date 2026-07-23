@@ -40,6 +40,8 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       // Keep isInitialized true — we know the user is now a guest.
+      localStorage.removeItem('foodoraToken');
+      localStorage.removeItem('userInfo');
     },
   },
 });

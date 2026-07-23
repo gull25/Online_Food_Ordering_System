@@ -1,106 +1,23 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAdminOrders, updateAdminOrderStatus } from '../../features/admin/adminSlice';
+import toast from 'react-hot-toast';
 import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import StatCard from './components/StatCard';
-
-const MOCK_ORDERS = [
-  {
-    id: '#ORD-9021',
-    customer: 'Julian Rivera',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBbIo21XWFMOnly3IkqcGThvSy40GvnG2dmMWiHjm5RK-rs3BJTaadqkOvvOFe1bhmoEjxAmDVWMNeRVe61OXB4mX2pgK8HPAnYvjNS691CLfJyNmGMY-YJgbmPyriybbG0I1Ep6K6p5emBdx2Ng_5Jf0_BIy2weW-46CqN2bYPmKhjszt1k1Wp3pDrq-GFPTb4LxUlBn4nq0DO0fQq0xDhWSoFi5dLzqJTZ3Cv2M_9YPx0wH3bq34geg',
-    items: 'Truffle Burger, Sweet Potato Fries, Coke Zero',
-    amount: 42.80,
-    status: 'PREPARING',
-    datetime: 'Oct 24, 12:45 PM',
-  },
-  {
-    id: '#ORD-9022',
-    customer: 'Elena Smith',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDBhMQQi6JyWPwdGVtH__cyve0OtbfxqiT7zP-GgqYKjpAhtbVzDfvFwmrGAer12ZQDAEkPPZG0sMKPLTwAt0zQAz2mZxrx-lELZ0OyjCCBM9c-iY-xziKGAwrefoAQ_0FVQlXmh2meAoZV3VlLPLhOAAZr3sL55E7csvUxLcV3ZGvuaETS35ucgy8496XSbaVnC01O2X5477LW18uUCRSI-lp8q9ksgkOxp40LsYxQDng5O4uZFJmYRw',
-    items: 'Quinoa Bowl, Salmon Tartare',
-    amount: 35.00,
-    status: 'OUT FOR DELIVERY',
-    datetime: 'Oct 24, 12:30 PM',
-  },
-  {
-    id: '#ORD-9023',
-    customer: 'Robert Chen',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDbcNFE4UBlqEbt1nqIwX0Gh01BIOjfwlcAIMIeu3pYCtaysxsIUXCMuwSkgWhXu78eai0kRIcVw4jQ9O5NLY1P_2bod1qnoou6DF1ovi2DBZYT0kU3w4b-HS3zxPVIFGHxiDYmizBBuFlbhdpC8RUL0jqs1pCc5aMxEM6k_akH-NquTwupxH-WfYVYhE-thKQTTpqf9raxzpF9MSrY6zxR1gSTfxCwDCzEQ-4-tUllhFFXt0GfDMZ6aA',
-    items: 'Sushi Platter (Large), Miso Soup x2',
-    amount: 78.20,
-    status: 'DELIVERED',
-    datetime: 'Oct 24, 12:15 PM',
-  },
-  {
-    id: '#ORD-9024',
-    customer: 'Sophia Bell',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLnjQr1vR-wmJyKTBOR3SdKOKeFLlbMdscN3P72LFXJ1fC9PqxjufsDbXLEKa_CZGDRNTseL3Ws5sHenwPEjxPCF6BIT9VdJzOiHf0b765Lg6xgOXzgu1FajDwPtZuqB0B7_rqaRiNge-vSb0f1F7riwqKPX3ywbfifZzCBi5v-mpPR_OceTC_xfOWWY3LbfVTwtm7EE13Gte4mNLywbWN2E5fJFLhsLd7jVWCO2Ku4BuGt-DrtUEuVw',
-    items: 'Pepperoni Pizza, Garlic Knots',
-    amount: 22.40,
-    status: 'PENDING',
-    datetime: 'Oct 24, 1:02 PM',
-  },
-  {
-    id: '#ORD-9025',
-    customer: 'Nora G.',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCG7c3_Oav44D-10LTqBYgTknTJAagGCkwtfVrmI1LhBLmfbOVMcGqz_lngYbbdWUirpO9pBcPci1dX6nwTpexiIvtCGMG03DvO2jgqZMpX7XCV3QUBp_8bonpjayNDISrenqlckOgIkBzR-4P0pSuxJOmKe80iPBq0YWJy-qQHJZgMiQMcXcb73mwvYr_hvqkhcIuLY42whbERy6c8cXwv-a_L_rGAOhnDUA67CH1E9JHMpEflOyoInw',
-    items: 'Chicken Tikka Masala, Naan, Rice',
-    amount: 31.50,
-    status: 'CANCELLED',
-    datetime: 'Oct 24, 12:00 PM',
-  },
-  {
-    id: '#ORD-9026',
-    customer: 'Liam Carter',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuByF1rl9zCgSVHW_4EeJNf0OuePeD4MmxLbS9l4pL46P4ZJUyFheFK_tBFwHTuBavlUMi8d4sxUJCs9dbuM2Kos4MbF6kSCtNXCGV9AD_9jlA2WVwrNpZvtl-FpAIMGPMaAiisrf9d1JDBSabq6r3VX-KtZARZvOatXisyvhAR6h7_t9vk063TmFA_xMyrMvaHn8qL8OcIi5Hyj2yUWxd0Tp83S16P7jpe5gMwZIdqLrNrzCehRBIzJpg',
-    items: 'Vegan Taco Bowl, Guacamole & Chips',
-    amount: 54.20,
-    status: 'DELIVERED',
-    datetime: 'Oct 23, 8:15 PM',
-  },
-  {
-    id: '#ORD-9027',
-    customer: 'Olivia Martinez',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCiZqH-_kUyiSbC387bTJJHK05ipV2hpj_A_oHNBiXJ6S8zBktqa646qfE8qFjf9t7wMV5vcocdybRmSIoJPvo2QTjV0uFpOUuB7Ng_U9VGQGVNv7brcyABDPAjBWo6Ba-gAFsuxMOZ_jiRj9uIW-2yMBeHZg9FxWryyJyy1wpLdt8NinZLQPu3db_T-StfdOLy0yaxPzxT1lxmD1onflq9G07e0KBnCtgCV7KsUOWx5NjTEd5TJ0zFGA',
-    items: 'Classic Cheeseburger, Onion Rings',
-    amount: 29.90,
-    status: 'PREPARING',
-    datetime: 'Oct 24, 1:10 PM',
-  },
-  {
-    id: '#ORD-9028',
-    customer: 'William Davis',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIpJpn0ONEjnBQyYP5_jYWDDEnklzUa7FzXXmwoAETqFG2qxvoPHTN7QaRj2NfkASP9RYA0A2wPowjVlpVKN0FRQw8fOTCUkBtRMsm2z3QVzh7O-7pR1NGSDS3HPcWLYw8CnXbXac0Eho8sbQoYJv5iwcmI5lCCoEEpGItzz7nYSD36Do-6TgLUpQbtLB1gskYXk3IbQYTcECvlE68936-xYrrugxyzFOK0hzeZ0tORDBrg6DFhdYo1Q',
-    items: 'Ribeye Steak, Mashed Potatoes',
-    amount: 65.00,
-    status: 'PENDING',
-    datetime: 'Oct 24, 1:15 PM',
-  },
-  {
-    id: '#ORD-9029',
-    customer: 'Emma Wilson',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLnjQr1vR-wmJyKTBOR3SdKOKeFLlbMdscN3P72LFXJ1fC9PqxjufsDbXLEKa_CZGDRNTseL3Ws5sHenwPEjxPCF6BIT9VdJzOiHf0b765Lg6xgOXzgu1FajDwPtZuqB0B7_rqaRiNge-vSb0f1F7riwqKPX3ywbfifZzCBi5v-mpPR_OceTC_xfOWWY3LbfVTwtm7EE13Gte4mNLywbWN2E5fJFLhsLd7jVWCO2Ku4BuGt-DrtUEuVw',
-    items: 'Caesar Salad, Iced Tea',
-    amount: 19.50,
-    status: 'DELIVERED',
-    datetime: 'Oct 23, 7:30 PM',
-  },
-  {
-    id: '#ORD-9030',
-    customer: 'James Taylor',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCG7c3_Oav44D-10LTqBYgTknTJAagGCkwtfVrmI1LhBLmfbOVMcGqz_lngYbbdWUirpO9pBcPci1dX6nwTpexiIvtCGMG03DvO2jgqZMpX7XCV3QUBp_8bonpjayNDISrenqlckOgIkBzR-4P0pSuxJOmKe80iPBq0YWJy-qQHJZgMiQMcXcb73mwvYr_hvqkhcIuLY42whbERy6c8cXwv-a_L_rGAOhnDUA67CH1E9JHMpEflOyoInw',
-    items: 'BBQ Pork Ribs, Mac and Cheese',
-    amount: 47.00,
-    status: 'CANCELLED',
-    datetime: 'Oct 23, 6:45 PM',
-  },
-];
 
 const ITEMS_PER_PAGE = 5;
 
 const AdminOrdersPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  const { orders, loading } = useSelector((state) => state.admin);
+
+  useEffect(() => {
+    dispatch(fetchAdminOrders());
+  }, [dispatch]);
 
   // Selected filter states
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -115,14 +32,6 @@ const AdminOrdersPage = () => {
   // Selected Order Details modal overlay
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // Toast notification state
-  const [toastMessage, setToastMessage] = useState('');
-
-  const showToast = (message) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(''), 3000);
-  };
-
   // Add Restaurant form submission
   const handleAddRestaurant = (e) => {
     e.preventDefault();
@@ -135,21 +44,25 @@ const AdminOrdersPage = () => {
 
   // Dynamic filter rules
   const filteredOrders = useMemo(() => {
-    return MOCK_ORDERS.filter((order) => {
+    return orders.filter((order) => {
       // Filter status
       const matchesFilter =
         activeFilter === 'ALL' ||
         order.status === activeFilter;
 
       // Filter search
+      const orderIdStr = order._id.toString();
+      const customerName = order.user?.name || 'Unknown User';
+      const itemsStr = order.items?.map(i => i.menuItem?.name).join(', ') || '';
+
       const matchesSearch =
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.items.toLowerCase().includes(searchQuery.toLowerCase());
+        orderIdStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        itemsStr.toLowerCase().includes(searchQuery.toLowerCase());
 
       return matchesFilter && matchesSearch;
     });
-  }, [activeFilter, searchQuery]);
+  }, [orders, activeFilter, searchQuery]);
 
   // Paginated subset
   const paginatedOrders = useMemo(() => {
@@ -168,7 +81,7 @@ const AdminOrdersPage = () => {
     const completedCount = filteredOrders.filter((o) => o.status === 'DELIVERED').length;
     const revenueSum = filteredOrders
       .filter((o) => o.status !== 'CANCELLED')
-      .reduce((sum, o) => sum + o.amount, 0);
+      .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
     return {
       totalToday,
@@ -194,14 +107,6 @@ const AdminOrdersPage = () => {
           font-weight: 600;
         }
       `}</style>
-
-      {/* Toast Alert overlay */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-[70] bg-inverse-surface text-white px-6 py-4 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
-          <span className="material-symbols-outlined text-primary-fixed">info</span>
-          <span className="font-button text-button text-sm">{toastMessage}</span>
-        </div>
-      )}
 
       {/* Restaurant Addition Modal */}
       {isModalOpen && (
@@ -285,20 +190,22 @@ const AdminOrdersPage = () => {
                   />
                 </div>
                 <div>
-                  <h4 className="font-bold text-body text-on-surface">{selectedOrder.customer}</h4>
-                  <p className="text-secondary text-small">{selectedOrder.datetime}</p>
+                  <h4 className="font-bold text-body text-on-surface">{selectedOrder.user?.name || 'Unknown User'}</h4>
+                  <p className="text-secondary text-small">{new Date(selectedOrder.createdAt).toLocaleString()}</p>
                 </div>
               </div>
 
               <div className="bg-surface-container-low p-4 rounded-xl space-y-2 border border-outline-variant/20">
                 <p className="font-label text-label text-secondary uppercase">Items List</p>
-                <p className="font-body text-small text-on-surface">{selectedOrder.items}</p>
+                <p className="font-body text-small text-on-surface">
+                  {selectedOrder.items?.map(i => `${i.quantity}x ${i.menuItem?.name || 'Unknown Item'}`).join(', ')}
+                </p>
               </div>
 
               <div className="flex justify-between items-center border-t border-outline-variant/20 pt-4">
                 <div>
                   <p className="font-label text-label text-secondary uppercase">Total Amount</p>
-                  <p className="font-h2 text-h3 font-bold text-primary">${selectedOrder.amount.toFixed(2)}</p>
+                  <p className="font-h2 text-h3 font-bold text-primary">${(selectedOrder.totalAmount || 0).toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="font-label text-label text-secondary uppercase text-right mb-1">Status</p>
@@ -321,14 +228,33 @@ const AdminOrdersPage = () => {
               </div>
             </div>
 
-            <div className="mt-8">
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="w-full h-12 rounded-xl bg-secondary text-on-secondary font-button text-button hover:opacity-90 transition-colors shadow-sm"
-              >
-                Close Details
-              </button>
-            </div>
+              <div className="flex gap-2">
+                <select
+                  value={selectedOrder.status}
+                  onChange={(e) => {
+                    const newStatus = e.target.value;
+                    dispatch(updateAdminOrderStatus({ orderId: selectedOrder._id, status: newStatus }))
+                      .unwrap()
+                      .then((updatedOrder) => {
+                        setSelectedOrder(updatedOrder);
+                        toast.success(`Status updated to ${newStatus}`);
+                      });
+                  }}
+                  className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-white font-button text-small outline-none focus:border-primary cursor-pointer"
+                >
+                  <option value="PENDING">PENDING</option>
+                  <option value="PREPARING">PREPARING</option>
+                  <option value="OUT FOR DELIVERY">OUT FOR DELIVERY</option>
+                  <option value="DELIVERED">DELIVERED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="px-6 h-12 rounded-xl bg-secondary text-on-secondary font-button text-button hover:opacity-90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                >
+                  Close Details
+                </button>
+              </div>
           </div>
         </div>
       )}
@@ -463,33 +389,40 @@ const AdminOrdersPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant">
-                {paginatedOrders.map((order) => (
+                {loading && (
+                  <tr>
+                    <td colSpan="7" className="py-8 text-center text-secondary font-body">
+                      Loading orders...
+                    </td>
+                  </tr>
+                )}
+                {!loading && paginatedOrders.map((order) => (
                   <tr
-                    key={order.id}
+                    key={order._id}
                     className="hover:bg-surface-container-lowest transition-colors"
                   >
                     <td className="px-6 py-4 font-body text-body font-bold text-on-surface">
-                      {order.id}
+                      #{order._id.substring(order._id.length - 6).toUpperCase()}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
                           <img
                             className="w-full h-full object-cover"
-                            alt={order.customer}
-                            src={order.avatar}
+                            alt={order.user?.name || 'User'}
+                            src={order.user?.avatar || "https://ui-avatars.com/api/?name=" + (order.user?.name || 'U')}
                           />
                         </div>
                         <span className="font-body text-small font-semibold">
-                          {order.customer}
+                          {order.user?.name || 'Unknown User'}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 font-body text-small text-secondary max-w-[200px] truncate">
-                      {order.items}
+                      {order.items?.map(i => i.menuItem?.name).join(', ')}
                     </td>
                     <td className="px-6 py-4 font-body text-body font-bold">
-                      ${order.amount.toFixed(2)}
+                      ${(order.totalAmount || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
                       <span
@@ -509,7 +442,7 @@ const AdminOrdersPage = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 font-body text-small text-secondary">
-                      {order.datetime}
+                      {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="px-6 py-4">
                       <button
@@ -522,7 +455,7 @@ const AdminOrdersPage = () => {
                   </tr>
                 ))}
 
-                {paginatedOrders.length === 0 && (
+                {!loading && paginatedOrders.length === 0 && (
                   <tr>
                     <td colSpan="7" className="py-8 text-center text-secondary font-body">
                       No matching orders found.

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import TopNavBar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import FoodCard from '../../components/ui/FoodCard/FoodCard';
@@ -8,188 +8,87 @@ import CategorySidebar from './components/CategorySidebar';
 import MobileCategoryNav from './components/MobileCategoryNav';
 import MenuSection from './components/MenuSection';
 import FloatingCartSummary from './components/FloatingCartSummary';
+import ReviewsSection from './components/ReviewsSection';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart } from '../../features/cart/cartSlice';
 
-// Clean data representation of the menu
-const MENU_CATEGORIES = [
-  { id: 'popular', name: 'Popular', badge: '🔥', count: 2 },
-  { id: 'starters', name: 'Starters', count: 0 }, // Placeholder for extra categories in HTML
-  { id: 'pizza', name: 'Artisan Pizza', count: 2 },
-  { id: 'pasta', name: 'Fresh Pasta', count: 0 },
-  { id: 'mains', name: 'Mains', count: 0 },
-  { id: 'desserts', name: 'Desserts', count: 0 },
-  { id: 'drinks', name: 'Drinks', count: 0 },
-];
-
-const MENU_ITEMS = [
-  {
-    id: 'margherita',
-    name: 'Classic Margherita',
-    price: 14.00,
-    description: 'San Marzano tomato sauce, fresh mozzarella di bufala, basil, extra virgin olive oil.',
-    category: 'popular',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAGetNiq5A-grFrT7P5I5ItEPizHW1mGULie2XmHLkiLuNgPAmg1jFNOfBVSWVDKqt6Vd_tXngWcGdxqjhqm8g5dyzRp60Pr2J-ZXPxKZUabbCxiyYeyt7R9vrRArTbFXHwNkFHvl8F2bvU7PHBrEbYPFaDWRGBa4L2xpAvjT0kwZLvKha1Xqx7wAUtAaiDWaVQaoxCqrI-Kq1CIAuq3fTfely5J6YiFEyFg9scGh4z7FC6YZddQm9bHg',
-    tag: 'Vegetarian',
-    rating: '98%',
-  },
-  {
-    id: 'tagliatelle',
-    name: 'Truffle Tagliatelle',
-    price: 22.50,
-    description: 'Handmade ribbon pasta tossed in a rich black truffle cream sauce with aged parmesan.',
-    category: 'popular',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWyx19xORr0olvqzkpTOsgj1iCtHpfVD6vQz6JjlpREeTRggobJ44I1ABbhSpEH8VA93PLjnGUl0b2bQ7UQ0tuSFRmi48daAosRpeVsSqY114lW-UjQLtA2xLD18aM0-lI7cn_2L_o3P6gNa2_s6rm2vq-sVhKPxRp2bnvC6Sgk25b5JgdXUf1vwknxxIXAwUSQwS_N6nZdvChZaxPRCOB8HpW-zpXy58m8yU2FpCMfgJvR6SLFexmqQ',
-    tag: "Chef's Pick",
-  },
-  {
-    id: 'diavola',
-    name: 'Diavola Piccante',
-    price: 16.00,
-    description: 'Spicy Calabrian salami, tomato sauce, mozzarella, chili oil, and fresh oregano.',
-    category: 'pizza',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBzYoO7cJRdYgaffgylzFH4EU34H3IYqrCsRpljeUN-cp6nxiQ7h806nQQWdUCNbFulfZA1Zvy_n2-EJtiN-HZTSTBy3mqr0nf5iqnwaWNXwyt6YtF2ijqO5f5mUNMrZlR9EwL1O1E3ncdRJ83OZERKdfgjLGAeltHz8Mg_tbqj1ArTHGKGkD-R_CAYqmk44-NDuPHKsPaCbWkmP157cmTWxuoaWAeb3eUNIA7qbKMu-CCbzp-J2vJlew',
-    tag: 'Spicy',
-  },
-  {
-    id: 'quattro',
-    name: 'Quattro Formaggi',
-    price: 18.50,
-    description: 'Mozzarella, gorgonzola, fontina, and parmesan cheese on a white base, finished with truffle honey.',
-    category: 'pizza',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBuliHJnZSMQjZuE_f6BUD7tiE5Ei5WF5GjhmSOI6dp1de7CXKNxtZhiCtYmcd5ecwzFqD0E4GxL1WkHo0V-1xNSj3L0u59fQsE-t_HwnBsvhR9gpE6g8a7OJYeZyklSzQx3p6U_tz8dqprouArg4Q6Za7wrJzUVUD5qpgM39Nm2hIgu4VuGW0I7hU7q1RWfcUc--T0KPQNn79QyIlsLYzYD-qGXLjM5NLX8B3c9eeoIe7gvg_SSlej6Q',
-    tag: 'Vegetarian',
-  },
-  {
-    id: 'garlic_bread',
-    name: 'Garlic Bread',
-    price: 6.50,
-    description: 'Freshly baked ciabatta bread topped with garlic butter and parsley.',
-    category: 'starters',
-    image: '/garlic_bread.png',
-    tag: 'Vegetarian',
-  },
-  {
-    id: 'bruschetta',
-    name: 'Tomato Bruschetta',
-    price: 8.00,
-    description: 'Toasted bread topped with fresh tomatoes, basil, garlic, and balsamic glaze.',
-    category: 'starters',
-    image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?auto=format&fit=crop&w=1000&q=80',
-    tag: 'Vegan',
-  },
-  {
-    id: 'carbonara',
-    name: 'Spaghetti Carbonara',
-    price: 16.50,
-    description: 'Traditional Roman pasta dish with pancetta, egg yolk, pecorino cheese, and black pepper.',
-    category: 'pasta',
-    image: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?auto=format&fit=crop&w=1000&q=80',
-    tag: 'Popular',
-  },
-  {
-    id: 'arrabbiata',
-    name: 'Penne Arrabbiata',
-    price: 14.50,
-    description: 'Penne pasta in a spicy tomato sauce with garlic and fresh parsley.',
-    category: 'pasta',
-    image: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=1000&q=80',
-    tag: 'Spicy',
-  },
-  {
-    id: 'chicken_parm',
-    name: 'Chicken Parmesan',
-    price: 24.00,
-    description: 'Breaded chicken breast topped with marinara sauce and melted mozzarella, served with a side of spaghetti.',
-    category: 'mains',
-    image: 'https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?auto=format&fit=crop&w=1000&q=80',
-  },
-  {
-    id: 'salmon',
-    name: 'Grilled Salmon',
-    price: 26.50,
-    description: 'Fresh grilled salmon fillet served with roasted asparagus and lemon butter sauce.',
-    category: 'mains',
-    image: 'https://images.unsplash.com/photo-1485921325833-c519f76c4927?auto=format&fit=crop&w=1000&q=80',
-    tag: 'Healthy',
-  },
-  {
-    id: 'tiramisu',
-    name: 'Classic Tiramisu',
-    price: 9.00,
-    description: 'Espresso-soaked ladyfingers layered with mascarpone cream and dusted with cocoa powder.',
-    category: 'desserts',
-    image: 'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?auto=format&fit=crop&w=1000&q=80',
-    tag: 'Sweet',
-  },
-  {
-    id: 'panna_cotta',
-    name: 'Vanilla Panna Cotta',
-    price: 8.50,
-    description: 'Creamy vanilla dessert served with a mixed berry coulis.',
-    category: 'desserts',
-    image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1000&q=80',
-  },
-  {
-    id: 'italian_soda',
-    name: 'Italian Soda',
-    price: 4.50,
-    description: 'Refreshing sparkling water with a choice of raspberry, peach, or lemon syrup.',
-    category: 'drinks',
-    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1000&q=80',
-  },
-  {
-    id: 'espresso',
-    name: 'Espresso',
-    price: 3.50,
-    description: 'Rich and bold single shot of Italian espresso.',
-    category: 'drinks',
-    image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&w=1000&q=80',
-  }
-];
+import { fetchRestaurantDetails } from '../../features/restaurants/restaurantSlice';
+import { fetchRestaurantMenu } from '../../features/menu/menuSlice';
 
 const RestaurantDetailPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [searchQuery, setSearchQuery] = useState('');
   const dispatch = useDispatch();
+  
+  const { currentRestaurant, loading: restaurantLoading } = useSelector((state) => state.restaurants);
+  const { items: menuItems, loading: menuLoading } = useSelector((state) => state.menu);
   const { items: cart, totalQuantity: totalCartCount } = useSelector((state) => state.cart);
 
   const handleAddToCart = useCallback((item) => dispatch(addToCart(item)), [dispatch]);
   const handleRemoveFromCart = useCallback((itemId) => dispatch(removeFromCart(itemId)), [dispatch]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [shareText, setShareText] = useState('Share');
-  const [activeCategory, setActiveCategory] = useState('popular');
+
+  React.useEffect(() => {
+    if (id) {
+      dispatch(fetchRestaurantDetails(id));
+      dispatch(fetchRestaurantMenu(id));
+    }
+  }, [dispatch, id]);
+
+  const dynamicCategories = useMemo(() => {
+    if (!menuItems || !Array.isArray(menuItems) || menuItems.length === 0) return [];
+    const cats = new Set(menuItems.map(item => item.category));
+    return Array.from(cats).map(cat => ({
+      id: cat?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+      name: cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : 'Unknown',
+      count: 0
+    }));
+  }, [menuItems]);
+
+  const [activeCategory, setActiveCategory] = useState('');
+  
+  React.useEffect(() => {
+    if (dynamicCategories.length > 0 && !activeCategory) {
+      setActiveCategory(dynamicCategories[0].id);
+    }
+  }, [dynamicCategories, activeCategory]);
 
   // Filter items based on search query
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return MENU_ITEMS;
-    return MENU_ITEMS.filter(
+    if (!menuItems || !Array.isArray(menuItems)) return [];
+    if (!searchQuery.trim()) return menuItems;
+    return menuItems.filter(
       (item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase())
+        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
+  }, [searchQuery, menuItems]);
 
   // Group items by category for rendering
   const itemsByCategory = useMemo(() => {
     const groups = {};
+    if (!Array.isArray(filteredItems)) return groups;
     filteredItems.forEach((item) => {
-      if (!groups[item.category]) {
-        groups[item.category] = [];
+      const catId = item.category?.toLowerCase().replace(/\s+/g, '-') || 'unknown';
+      if (!groups[catId]) {
+        groups[catId] = [];
       }
-      groups[item.category].push(item);
+      groups[catId].push(item);
     });
     return groups;
   }, [filteredItems]);
 
   // Calculate dynamic count for sidebar badges
   const categoryCounts = useMemo(() => {
+    if (!menuItems) return {};
     const counts = {};
-    MENU_CATEGORIES.forEach((cat) => {
-      counts[cat.id] = MENU_ITEMS.filter((item) => item.category === cat.id).length;
+    dynamicCategories.forEach((cat) => {
+      counts[cat.id] = menuItems.filter((item) => item.category.toLowerCase().replace(/\s+/g, '-') === cat.id).length;
     });
     return counts;
-  }, []);
+  }, [dynamicCategories, menuItems]);
 
   const totalCartPrice = Object.values(cart).reduce(
     (sum, entry) => sum + entry.item.price * entry.quantity,
@@ -233,13 +132,15 @@ const RestaurantDetailPage = () => {
         shareText={shareText}
         isFavorite={isFavorite}
         setIsFavorite={setIsFavorite}
+        restaurant={currentRestaurant}
+        loading={restaurantLoading}
       />
 
       {/* Main Content */}
       <main className="max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg grid grid-cols-1 md:grid-cols-12 gap-gutter relative">
         {/* Sidebar Categories (Desktop) */}
         <CategorySidebar 
-          MENU_CATEGORIES={MENU_CATEGORIES}
+          MENU_CATEGORIES={dynamicCategories}
           categoryCounts={categoryCounts}
           activeCategory={activeCategory}
           scrollToCategory={scrollToCategory}
@@ -264,22 +165,45 @@ const RestaurantDetailPage = () => {
 
             {/* Mobile Categories Scrollbar */}
             <MobileCategoryNav 
-              MENU_CATEGORIES={MENU_CATEGORIES}
+              MENU_CATEGORIES={dynamicCategories}
               activeCategory={activeCategory}
               scrollToCategory={scrollToCategory}
             />
           </div>
 
           {/* Menu Sections & Empty State */}
-          <MenuSection 
-            MENU_CATEGORIES={MENU_CATEGORIES}
-            itemsByCategory={itemsByCategory}
-            searchQuery={searchQuery}
-            cart={cart}
-            addToCart={handleAddToCart}
-            removeFromCart={handleRemoveFromCart}
-            filteredItems={filteredItems}
-          />
+          {menuLoading ? (
+            <div className="space-y-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-8 w-48 bg-surface-variant rounded-md mb-4"></div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="h-32 bg-surface-container rounded-xl w-full"></div>
+                    <div className="h-32 bg-surface-container rounded-xl w-full"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (!menuItems || menuItems.length === 0) ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center">
+              <span className="material-symbols-outlined text-6xl text-surface-variant mb-4">menu_book</span>
+              <h3 className="text-h3 font-h3 mb-2 text-on-surface">Menu Unavailable</h3>
+              <p className="text-body font-body text-secondary max-w-md mx-auto">This restaurant hasn't added any menu items yet or is currently updating their offerings.</p>
+            </div>
+          ) : (
+            <MenuSection 
+              MENU_CATEGORIES={dynamicCategories}
+              itemsByCategory={itemsByCategory}
+              searchQuery={searchQuery}
+              cart={cart}
+              addToCart={handleAddToCart}
+              removeFromCart={handleRemoveFromCart}
+              filteredItems={filteredItems}
+            />
+          )}
+
+          {/* Customer Reviews */}
+          <ReviewsSection restaurantId={id} />
         </div>
       </main>
 

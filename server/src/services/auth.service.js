@@ -1,4 +1,5 @@
 const userRepository = require('../repositories/user.repository');
+const Restaurant = require('../models/Restaurant');
 const generateToken = require('../utils/generateToken');
 const ApiError = require('../utils/ApiError');
 
@@ -32,6 +33,14 @@ class AuthService {
         const user = await userRepository.findByEmail(email, true);
 
         if (user && (await user.matchPassword(password))) {
+            let restaurantId = null;
+            if (user.role === 'admin') {
+                const restaurant = await Restaurant.findOne({ owner: user._id });
+                if (restaurant) {
+                    restaurantId = restaurant._id.toString();
+                }
+            }
+
             return {
                 success: true,
                 token: generateToken(user._id),
@@ -40,6 +49,7 @@ class AuthService {
                     name: user.name,
                     email: user.email,
                     role: user.role,
+                    restaurantId: restaurantId,
                 },
             };
         } else {

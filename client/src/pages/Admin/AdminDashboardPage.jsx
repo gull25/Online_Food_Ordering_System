@@ -1,36 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAdminAnalytics, fetchAdminOrders, updateAdminOrderStatus } from '../../features/admin/adminSlice';
 import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import StatCard from './components/StatCard';
 import RecentOrdersTable from './components/RecentOrdersTable';
-
-const INITIAL_ORDERS = [
-  {
-    id: '#FD-8291',
-    customer: 'Mark Jensen',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuByF1rl9zCgSVHW_4EeJNf0OuePeD4MmxLbS9l4pL46P4ZJUyFheFK_tBFwHTuBavlUMi8d4sxUJCs9dbuM2Kos4MbF6kSCtNXCGV9AD_9jlA2WVwrNpZvtl-FpAIMGPMaAiisrf9d1JDBSabq6r3VX-KtZARZvOatXisyvhAR6h7_t9vk063TmFA_xMyrMvaHn8qL8OcIi5Hyj2yUWxd0Tp83S16P7jpe5gMwZIdqLrNrzCehRBIzJpg',
-    itemsCount: 3,
-    amount: 42.50,
-    status: 'DELIVERED',
-  },
-  {
-    id: '#FD-8292',
-    customer: 'Sarah Chen',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCiZqH-_kUyiSbC387bTJJHK05ipV2hpj_A_oHNBiXJ6S8zBktqa646qfE8qFjf9t7wMV5vcocdybRmSIoJPvo2QTjV0uFpOUuB7Ng_U9VGQGVNv7brcyABDPAjBWo6Ba-gAFsuxMOZ_jiRj9uIW-2yMBeHZg9FxWryyJyy1wpLdt8NinZLQPu3db_T-StfdOLy0yaxPzxT1lxmD1onflq9G07e0KBnCtgCV7KsUOWx5NjTEd5TJ0zFGA',
-    itemsCount: 1,
-    amount: 18.90,
-    status: 'PREPARING',
-  },
-  {
-    id: '#FD-8293',
-    customer: 'James Wilson',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIpJpn0ONEjnBQyYP5_jYWDDEnklzUa7FzXXmwoAETqFG2qxvoPHTN7QaRj2NfkASP9RYA0A2wPowjVlpVKN0FRQw8fOTCUkBtRMsm2z3QVzh7O-7pR1NGSDS3HPcWLYw8CnXbXac0Eho8sbQoYJv5iwcmI5lCCoEEpGItzz7nYSD36Do-6TgLUpQbtLB1gskYXk3IbQYTcECvlE68936-xYrrugxyzFOK0hzeZ0tORDBrg6DFhdYo1Q',
-    itemsCount: 5,
-    amount: 112.00,
-    status: 'PENDING',
-  },
-];
 
 const CHART_DATA_SET = {
   '30': {
@@ -64,6 +39,16 @@ const CHART_DATA_SET = {
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { analytics, orders, loading } = useSelector((state) => state.admin);
+  const { user } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    dispatch(fetchAdminAnalytics());
+    dispatch(fetchAdminOrders());
+  }, [dispatch]);
+
   // Navigation active tab
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -72,7 +57,6 @@ const AdminDashboardPage = () => {
   const [hoveredPoint, setHoveredPoint] = useState(null);
 
   // Orders and search states
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDropdownId, setActiveDropdownId] = useState(null);
 
@@ -92,8 +76,19 @@ const AdminDashboardPage = () => {
 
   // Filter orders by search query
   const filteredOrders = useMemo(() => {
-    if (!searchQuery.trim()) return orders;
-    return orders.filter(
+    // Map backend orders to format expected by RecentOrdersTable
+    const mappedOrders = orders.slice(0, 5).map(o => ({
+      id: `#${o._id.substring(o._id.length - 6).toUpperCase()}`,
+      originalId: o._id,
+      customer: o.user?.name || 'Unknown User',
+      avatar: o.user?.avatar || `https://ui-avatars.com/api/?name=${o.user?.name || 'U'}`,
+      itemsCount: o.items?.length || 0,
+      amount: o.totalAmount || 0,
+      status: o.status
+    }));
+
+    if (!searchQuery.trim()) return mappedOrders;
+    return mappedOrders.filter(
       (order) =>
         order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customer.toLowerCase().includes(searchQuery.toLowerCase())
@@ -102,11 +97,12 @@ const AdminDashboardPage = () => {
 
   // Update order status from action dropdown
   const handleUpdateStatus = (orderId, newStatus) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-    );
-    setActiveDropdownId(null);
-    showToast(`Order ${orderId} updated to ${newStatus}`);
+    dispatch(updateAdminOrderStatus({ orderId, status: newStatus }))
+      .unwrap()
+      .then(() => {
+        setActiveDropdownId(null);
+        showToast(`Order updated to ${newStatus}`);
+      });
   };
 
   // Add Restaurant form submission
@@ -219,8 +215,8 @@ const AdminDashboardPage = () => {
       <main className="ml-64 p-margin_desktop max-w-container_max">
         {/* Header */}
         <AdminHeader 
-          title="Welcome back, Alex"
-          subtitle="Here's what's happening with Foodora today."
+          title={`Welcome back, ${user?.name?.split(' ')[0] || 'Admin'}`}
+          subtitle={user?.role === 'admin' ? "Here's what's happening with your restaurant today." : "Here's what's happening with Foodora today."}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           showToast={showToast}
@@ -232,37 +228,37 @@ const AdminDashboardPage = () => {
             icon="shopping_bag"
             colorClass="bg-primary/5"
             iconColorClass="text-primary"
-            trendText="+12.5%"
+            trendText={analytics ? "+12.5%" : "Loading..."}
             trendUp={true}
             title="Total Orders"
-            value="14,289"
+            value={analytics ? analytics.orders.total.toLocaleString() : "..."}
           />
           <StatCard
             icon="payments"
             colorClass="bg-tertiary/5"
             iconColorClass="text-tertiary"
-            trendText="+8.2%"
+            trendText={analytics ? "+8.2%" : "Loading..."}
             trendUp={true}
             title="Total Revenue"
-            value="$128,430"
+            value={analytics ? `$${analytics.orders.revenue.toLocaleString()}` : "..."}
           />
           <StatCard
             icon="group"
             colorClass="bg-on-secondary-fixed-variant/5"
             iconColorClass="text-secondary"
-            trendText="+2.1%"
+            trendText={analytics ? "+2.1%" : "Loading..."}
             trendUp={true}
             title="Active Customers"
-            value="8,432"
+            value={analytics ? analytics.users.totalCustomers.toLocaleString() : "..."}
           />
           <StatCard
             icon="restaurant"
             colorClass="bg-outline/5"
             iconColorClass="text-on-surface-variant"
-            trendText="+12 new"
+            trendText={analytics ? "+12 new" : "Loading..."}
             trendUp={undefined}
             title="Active Restaurants"
-            value="412"
+            value={analytics ? analytics.restaurants.active.toLocaleString() : "..."}
           />
         </section>
 

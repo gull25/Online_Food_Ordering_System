@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../features/auth/authSlice';
+import { clearCart } from '../../../features/cart/cartSlice';
 
 const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
   const handleLogout = () => {
     localStorage.removeItem('foodoraToken');
     localStorage.removeItem('userInfo');
+    dispatch(clearCart());
     dispatch(logout());
     navigate('/');
   };
@@ -59,13 +61,24 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
           <span className="material-symbols-outlined">receipt_long</span>
           <span>Orders</span>
         </button>
-        <button
-          onClick={() => navigate('/admin/restaurants')}
-          className={getTabClass('restaurants')}
-        >
-          <span className="material-symbols-outlined">storefront</span>
-          <span>Restaurants</span>
-        </button>
+        {user?.role === 'super_admin' && (
+          <button
+            onClick={() => navigate('/admin/restaurants')}
+            className={getTabClass('restaurants')}
+          >
+            <span className="material-symbols-outlined">storefront</span>
+            <span>Restaurants</span>
+          </button>
+        )}
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => navigate('/admin/my-restaurant')}
+            className={getTabClass('my-restaurant')}
+          >
+            <span className="material-symbols-outlined">storefront</span>
+            <span>My Restaurant</span>
+          </button>
+        )}
         <button
           onClick={() => navigate('/admin/analytics')}
           className={getTabClass('analytics')}
@@ -91,7 +104,13 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
         {/* Profile popup — opens above the avatar */}
         {isProfileOpen && (
           <div className="absolute bottom-full left-4 right-4 mb-2 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg flex flex-col py-2 animate-in fade-in zoom-in-95 duration-150">
-            <button className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-on-surface transition-colors cursor-pointer flex items-center gap-3">
+            <button 
+              onClick={() => {
+                setIsProfileOpen(false);
+                navigate('/profile');
+              }}
+              className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-on-surface transition-colors cursor-pointer flex items-center gap-3"
+            >
               <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
               Profile Setting
             </button>
@@ -120,7 +139,7 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-label text-label text-on-surface truncate">{user?.name || 'Admin'}</p>
-            <p className="text-[10px] text-secondary font-semibold uppercase">Super Admin</p>
+            <p className="text-[10px] text-secondary font-semibold uppercase">{user?.role === 'super_admin' ? 'Super Admin' : 'Restaurant Admin'}</p>
           </div>
           <span className={`material-symbols-outlined text-[16px] text-secondary transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`}>
             expand_less
