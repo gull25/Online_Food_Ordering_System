@@ -1,8 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../../../features/auth/authSlice';
 
 const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('foodoraToken');
+    localStorage.removeItem('userInfo');
+    dispatch(logout());
+    navigate('/');
+  };
 
   const getTabClass = (tabName) => {
     if (activeTab === tabName) {
@@ -42,13 +67,6 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
           <span>Restaurants</span>
         </button>
         <button
-          onClick={() => navigate('/admin/menu')}
-          className={getTabClass('menu')}
-        >
-          <span className="material-symbols-outlined">restaurant_menu</span>
-          <span>Menu Management</span>
-        </button>
-        <button
           onClick={() => navigate('/admin/analytics')}
           className={getTabClass('analytics')}
         >
@@ -67,17 +85,46 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
           </button>
         </div>
       )}
-      <div className="px-6 py-8 border-t border-outline-variant/30 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
-          <img
-            className="w-full h-full object-cover"
-            alt="Alex Mercer headshot"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXFzmrGv9s3Ato2f9nWAgDsrlUCxvTo6kT4KBKaJD03tN2Azoye3nT9UOMNullVClmnhc2WkAJ7rJud3tnbODMqjZqHzCNmjAj8CZQ8Ska7sMJcIx3ZiPhL7CquHAT9Ko4Qu17ZXSs7e3OmQp4mTJWMDpOWY_HV97e8RWX3K_xQHZOl25WzCBwGMI0htohMFPeOhzIiqQESZenx_Z2mP4Lw_VWuLjRy7RxtvMVQ1LOPizB219JO_zZBA"
-          />
-        </div>
-        <div>
-          <p className="font-label text-label text-on-surface">Alex Mitchell</p>
-          <p className="text-[10px] text-secondary font-semibold uppercase">Super Admin</p>
+
+      {/* Profile section — click to open popup */}
+      <div ref={profileRef} className="relative">
+        {/* Profile popup — opens above the avatar */}
+        {isProfileOpen && (
+          <div className="absolute bottom-full left-4 right-4 mb-2 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg flex flex-col py-2 animate-in fade-in zoom-in-95 duration-150">
+            <button className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-on-surface transition-colors cursor-pointer flex items-center gap-3">
+              <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
+              Profile Setting
+            </button>
+            <div className="h-px bg-outline-variant/30 mx-3" />
+            <button
+              onClick={handleLogout}
+              className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-error transition-colors cursor-pointer flex items-center gap-3"
+            >
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+              Logout
+            </button>
+          </div>
+        )}
+
+        {/* Clickable profile row */}
+        <div
+          onClick={() => setIsProfileOpen((prev) => !prev)}
+          className="px-6 py-8 border-t border-outline-variant/30 flex items-center gap-3 cursor-pointer hover:bg-surface-variant/30 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden flex-shrink-0">
+            <img
+              className="w-full h-full object-cover"
+              alt="Admin avatar"
+              src={user?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXFzmrGv9s3Ato2f9nWAgDsrlUCxvTo6kT4KBKaJD03tN2Azoye3nT9UOMNullVClmnhc2WkAJ7rJud3tnbODMqjZqHzCNmjAj8CZQ8Ska7sMJcIx3ZiPhL7CquHAT9Ko4Qu17ZXSs7e3OmQp4mTJWMDpOWY_HV97e8RWX3K_xQHZOl25WzCBwGMI0htohMFPeOhzIiqQESZenx_Z2mP4Lw_VWuLjRy7RxtvMVQ1LOPizB219JO_zZBA'}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-label text-label text-on-surface truncate">{user?.name || 'Admin'}</p>
+            <p className="text-[10px] text-secondary font-semibold uppercase">Super Admin</p>
+          </div>
+          <span className={`material-symbols-outlined text-[16px] text-secondary transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`}>
+            expand_less
+          </span>
         </div>
       </div>
     </aside>

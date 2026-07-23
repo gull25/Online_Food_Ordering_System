@@ -68,11 +68,14 @@ export const useAuthForm = () => {
         dispatch(loginSuccess(response.user));
         setIsSuccess(true);
 
-        // All users (customer + admin) land on the restaurant page.
-        // If the user is admin, the Navbar will show "Admin Dashboard"
-        // and they can navigate there whenever they choose.
+        // Admins go straight to their dashboard.
+        // Customers land on the restaurant page.
         setTimeout(() => {
-          navigate('/restaurant/bella-cucina');
+          if (response.user.role === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/restaurant/bella-cucina');
+          }
         }, 1500);
       }
       

@@ -25,7 +25,6 @@ const CheckoutPage         = React.lazy(() => import('../pages/Checkout/Checkout
 const AdminDashboardPage   = React.lazy(() => import('../pages/Admin/AdminDashboardPage'));
 const AdminOrdersPage      = React.lazy(() => import('../pages/Admin/AdminOrdersPage'));
 const AdminRestaurantsPage = React.lazy(() => import('../pages/Admin/AdminRestaurantsPage'));
-const AdminMenuPage        = React.lazy(() => import('../pages/Admin/AdminMenuPage'));
 const AdminAnalyticsPage   = React.lazy(() => import('../pages/Admin/AdminAnalyticsPage'));
 
 // Utility
@@ -61,7 +60,6 @@ const AppRoutes = () => {
             <Route path="/admin"               element={<AdminDashboardPage />} />
             <Route path="/admin/orders"        element={<AdminOrdersPage />} />
             <Route path="/admin/restaurants"   element={<AdminRestaurantsPage />} />
-            <Route path="/admin/menu"          element={<AdminMenuPage />} />
             <Route path="/admin/analytics"     element={<AdminAnalyticsPage />} />
           </Route>
         </Route>

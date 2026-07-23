@@ -8,7 +8,8 @@ import { logout } from '../../../features/auth/authSlice';
  *
  * Guest    : Home, Restaurants, Offers, Track Order | Login button
  * Customer : Restaurants, Offers, Track Order | Cart | Avatar (Profile, Logout)
- * Admin    : Restaurants, Offers, Track Order, Admin Dashboard | Cart | Avatar (Profile, Logout)
+ * Admin    : Restaurants, Offers, Track Order | Cart | Avatar (Profile, Logout)
+ *            (Admin is redirected to /admin on login — no navbar link needed)
  *
  * Link routing rule:
  *   - Authenticated → always go to the real page.
@@ -81,12 +82,6 @@ const Navbar = () => {
               Track Order
             </Link>
 
-            {/* Admin Dashboard — only visible to admins, sits right after Track Order */}
-            {isAdmin && (
-              <Link className={getLinkClass('/admin')} to="/admin">
-                Admin Dashboard
-              </Link>
-            )}
           </div>
         </div>
 
