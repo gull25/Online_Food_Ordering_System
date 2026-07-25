@@ -34,7 +34,8 @@ class AuthService {
 
         if (user && (await user.matchPassword(password))) {
             let restaurantId = null;
-            if (user.role === 'admin') {
+            let restaurantStatus = null;
+            if (user.role === 'restaurant_admin') {
                 const restaurant = await Restaurant.findOne({ owner: user._id });
                 if (restaurant) {
                     restaurantId = restaurant._id.toString();

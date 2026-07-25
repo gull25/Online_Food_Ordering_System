@@ -5,65 +5,9 @@ import { fetchAdminAnalytics } from '../../features/admin/adminSlice';
 import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import StatCard from './components/StatCard';
+import { generateChartPaths } from '../../utils/chartUtils';
 
-const METRICS_DATA_SET = {
-  'Last 7 Days': {
-    revenue: '$248,590',
-    revenueGrowth: '+4%',
-    aov: '$45.10',
-    aovGrowth: '+2%',
-    growth: '14.2%',
-    growthGrowth: '+1.5%',
-    orders: '8,420',
-    ordersGrowth: '-0.3%',
-    linePath: 'M0,90 Q10,75 20,82 T40,65 T60,55 T80,40 T100,50',
-    prevLinePath: 'M0,95 Q10,90 20,92 T40,80 T60,72 T80,55 T100,65',
-    areaPath: 'M0,90 Q10,75 20,82 T40,65 T60,55 T80,40 T100,50 V100 H0 Z',
-    weeks: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
-  },
-  'Last 30 Days': {
-    revenue: '$1,284,590',
-    revenueGrowth: '+12%',
-    aov: '$42.80',
-    aovGrowth: '+5%',
-    growth: '18.5%',
-    growthGrowth: '+2.4%',
-    orders: '32,450',
-    ordersGrowth: '-0.8%',
-    linePath: 'M0,80 Q10,70 20,75 T40,40 T60,50 T80,20 T100,30',
-    prevLinePath: 'M0,90 Q10,85 20,88 T40,60 T60,70 T80,45 T100,55',
-    areaPath: 'M0,80 Q10,70 20,75 T40,40 T60,50 T80,20 T100,30 V100 H0 Z',
-    weeks: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
-  },
-  'Last 90 Days': {
-    revenue: '$3,942,000',
-    revenueGrowth: '+18%',
-    aov: '$40.50',
-    aovGrowth: '+8%',
-    growth: '22.4%',
-    growthGrowth: '+3.1%',
-    orders: '98,200',
-    ordersGrowth: '+1.2%',
-    linePath: 'M0,70 Q10,50 20,60 T40,30 T60,45 T80,15 T100,25',
-    prevLinePath: 'M0,85 Q10,75 20,80 T40,50 T60,65 T80,35 T100,45',
-    areaPath: 'M0,70 Q10,50 20,60 T40,30 T60,45 T80,15 T100,25 V100 H0 Z',
-    weeks: ['Month 1', 'Month 2', 'Month 3'],
-  },
-  'Last Year': {
-    revenue: '$14,842,500',
-    revenueGrowth: '+25%',
-    aov: '$38.90',
-    aovGrowth: '+10%',
-    growth: '28.1%',
-    growthGrowth: '+4.5%',
-    orders: '412,000',
-    ordersGrowth: '+3.4%',
-    linePath: 'M0,60 Q10,40 20,50 T40,20 T60,30 T80,10 T100,15',
-    prevLinePath: 'M0,75 Q10,65 20,70 T40,40 T60,55 T80,25 T100,35',
-    areaPath: 'M0,60 Q10,40 20,50 T40,20 T60,30 T80,10 T100,15 V100 H0 Z',
-    weeks: ['Q1', 'Q2', 'Q3', 'Q4'],
-  },
-};
+// Static data removed in favor of dynamic generation
 
 const HOTSPOTS = [
   { id: 'central', district: 'Central District', efficiency: '94%', activeOrders: 142, top: '20%', left: '30%' },
@@ -118,18 +62,48 @@ const AdminAnalyticsPage = () => {
   };
 
   const currentStats = useMemo(() => {
-    if (!analytics) return METRICS_DATA_SET[activeRange];
+    if (!analytics) {
+      return {
+        revenue: '$0', orders: '0', growth: '0%', aov: '$0.00',
+        linePath: '', prevLinePath: '', xLabels: []
+      };
+    }
     
-    // Create dynamic stats based on real analytics
-    // Using the real total revenue, orders, and restaurants but keeping the SVG shape intact
+    // Dynamic chart paths
+    let data = [];
+    if (analytics.timeSeriesData) {
+        data = analytics.timeSeriesData.map(ts => ({ value: ts.revenue, label: ts.label }));
+    }
+    const chart = generateChartPaths(data, 100, 100, 10);
+    
+    const step = Math.max(1, Math.floor(data.length / 5));
+    const labels = [];
+    for(let i=0; i<data.length; i+=step) {
+      if(labels.length < 6) labels.push(data[i].label);
+    }
+    
     return {
-      ...METRICS_DATA_SET[activeRange],
-      revenue: `$${(analytics.orders.revenue || 0).toLocaleString()}`,
+      revenue: `$${(analytics.orders.revenue || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`,
       orders: (analytics.orders.total || 0).toLocaleString(),
-      growth: `${(analytics.restaurants.total || 0) * 2}%`, // simulated growth based on restaurant count
-      aov: `$${analytics.orders.total > 0 ? (analytics.orders.revenue / analytics.orders.total).toFixed(2) : '0.00'}`
+      growth: `${(analytics.restaurants.total || 0) * 2}%`,
+      aov: `$${analytics.orders.total > 0 ? (analytics.orders.revenue / analytics.orders.total).toFixed(2) : '0.00'}`,
+      linePath: chart.linePath,
+      prevLinePath: chart.linePath ? chart.linePath.replace(/cy="(\d+)"/g, 'cy="$1"') : '', // mock previous
+      xLabels: labels
     };
   }, [activeRange, analytics]);
+
+  const cuisineList = useMemo(() => {
+    if (!analytics?.cuisineDistribution) return [];
+    // Sort descending by count
+    return [...analytics.cuisineDistribution].sort((a, b) => b.count - a.count);
+  }, [analytics]);
+
+  const topRestaurantsList = useMemo(() => {
+    return analytics?.topRestaurants || [];
+  }, [analytics]);
+
+  const totalCuisines = cuisineList.reduce((sum, c) => sum + c.count, 0) || 1;
 
   return (
     <div className="bg-background text-on-background min-h-screen">
@@ -241,7 +215,7 @@ const AdminAnalyticsPage = () => {
                 <div>
                   <h4 className="font-h3 text-h3 text-on-surface mb-1 font-bold">Revenue over Time</h4>
                   <p className="font-small text-small text-secondary">
-                    Weekly performance monitoring for last {currentStats.weeks.length} intervals
+                    Weekly performance monitoring for last {currentStats.xLabels.length} intervals
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -281,6 +255,7 @@ const AdminAnalyticsPage = () => {
                       stroke="#bdc7d9"
                       strokeDasharray="4 2"
                       strokeWidth="1.5"
+                      style={{ opacity: 0.3 }}
                     ></path>
                   </svg>
                   <div className="h-full border-l border-outline-variant flex flex-col justify-between text-[10px] text-secondary absolute left-0 top-0 pl-2">
@@ -289,9 +264,9 @@ const AdminAnalyticsPage = () => {
                     <span>$50k</span>
                     <span>0</span>
                   </div>
-                  {currentStats.weeks.map((wk) => (
-                    <div key={wk} className="flex-1 text-center font-label text-label text-secondary">
-                      {wk}
+                  {currentStats.xLabels.map((lbl, i) => (
+                    <div key={i} className="flex-1 text-center font-label text-label text-secondary">
+                      {lbl}
                     </div>
                   ))}
                 </div>
@@ -310,32 +285,28 @@ const AdminAnalyticsPage = () => {
                     <circle cx="18" cy="18" fill="transparent" r="15.915" stroke="#555f6f" stroke-dasharray="5 95" stroke-dashoffset="-95" stroke-width="4"></circle>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="font-h3 text-h3 text-on-surface font-bold">100%</span>
+                    <span className="font-h3 text-h3 text-on-surface font-bold">{totalCuisines === 1 && cuisineList.length === 0 ? 0 : totalCuisines}</span>
                     <span className="font-label text-label text-secondary uppercase">Total</span>
                   </div>
                 </div>
                 <div className="w-full space-y-3">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-tertiary-container"></span>
-                      <span className="font-body text-body">Italian</span>
-                    </div>
-                    <span className="font-button text-button">70%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-primary-container"></span>
-                      <span className="font-body text-body">Vegan</span>
-                    </div>
-                    <span className="font-button text-button">25%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                      <span className="font-body text-body">Asian</span>
-                    </div>
-                    <span className="font-button text-button">5%</span>
-                  </div>
+                  {cuisineList.slice(0, 4).map((cuisine, i) => {
+                    const percentage = Math.round((cuisine.count / totalCuisines) * 100);
+                    const colors = ['bg-tertiary-container', 'bg-primary-container', 'bg-secondary', 'bg-surface-variant'];
+                    const color = colors[i % colors.length];
+                    return (
+                      <div key={cuisine.name} className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${color}`}></span>
+                          <span className="font-body text-body line-clamp-1">{cuisine.name}</span>
+                        </div>
+                        <span className="font-button text-button">{percentage}%</span>
+                      </div>
+                    );
+                  })}
+                  {cuisineList.length === 0 && (
+                    <p className="text-center text-secondary text-sm">No data available.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -366,82 +337,42 @@ const AdminAnalyticsPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant">
-                    <tr>
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary">
-                            <span className="material-symbols-outlined text-[20px]">local_pizza</span>
-                          </div>
-                          <span className="font-body text-body font-semibold">Pasta Palace</span>
-                        </div>
-                      </td>
-                      <td className="py-4 text-right font-body text-body font-bold">$124,000</td>
-                      <td className="py-4 w-48 pl-8">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-2 bg-surface-variant rounded-full overflow-hidden">
-                            <div className="h-full bg-tertiary-container w-[92%]"></div>
-                          </div>
-                          <span className="font-label text-label">92%</span>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary">
-                            <span className="material-symbols-outlined text-[20px]">eco</span>
-                          </div>
-                          <span className="font-body text-body font-semibold">The Green Bowl</span>
-                        </div>
-                      </td>
-                      <td className="py-4 text-right font-body text-body font-bold">$98,500</td>
-                      <td className="py-4 w-48 pl-8">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-2 bg-surface-variant rounded-full overflow-hidden">
-                            <div className="h-full bg-primary-container w-[78%]"></div>
-                          </div>
-                          <span className="font-label text-label">78%</span>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary">
-                            <span className="material-symbols-outlined text-[20px]">ramen_dining</span>
-                          </div>
-                          <span className="font-body text-body font-semibold">Sushi Zen</span>
-                        </div>
-                      </td>
-                      <td className="py-4 text-right font-body text-body font-bold">$82,400</td>
-                      <td className="py-4 w-48 pl-8">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-2 bg-surface-variant rounded-full overflow-hidden">
-                            <div className="h-full bg-primary-container w-[65%]"></div>
-                          </div>
-                          <span className="font-label text-label">65%</span>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary">
-                            <span className="material-symbols-outlined text-[20px]">bakery_dining</span>
-                          </div>
-                          <span className="font-body text-body font-semibold">Morning Brews</span>
-                        </div>
-                      </td>
-                      <td className="py-4 text-right font-body text-body font-bold">$45,200</td>
-                      <td className="py-4 w-48 pl-8">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-2 bg-surface-variant rounded-full overflow-hidden">
-                            <div className="h-full bg-secondary w-[45%]"></div>
-                          </div>
-                          <span className="font-label text-label">45%</span>
-                        </div>
-                      </td>
-                    </tr>
+                    {topRestaurantsList.length > 0 ? topRestaurantsList.map((rest, index) => {
+                      const progress = Math.min(100, Math.round((rest.revenue / (topRestaurantsList[0].revenue || 1)) * 100));
+                      // Pick a color based on index
+                      const color = index === 0 ? 'bg-tertiary-container' : index === 1 ? 'bg-primary-container' : 'bg-secondary';
+                      return (
+                        <tr key={rest._id}>
+                          <td className="py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary overflow-hidden">
+                                {rest.image ? (
+                                  <img src={rest.image} alt={rest.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="material-symbols-outlined text-[20px]">restaurant</span>
+                                )}
+                              </div>
+                              <span className="font-body text-body font-semibold">{rest.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 text-right font-body text-body font-bold">${rest.revenue.toLocaleString()}</td>
+                          <td className="py-4 w-48 pl-8">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 h-2 bg-surface-variant rounded-full overflow-hidden">
+                                <div className={`h-full ${color}`} style={{ width: `${progress}%` }}></div>
+                              </div>
+                              <span className="font-label text-label">{progress}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }) : (
+                      <tr>
+                        <td colSpan="3" className="py-8 text-center text-secondary">
+                          No restaurant revenue data available.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

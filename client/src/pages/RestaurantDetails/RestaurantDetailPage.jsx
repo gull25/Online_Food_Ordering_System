@@ -14,6 +14,7 @@ import { addToCart, removeFromCart } from '../../features/cart/cartSlice';
 
 import { fetchRestaurantDetails } from '../../features/restaurants/restaurantSlice';
 import { fetchRestaurantMenu } from '../../features/menu/menuSlice';
+import api from '../../api/axios';
 
 const RestaurantDetailPage = () => {
   const navigate = useNavigate();
@@ -30,22 +31,25 @@ const RestaurantDetailPage = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [shareText, setShareText] = useState('Share');
 
+  const [categories, setCategories] = useState([]);
+  
   React.useEffect(() => {
     if (id) {
       dispatch(fetchRestaurantDetails(id));
       dispatch(fetchRestaurantMenu(id));
+      // Fetch all categories for this restaurant
+      api.get(`/categories/restaurant/${id}`).then(res => {
+        const sortedCats = (res.data.data || []).filter(c => c.isActive).sort((a, b) => a.order - b.order).map(cat => ({
+          id: cat._id,
+          name: cat.name,
+          order: cat.order || 0
+        }));
+        setCategories(sortedCats);
+      }).catch(err => console.error("Failed to fetch categories", err));
     }
   }, [dispatch, id]);
 
-  const dynamicCategories = useMemo(() => {
-    if (!menuItems || !Array.isArray(menuItems) || menuItems.length === 0) return [];
-    const cats = new Set(menuItems.map(item => item.category));
-    return Array.from(cats).map(cat => ({
-      id: cat?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
-      name: cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : 'Unknown',
-      count: 0
-    }));
-  }, [menuItems]);
+  const dynamicCategories = categories;
 
   const [activeCategory, setActiveCategory] = useState('');
   
@@ -71,7 +75,7 @@ const RestaurantDetailPage = () => {
     const groups = {};
     if (!Array.isArray(filteredItems)) return groups;
     filteredItems.forEach((item) => {
-      const catId = item.category?.toLowerCase().replace(/\s+/g, '-') || 'unknown';
+      const catId = item.category?._id || 'unknown';
       if (!groups[catId]) {
         groups[catId] = [];
       }
@@ -85,13 +89,17 @@ const RestaurantDetailPage = () => {
     if (!menuItems) return {};
     const counts = {};
     dynamicCategories.forEach((cat) => {
-      counts[cat.id] = menuItems.filter((item) => item.category.toLowerCase().replace(/\s+/g, '-') === cat.id).length;
+      counts[cat.id] = menuItems.filter((item) => item.category?._id === cat.id).length;
     });
     return counts;
   }, [dynamicCategories, menuItems]);
 
   const totalCartPrice = Object.values(cart).reduce(
-    (sum, entry) => sum + entry.item.price * entry.quantity,
+    (sum, entry) => {
+      const item = entry.item;
+      const itemPrice = item.price + (item.selectedSize?.additionalPrice || 0) + (item.selectedAddOns?.reduce((s, a) => s + a.price, 0) || 0);
+      return sum + itemPrice * entry.quantity;
+    },
     0
   );
 

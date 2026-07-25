@@ -71,7 +71,7 @@ export const useAuthForm = () => {
         // Admins go straight to their dashboard.
         // Customers land on the home page.
         setTimeout(() => {
-          if (response.user.role === 'admin' || response.user.role === 'super_admin') {
+          if (response.user.role === 'restaurant_admin') {
             navigate('/admin');
           } else {
             navigate('/');

@@ -1,7 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import FoodCard from '../../../components/ui/FoodCard/FoodCard';
+import MenuItemModal from '../../../components/ui/MenuItemModal/MenuItemModal';
 
 const MenuSection = ({ MENU_CATEGORIES, itemsByCategory, searchQuery, cart, addToCart, removeFromCart, filteredItems }) => {
+  const [selectedItemForModal, setSelectedItemForModal] = useState(null);
+
+  const handleAddClick = (item) => {
+    if ((item.sizes && item.sizes.length > 0) || (item.addOns && item.addOns.length > 0)) {
+      setSelectedItemForModal(item);
+    } else {
+      addToCart(item);
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col gap-stack_lg">
@@ -30,15 +41,25 @@ const MenuSection = ({ MENU_CATEGORIES, itemsByCategory, searchQuery, cart, addT
                 {category.name} {category.badge || ''}
               </h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-stack_md">
-                {categoryItems.map((item) => (
-                  <FoodCard
-                    key={item.id}
-                    item={item}
-                    cartQty={cart[item.id]?.quantity || 0}
-                    onAdd={addToCart}
-                    onRemove={removeFromCart}
-                  />
-                ))}
+                {categoryItems.map((item) => {
+                  // For a base item in the cart, count total quantity across all variations
+                  // This allows the + / - on the food card to still function if there are no variations,
+                  // or just show "total in cart" if there are variations.
+                  // Actually, for variation items, the FoodCard should probably just show an Add button.
+                  // But for now, we'll pass cartQty = 0 so it always shows "+ Add" if it has variations.
+                  const hasVariations = (item.sizes && item.sizes.length > 0) || (item.addOns && item.addOns.length > 0);
+                  const cartQty = hasVariations ? 0 : (cart[item._id || item.id]?.quantity || 0);
+                  
+                  return (
+                    <FoodCard
+                      key={item._id || item.id}
+                      item={item}
+                      cartQty={cartQty}
+                      onAdd={() => handleAddClick(item)}
+                      onRemove={() => removeFromCart(item._id || item.id)}
+                    />
+                  );
+                })}
               </div>
             </section>
           );
@@ -58,6 +79,14 @@ const MenuSection = ({ MENU_CATEGORIES, itemsByCategory, searchQuery, cart, addT
           </p>
         </div>
       )}
+
+      {/* Variation Modal */}
+      <MenuItemModal
+        item={selectedItemForModal}
+        isOpen={!!selectedItemForModal}
+        onClose={() => setSelectedItemForModal(null)}
+        onAddToCart={addToCart}
+      />
     </>
   );
 };

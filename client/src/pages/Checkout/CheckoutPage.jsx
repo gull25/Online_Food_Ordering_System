@@ -28,7 +28,8 @@ const CheckoutPage = () => {
   const cartItems = useMemo(() => {
     return Object.values(cartItemsObj).map(cartItem => ({
       ...cartItem.item,
-      quantity: cartItem.quantity
+      quantity: cartItem.quantity,
+      cartItemId: cartItem.cartItemId
     }));
   }, [cartItemsObj]);
 
@@ -44,6 +45,25 @@ const CheckoutPage = () => {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
   const [pendingOrderId, setPendingOrderId] = useState(null);
+  const [restaurantData, setRestaurantData] = useState(null);
+
+  React.useEffect(() => {
+    const fetchRestaurant = async () => {
+      if (cartItems.length > 0) {
+        const restId = cartItems[0].restaurant?._id || cartItems[0].restaurant;
+        if (restId) {
+          try {
+            const { default: api } = await import('../../api/axios');
+            const res = await api.get(`/restaurants/${restId}`);
+            setRestaurantData(res.data.data);
+          } catch (err) {
+            console.error('Failed to fetch restaurant for checkout', err);
+          }
+        }
+      }
+    };
+    fetchRestaurant();
+  }, [cartItems]);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -60,27 +80,22 @@ const CheckoutPage = () => {
     if (formError) setFormError('');
   };
 
-  const updateQuantity = (id, delta) => {
-    const cartItem = cartItems.find(i => (i.id || i._id) === id);
+  const updateQuantity = (cartItemId, delta) => {
+    const cartItem = cartItems.find(i => i.cartItemId === cartItemId);
     if (!cartItem) return;
     
     if (delta > 0) {
       dispatch(addToCart(cartItem));
     } else {
-      dispatch(removeFromCart(id));
+      dispatch(removeFromCart(cartItemId));
     }
   };
 
-  const deleteItem = (id) => {
-    // Hack: Call removeFromCart multiple times or create a new action. 
-    // Since we need to remove the whole item, let's just clear it from Redux.
-    // Wait, removeFromCart handles full deletion if quantity reaches 1, 
-    // but a proper deleteFromCart would be better. For now, we can loop or add a delete action later.
-    // Let's just dispatch removeFromCart until quantity is 0
-    const cartItem = cartItems.find(i => (i.id || i._id) === id);
+  const deleteItem = (cartItemId) => {
+    const cartItem = cartItems.find(i => i.cartItemId === cartItemId);
     if (cartItem) {
         for(let i=0; i<cartItem.quantity; i++) {
-           dispatch(removeFromCart(id));
+           dispatch(removeFromCart(cartItemId));
         }
     }
   };
@@ -90,14 +105,6 @@ const CheckoutPage = () => {
     if (!code) return;
 
     try {
-      // For legacy test codes, handle them locally if we want, or rely entirely on DB.
-      // We rely entirely on the new DB API.
-      // Note: we need to import api from '../../api/axios';
-      // Wait, is 'api' imported in this file? I should check.
-      // Assuming it's not imported since this is a new API call, I should add the import if needed.
-      // Let's first try just fetch or axios directly if api is not imported. 
-      // Actually, I can just use `fetch` or `axios` or Redux. I'll import `api` at the top of the file.
-      // Let's replace the whole function.
       setPromoMessage('Validating...');
       const { default: api } = await import('../../api/axios');
       const response = await api.get(`/public/offers/validate/${code}`);
@@ -128,7 +135,7 @@ const CheckoutPage = () => {
     }
     
     // We assume all cart items are from the same restaurant in this UI flow.
-    const restaurantId = cartItems[0]?.restaurant || cartItems[0]?.restaurantId; // Depends on your MenuItem schema
+    const restaurantId = cartItems[0]?.restaurant?._id || cartItems[0]?.restaurant; 
 
     const orderPayload = {
         restaurant: restaurantId,
@@ -136,7 +143,9 @@ const CheckoutPage = () => {
             menuItem: i._id || i.id,
             name: i.name,
             quantity: i.quantity,
-            price: i.price
+            price: i.price,
+            selectedSize: i.selectedSize,
+            selectedAddOns: i.selectedAddOns
         })),
         totalAmount: total, // Still sent but ignored by backend for security
         deliveryAddress: formData,
@@ -164,9 +173,6 @@ const CheckoutPage = () => {
 
   const handlePaymentSuccess = () => {
     setPaymentModalOpen(false);
-    
-    // In Stripe's redirect='if_required' flow, the webhook will still hit the backend asynchronously.
-    // We just navigate to track order locally.
     dispatch(clearCart());
     navigate(`/track-order?orderId=${pendingOrderId}`);
   };
@@ -178,7 +184,10 @@ const CheckoutPage = () => {
 
   // Computations
   const subtotal = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return cartItems.reduce((sum, item) => {
+      const itemPrice = item.price + (item.selectedSize?.additionalPrice || 0) + (item.selectedAddOns?.reduce((s, a) => s + a.price, 0) || 0);
+      return sum + itemPrice * item.quantity;
+    }, 0);
   }, [cartItems]);
 
   const discountAmount = useMemo(() => {
@@ -191,12 +200,14 @@ const CheckoutPage = () => {
   }, [subtotal, discountAmount]);
 
   const serviceFee = subtotal > 0 ? 2.50 : 0;
-  const deliveryFee = 0;
+  
+  // Dynamic Delivery Fee
+  const deliveryFee = restaurantData?.deliveryFee || 0;
 
   const total = useMemo(() => {
     const calculatedTotal = subtotal - discountAmount + tax + serviceFee + deliveryFee;
     return Math.max(0, calculatedTotal);
-  }, [subtotal, discountAmount, tax, serviceFee]);
+  }, [subtotal, discountAmount, tax, serviceFee, deliveryFee]);
 
   return (
     <div className="bg-background text-on-background min-h-screen relative flex flex-col">
@@ -240,7 +251,7 @@ const CheckoutPage = () => {
                 <div className="space-y-6">
                   {cartItems.map((item) => (
                     <CartItem
-                      key={item.id}
+                      key={item.cartItemId}
                       item={item}
                       onUpdateQuantity={updateQuantity}
                       onDelete={deleteItem}
@@ -270,6 +281,7 @@ const CheckoutPage = () => {
                 discountAmount={discountAmount}
                 discountPercent={discountPercent}
                 serviceFee={serviceFee}
+                deliveryFee={deliveryFee}
                 tax={tax}
                 total={total}
                 promoInput={promoInput}

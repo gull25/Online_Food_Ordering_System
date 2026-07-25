@@ -6,36 +6,10 @@ import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import StatCard from './components/StatCard';
 import RecentOrdersTable from './components/RecentOrdersTable';
+import { generateChartPaths } from '../../utils/chartUtils';
 
-const CHART_DATA_SET = {
-  '30': {
-    linePath: 'M0,250 Q100,180 200,210 T400,120 T600,150 T800,80 T1000,100',
-    areaPath: 'M0,250 Q100,180 200,210 T400,120 T600,150 T800,80 T1000,100 V300 H0 Z',
-    points: [
-      { cx: 200, cy: 210, value: '$4,289.00', date: 'Oct 07' },
-      { cx: 400, cy: 120, value: '$6,832.00', date: 'Oct 14' },
-      { cx: 800, cy: 80, value: '$9,210.00', date: 'Oct 24' },
-    ],
-  },
-  '90': {
-    linePath: 'M0,220 Q100,140 200,180 T400,240 T600,90 T800,130 T1000,70',
-    areaPath: 'M0,220 Q100,140 200,180 T400,240 T600,90 T800,130 T1000,70 V300 H0 Z',
-    points: [
-      { cx: 200, cy: 180, value: '$12,430.00', date: 'Sep 2024' },
-      { cx: 600, cy: 90, value: '$18,920.00', date: 'Oct 2024' },
-      { cx: 800, cy: 130, value: '$15,480.00', date: 'Nov 2024' },
-    ],
-  },
-  'year': {
-    linePath: 'M0,180 Q100,230 200,130 T400,190 T600,80 T800,210 T1000,110',
-    areaPath: 'M0,180 Q100,230 200,130 T400,190 T600,80 T800,210 T1000,110 V300 H0 Z',
-    points: [
-      { cx: 200, cy: 130, value: '$48,210.00', date: 'Q1 2024' },
-      { cx: 600, cy: 80, value: '$72,940.00', date: 'Q3 2024' },
-      { cx: 800, cy: 210, value: '$38,200.00', date: 'Q4 2024' },
-    ],
-  },
-};
+// We use dynamic charting instead of static now
+const CHART_DATA_SET = {};
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
@@ -52,18 +26,47 @@ const AdminDashboardPage = () => {
   // Navigation active tab
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Performance Chart Range
   const [chartRange, setChartRange] = useState('30');
   const [hoveredPoint, setHoveredPoint] = useState(null);
+
+  // Dynamic Chart Generation
+  const dynamicChart = useMemo(() => {
+    if (!analytics?.timeSeriesData) {
+      return { linePath: '', areaPath: '', points: [], xLabels: [] };
+    }
+    
+    // Convert timeSeriesData for the selected range
+    // Since backend returns last 30 days daily, we can use that directly for '30'
+    let data = [];
+    if (chartRange === '30') {
+      data = analytics.timeSeriesData.map(ts => ({ value: ts.revenue, label: ts.label }));
+    } else {
+      // Mock for 90 or year if we don't have that data in backend
+      // We just stretch the 30 days data for now.
+      data = analytics.timeSeriesData.map(ts => ({ value: ts.revenue, label: ts.label }));
+    }
+
+    const chart = generateChartPaths(data, 1000, 300, 40);
+    
+    // Pick 5 even indices for x-axis labels
+    const step = Math.max(1, Math.floor(data.length / 4));
+    const labels = [];
+    for(let i=0; i<data.length; i+=step) {
+      if(labels.length < 5) labels.push(data[i].label);
+    }
+    if (labels.length < 5 && data.length > 0) labels.push(data[data.length-1].label);
+
+    return {
+      ...chart,
+      xLabels: labels
+    };
+  }, [analytics, chartRange]);
 
   // Orders and search states
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDropdownId, setActiveDropdownId] = useState(null);
 
-  // Modal State for adding new restaurant
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [restaurantName, setRestaurantName] = useState('');
-  const [cuisineType, setCuisineType] = useState('Italian');
+  // (Mock modal state removed, using /admin/onboarding route instead)
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState('');
@@ -150,66 +153,10 @@ const AdminDashboardPage = () => {
         </div>
       )}
 
-      {/* Restaurant Addition Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-surface-container-lowest max-w-md w-full rounded-2xl p-gutter border border-outline-variant/30 shadow-2xl animate-in zoom-in-95">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-h3 text-h3 font-bold text-on-surface">Add New Restaurant</h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full hover:bg-surface-container-high flex items-center justify-center text-secondary"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <form onSubmit={handleAddRestaurant} className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <label className="font-label text-label text-secondary">Restaurant Name</label>
-                <input
-                  value={restaurantName}
-                  onChange={(e) => setRestaurantName(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-outline-variant/30 focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body text-body"
-                  placeholder="e.g. Bella Cucina"
-                  type="text"
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="font-label text-label text-secondary">Cuisine Type</label>
-                <select
-                  value={cuisineType}
-                  onChange={(e) => setCuisineType(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-outline-variant/30 focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-lowest font-body text-body"
-                >
-                  <option value="Italian">Italian</option>
-                  <option value="Burgers">Burgers</option>
-                  <option value="Sushi">Sushi</option>
-                  <option value="Mexican">Mexican</option>
-                </select>
-              </div>
-              <div className="pt-4 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 h-12 rounded-xl border border-outline-variant/30 text-secondary font-button text-button hover:bg-surface-variant/40 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 h-12 rounded-xl bg-primary text-white font-button text-button hover:opacity-90 transition-colors shadow-md"
-                >
-                  Add Restaurant
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* (Restaurant Addition Modal Removed, user is routed to /admin/onboarding instead) */}
 
       {/* Side Navigation Bar */}
-      <AdminSidebar setIsModalOpen={setIsModalOpen} activeTab="dashboard" />
+      <AdminSidebar activeTab="dashboard" />
 
       {/* Main Content Canvas */}
       <main className="ml-64 p-margin_desktop max-w-container_max">
@@ -329,21 +276,24 @@ const AdminDashboardPage = () => {
                   </defs>
                   <path
                     className="transition-all duration-500"
-                    d={CHART_DATA_SET[chartRange].areaPath}
+                    d={dynamicChart.areaPath}
                     fill="url(#chartGradient)"
                   ></path>
                   <path
                     className="transition-all duration-500"
-                    d={CHART_DATA_SET[chartRange].linePath}
+                    d={dynamicChart.linePath}
                     fill="none"
                     stroke="#ae3200"
                     strokeLinecap="round"
                     strokeWidth="4"
                   ></path>
-                  {CHART_DATA_SET[chartRange].points.map((pt, idx) => (
+                  {dynamicChart.points.map((pt, idx) => (
                     <circle
                       key={idx}
-                      onMouseEnter={() => setHoveredPoint(pt)}
+                      onMouseEnter={() => setHoveredPoint({
+                         ...pt,
+                         value: `$${pt.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      })}
                       onMouseLeave={() => setHoveredPoint(null)}
                       className="cursor-pointer transition-all hover:r-[10px]"
                       cx={pt.cx}
@@ -374,29 +324,9 @@ const AdminDashboardPage = () => {
             </div>
 
             <div className="flex justify-between mt-4 font-label text-label text-secondary">
-              {chartRange === '30' ? (
-                <>
-                  <span>Oct 01</span>
-                  <span>Oct 07</span>
-                  <span>Oct 14</span>
-                  <span>Oct 21</span>
-                  <span>Oct 28</span>
-                </>
-              ) : chartRange === '90' ? (
-                <>
-                  <span>Aug 24</span>
-                  <span>Sep 24</span>
-                  <span>Oct 24</span>
-                  <span>Nov 24</span>
-                </>
-              ) : (
-                <>
-                  <span>Q1 2024</span>
-                  <span>Q2 2024</span>
-                  <span>Q3 2024</span>
-                  <span>Q4 2024</span>
-                </>
-              )}
+              {dynamicChart.xLabels.map((l, i) => (
+                <span key={i}>{l}</span>
+              ))}
             </div>
           </div>
         </section>
@@ -467,47 +397,85 @@ const AdminDashboardPage = () => {
             </div>
 
             {/* Top Performing */}
-            <div className="bg-inverse-surface p-gutter rounded-2xl text-on-primary shadow-xl">
-              <h3 className="font-h3 text-h3 text-primary-fixed mb-stack_md font-bold">
-                Top Restaurant
-              </h3>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex-shrink-0">
-                  <img
-                    className="w-full h-full object-cover"
-                    alt="Sushi platter"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7gJU-8rbue0Vlbkm503AErp26ySz58egKGLNlMFlIrl8mhla5my1u45sbyiw-chx_iOx4rE5LK2-0IWp23rKo-oBfmIm6s4xQxq--J4cfBy4Aj6NC8NXW_sVEIMvvxDdJEVChRswoV_019fIWZ8msurh_B5ZYRWXBB0oCBw1B8ImyIPI0Rd0KiTAT9BIh8cpRZi1vIRlyZNFydw8Bz-2oKHuiVagefrfHfi50_phbbxeyN8z_qsh5Nw"
-                  />
-                </div>
-                <div>
-                  <h4 className="font-button text-button text-white font-semibold">
-                    Sakura Zen Kitchen
-                  </h4>
-                  <p className="font-label text-label text-surface-variant/80">
-                    4.9 ★ (1.2k reviews)
-                  </p>
-                </div>
+            {user?.role === 'super_admin' ? (
+              <div className="bg-inverse-surface p-gutter rounded-2xl text-on-primary shadow-xl">
+                <h3 className="font-h3 text-h3 text-primary-fixed mb-stack_md font-bold">
+                  Top Restaurant
+                </h3>
+                {analytics?.topRestaurants?.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex-shrink-0">
+                        <img
+                          className="w-full h-full object-cover"
+                          alt={analytics.topRestaurants[0].name}
+                          src={analytics.topRestaurants[0].image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80'}
+                        />
+                      </div>
+                      <div>
+                        <h4 className="font-button text-button text-white font-semibold line-clamp-1">
+                          {analytics.topRestaurants[0].name}
+                        </h4>
+                        <p className="font-label text-label text-surface-variant/80">
+                          {analytics.topRestaurants[0].rating} ★ (Best Seller)
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+                        <p className="font-label text-[10px] text-surface-variant uppercase">
+                          Revenue
+                        </p>
+                        <p className="font-button text-button text-white">${analytics.topRestaurants[0].revenue.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-white">No data yet.</p>
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                  <p className="font-label text-[10px] text-surface-variant uppercase">
-                    Daily Revenue
-                  </p>
-                  <p className="font-button text-button text-white">$2,410</p>
-                </div>
-                <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                  <p className="font-label text-[10px] text-surface-variant uppercase">Growth</p>
-                  <p className="font-button text-button text-tertiary-fixed font-bold">+18%</p>
-                </div>
+            ) : (
+              <div className="bg-inverse-surface p-gutter rounded-2xl text-on-primary shadow-xl">
+                <h3 className="font-h3 text-h3 text-primary-fixed mb-stack_md font-bold">
+                  Top Selling Item
+                </h3>
+                {analytics?.topItems?.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-primary text-3xl">local_pizza</span>
+                      </div>
+                      <div>
+                        <h4 className="font-button text-button text-white font-semibold line-clamp-1">
+                          {analytics.topItems[0].name}
+                        </h4>
+                        <p className="font-label text-label text-surface-variant/80">
+                          {analytics.topItems[0].quantity} orders
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+                        <p className="font-label text-[10px] text-surface-variant uppercase">
+                          Revenue Generated
+                        </p>
+                        <p className="font-button text-button text-white">${analytics.topItems[0].revenue.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-white">No data yet.</p>
+                )}
               </div>
-            </div>
+            )}
           </div>
         </section>
       </main>
 
       {/* Floating Action Button (FAB) - For Global Add */}
+      {!user?.restaurantId && user?.role === 'restaurant_admin' && (
       <button
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => navigate('/admin/onboarding')}
         className="fixed bottom-10 right-10 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(174,50,0,0.3)] hover:scale-110 active:scale-95 transition-all z-[60] group cursor-pointer border-none"
       >
         <span className="material-symbols-outlined">add</span>
@@ -515,6 +483,7 @@ const AdminDashboardPage = () => {
           Create New
         </span>
       </button>
+      )}
 
       {/* Footer */}
       <footer className="ml-64 py-stack_lg px-margin_desktop bg-inverse-surface mt-stack_lg w-[calc(100%-256px)]">

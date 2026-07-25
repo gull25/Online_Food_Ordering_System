@@ -1,14 +1,15 @@
 const restaurantRepository = require('../repositories/restaurant.repository');
 const menuItemRepository = require('../repositories/menuItem.repository');
 const ApiError = require('../utils/ApiError');
+const { geocodeAddress } = require('../utils/geocoder');
 
 class RestaurantService {
-    async getFeaturedRestaurants() {
-        return await restaurantRepository.findAll({ isFeatured: true });
+    async getFeaturedRestaurants(query = {}, options = { includeUnapproved: false }) {
+        return await restaurantRepository.findAll({ isFeatured: true, ...query }, options);
     }
 
-    async getRestaurants(query = {}) {
-        return await restaurantRepository.findAll(query);
+    async getRestaurants(query = {}, options = { includeUnapproved: false }) {
+        return await restaurantRepository.findAll(query, options);
     }
 
     async getRestaurantDetails(id) {
@@ -19,8 +20,8 @@ class RestaurantService {
         return restaurant;
     }
 
-    async getRestaurantMenu(id) {
-        const restaurant = await restaurantRepository.findById(id);
+    async getRestaurantMenu(id, options = { includeUnapproved: false }) {
+        const restaurant = await restaurantRepository.findById(id, options);
         if (!restaurant) {
             throw new ApiError(404, `Restaurant not found with id of ${id}`);
         }
@@ -28,14 +29,41 @@ class RestaurantService {
     }
 
     async createRestaurant(data) {
+        if (data.address && data.city && data.state && data.zipCode) {
+            const fullAddress = `${data.address}, ${data.city}, ${data.state} ${data.zipCode}`;
+            const coords = await geocodeAddress(fullAddress);
+            if (coords) {
+                data.location = {
+                    type: 'Point',
+                    coordinates: [coords.lng, coords.lat] // GeoJSON expects [longitude, latitude]
+                };
+            }
+        }
         return await restaurantRepository.create(data);
     }
 
-    async updateRestaurant(id, data) {
-        let restaurant = await restaurantRepository.findById(id);
+    async updateRestaurant(id, data, options = { includeUnapproved: false }) {
+        let restaurant = await restaurantRepository.findById(id, options);
         if (!restaurant) {
             throw new ApiError(404, `Restaurant not found with id of ${id}`);
         }
+
+        if (data.address || data.city || data.state || data.zipCode) {
+            const addr = data.address || restaurant.address;
+            const city = data.city || restaurant.city;
+            const state = data.state || restaurant.state;
+            const zip = data.zipCode || restaurant.zipCode;
+            
+            const fullAddress = `${addr}, ${city}, ${state} ${zip}`;
+            const coords = await geocodeAddress(fullAddress);
+            if (coords) {
+                data.location = {
+                    type: 'Point',
+                    coordinates: [coords.lng, coords.lat]
+                };
+            }
+        }
+
         return await restaurantRepository.update(id, data);
     }
 

@@ -4,7 +4,6 @@ import { Routes, Route } from 'react-router-dom';
 // ── Route Guards ──────────────────────────────────────────────────────────────
 import ProtectedRoute from './ProtectedRoute';
 import AdminRoute from './AdminRoute';
-import SuperAdminRoute from './SuperAdminRoute';
 import GuestRoute from './GuestRoute';
 
 // ── Layouts ───────────────────────────────────────────────────────────────────
@@ -26,9 +25,12 @@ const ProfilePage          = React.lazy(() => import('../pages/Profile/ProfilePa
 // Admin-facing
 const AdminDashboardPage   = React.lazy(() => import('../pages/Admin/AdminDashboardPage'));
 const AdminOrdersPage      = React.lazy(() => import('../pages/Admin/AdminOrdersPage'));
-const AdminRestaurantsPage = React.lazy(() => import('../pages/Admin/AdminRestaurantsPage'));
 const AdminMyRestaurantPage = React.lazy(() => import('../pages/Admin/AdminMyRestaurantPage'));
+const AdminCategoriesPage  = React.lazy(() => import('../pages/Admin/AdminCategoriesPage'));
+const AdminProductsPage    = React.lazy(() => import('../pages/Admin/AdminProductsPage'));
 const AdminAnalyticsPage   = React.lazy(() => import('../pages/Admin/AdminAnalyticsPage'));
+const RestaurantOnboardingPage = React.lazy(() => import('../pages/Admin/RestaurantOnboardingPage'));
+const StripeReturnPage     = React.lazy(() => import('../pages/Admin/StripeReturnPage'));
 
 // Utility
 const NotFoundPage         = React.lazy(() => import('../pages/NotFound/NotFoundPage'));
@@ -62,12 +64,14 @@ const AppRoutes = () => {
         <Route element={<AdminRoute />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin"               element={<AdminDashboardPage />} />
+            <Route path="/admin/onboarding"    element={<RestaurantOnboardingPage />} />
             <Route path="/admin/orders"        element={<AdminOrdersPage />} />
             <Route path="/admin/analytics"     element={<AdminAnalyticsPage />} />
             <Route path="/admin/my-restaurant" element={<AdminMyRestaurantPage />} />
-            <Route element={<SuperAdminRoute />}>
-              <Route path="/admin/restaurants"   element={<AdminRestaurantsPage />} />
-            </Route>
+            <Route path="/admin/categories"    element={<AdminCategoriesPage />} />
+            <Route path="/admin/products"      element={<AdminProductsPage />} />
+            <Route path="/admin/stripe/return" element={<StripeReturnPage />} />
+            <Route path="/admin/stripe/refresh" element={<StripeReturnPage />} />
           </Route>
         </Route>
 

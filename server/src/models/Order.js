@@ -18,7 +18,17 @@ const orderItemSchema = new mongoose.Schema({
     price: {
         type: Number,
         required: true
-    }
+    },
+    selectedSize: {
+        name: String,
+        additionalPrice: Number
+    },
+    selectedAddOns: [
+        {
+            name: String,
+            price: Number
+        }
+    ]
 });
 
 const orderSchema = new mongoose.Schema({
@@ -63,8 +73,12 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled'],
+        enum: ['Pending', 'Preparing', 'Ready', 'Out For Delivery', 'Delivered', 'Completed', 'Cancelled'],
         default: 'Pending'
+    },
+    rider: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Rider'
     },
     isReviewed: {
         type: Boolean,

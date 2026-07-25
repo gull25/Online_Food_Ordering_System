@@ -22,7 +22,13 @@ const TIMELINE_STEPS = [
     title: 'Preparing Food',
     description: 'The kitchen is preparing your meal.',
     time: '8:15 PM',
-    icon: 'check',
+    icon: 'restaurant_menu',
+  },
+  {
+    title: 'Ready',
+    description: 'Your order is ready to be picked up.',
+    time: '8:25 PM',
+    icon: 'done_all',
   },
   {
     title: 'Out For Delivery',
@@ -77,8 +83,11 @@ const TrackOrderPage = () => {
     switch (status) {
       case 'Pending': return 0;
       case 'Preparing': return 1;
-      case 'Out for Delivery': return 2;
-      case 'Delivered': return 3;
+      case 'Ready': return 2;
+      case 'Out For Delivery': return 3;
+      case 'Delivered': return 4;
+      case 'Completed': return 4;
+      case 'Cancelled': return 0; // Or handle differently
       default: return 0;
     }
   };

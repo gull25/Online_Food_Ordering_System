@@ -1,8 +1,9 @@
 const orderRepository = require('../repositories/order.repository');
 const MenuItem = require('../models/MenuItem');
 const Offer = require('../models/Offer');
+const Restaurant = require('../models/Restaurant');
 const ApiError = require('../utils/ApiError');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
 const socketManager = require('../socket');
 
 class OrderService {
@@ -19,16 +20,42 @@ class OrderService {
             throw new ApiError(400, 'One or more items in your cart are invalid or no longer exist.');
         }
 
-        // 2. Map prices to a dictionary for quick lookup
-        const dbPrices = {};
+        // 2. Map items to a dictionary for quick lookup
+        const dbItems = {};
         menuItemsFromDb.forEach(item => {
-            dbPrices[item._id.toString()] = item.price;
+            dbItems[item._id.toString()] = item;
         });
 
         // 3. Calculate secure subtotal
         let subtotal = 0;
         data.items = data.items.map(cartItem => {
-            const securePrice = dbPrices[cartItem.menuItem.toString()];
+            const dbItem = dbItems[cartItem.menuItem.toString()];
+            let securePrice = dbItem.price;
+
+            // Validate and apply size price
+            if (cartItem.selectedSize && cartItem.selectedSize.name) {
+                const sizeFromDb = dbItem.sizes?.find(s => s.name === cartItem.selectedSize.name);
+                if (sizeFromDb) {
+                    securePrice += sizeFromDb.additionalPrice;
+                    cartItem.selectedSize.additionalPrice = sizeFromDb.additionalPrice; // Override with DB price
+                } else {
+                    throw new ApiError(400, `Invalid size ${cartItem.selectedSize.name} for item ${dbItem.name}`);
+                }
+            }
+
+            // Validate and apply add-ons prices
+            if (cartItem.selectedAddOns && cartItem.selectedAddOns.length > 0) {
+                cartItem.selectedAddOns.forEach(addOn => {
+                    const addOnFromDb = dbItem.addOns?.find(a => a.name === addOn.name);
+                    if (addOnFromDb) {
+                        securePrice += addOnFromDb.price;
+                        addOn.price = addOnFromDb.price; // Override with DB price
+                    } else {
+                         throw new ApiError(400, `Invalid add-on ${addOn.name} for item ${dbItem.name}`);
+                    }
+                });
+            }
+
             subtotal += securePrice * cartItem.quantity;
             // Overwrite frontend price with DB price
             return {
@@ -68,20 +95,40 @@ class OrderService {
 
         // 5. Generate Payment Intent (Stripe Live)
         let clientSecret = null;
-        if (data.paymentMethod !== 'cash') {
-            // Amount is in cents for Stripe!
+        if (data.paymentMethod !== 'cash' && data.paymentMethod !== 'cod') {
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
             const amountInCents = Math.round(data.totalAmount * 100);
             
-            const paymentIntent = await stripe.paymentIntents.create({
+            // Get Restaurant for Stripe Connect
+            const restaurant = await Restaurant.findById(data.restaurant);
+            if (!restaurant) {
+                throw new ApiError(404, 'Restaurant not found');
+            }
+
+            const paymentIntentPayload = {
                 amount: amountInCents,
                 currency: 'usd',
-                // Temporarily leave orderId blank or generic until we save the DB record, 
-                // but actually, we can add it later via stripe.paymentIntents.update
-                // or just rely on the fact that we'll save the paymentIntent.id to MongoDB immediately.
                 metadata: {
                     integration_check: 'accept_a_payment'
                 }
-            });
+            };
+
+            // Setup Stripe Connect split payment if onboarded
+            if (restaurant.stripeAccountId && restaurant.stripeOnboardingComplete) {
+                // Platform fee: 10% of subtotal + $2.50 flat service fee
+                const platformFee = (subtotal * 0.10) + serviceFee;
+                const platformFeeInCents = Math.round(platformFee * 100);
+
+                // Ensure the platform fee is not greater than the total amount
+                const finalFeeInCents = Math.min(platformFeeInCents, amountInCents);
+
+                paymentIntentPayload.application_fee_amount = finalFeeInCents;
+                paymentIntentPayload.transfer_data = {
+                    destination: restaurant.stripeAccountId
+                };
+            }
+
+            const paymentIntent = await stripe.paymentIntents.create(paymentIntentPayload);
             
             data.stripePaymentIntentId = paymentIntent.id;
             clientSecret = paymentIntent.client_secret;
@@ -93,6 +140,7 @@ class OrderService {
 
         // Update Stripe Payment Intent metadata with the real MongoDB Order ID
         if (data.stripePaymentIntentId) {
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
             await stripe.paymentIntents.update(data.stripePaymentIntentId, {
                 metadata: {
                     orderId: newOrder._id.toString()

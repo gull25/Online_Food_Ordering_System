@@ -54,6 +54,27 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
           />
         </label>
 
+        <label
+          onClick={() => setPaymentMethod('cod')}
+          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${
+            paymentMethod === 'cod'
+              ? 'border-primary bg-surface-container-low'
+              : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-secondary">payments</span>
+            <span className="font-bold text-small text-on-surface">Cash on Delivery</span>
+          </div>
+          <input
+            checked={paymentMethod === 'cod'}
+            onChange={() => setPaymentMethod('cod')}
+            className="w-5 h-5 text-primary border-outline focus:ring-primary accent-primary"
+            name="payment"
+            type="radio"
+          />
+        </label>
+
         <button
           type="button"
           onClick={() => alert('Adding new payment methods is coming soon!')}

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const OrderSummary = ({ subtotal, discountAmount, discountPercent, serviceFee, tax, total, promoInput, setPromoInput, handleApplyPromo, promoMessage }) => {
+const OrderSummary = ({ subtotal, discountAmount, discountPercent, serviceFee, deliveryFee, tax, total, promoInput, setPromoInput, handleApplyPromo, promoMessage }) => {
   return (
     <>
       <div className="space-y-3 mb-6">
@@ -18,7 +18,7 @@ const OrderSummary = ({ subtotal, discountAmount, discountPercent, serviceFee, t
 
         <div className="flex justify-between text-body">
           <span className="text-secondary">Delivery Fee</span>
-          <span className="text-tertiary font-semibold">FREE</span>
+          <span className="text-tertiary font-semibold">{deliveryFee > 0 ? `$${deliveryFee.toFixed(2)}` : 'FREE'}</span>
         </div>
         <div className="flex justify-between text-body">
           <span className="text-secondary">Service Fee</span>

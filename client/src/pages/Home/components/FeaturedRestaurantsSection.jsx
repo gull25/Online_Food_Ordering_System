@@ -1,29 +1,63 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchFeaturedRestaurants } from '../../../features/restaurants/restaurantSlice';
+import { fetchFeaturedRestaurants, setUserLocation } from '../../../features/restaurants/restaurantSlice';
 import RestaurantCard from '../../../components/ui/RestaurantCard/RestaurantCard';
+import { toast } from 'react-hot-toast';
 
 const FeaturedRestaurantsSection = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { featuredRestaurants, loading, error } = useSelector((state) => state.restaurants);
+  const { featuredRestaurants, loading, error, userLocation } = useSelector((state) => state.restaurants);
+  const [locating, setLocating] = React.useState(false);
 
   useEffect(() => {
-    dispatch(fetchFeaturedRestaurants());
-  }, [dispatch]);
+    dispatch(fetchFeaturedRestaurants(userLocation));
+  }, [dispatch, userLocation]);
+
+  const handleUseLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        dispatch(setUserLocation({ lat, lng }));
+        setLocating(false);
+        toast.success('Found restaurants near you!');
+      },
+      (error) => {
+        setLocating(false);
+        toast.error('Unable to retrieve your location');
+      }
+    );
+  };
 
   return (
     <section className="py-stack_lg bg-surface animate-section">
           <div className="max-w-container_max mx-auto px-margin_desktop">
-            <div className="flex justify-between items-center mb-stack_lg">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-stack_lg gap-4">
               <h2 className="font-h2 text-h2 text-on-background">Featured Restaurants</h2>
-              <button
-                onClick={() => navigate('/auth')}
-                className="text-primary font-button flex items-center gap-1 hover:underline"
-              >
-                View all restaurants <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleUseLocation}
+                  disabled={locating}
+                  className="px-4 py-2 bg-surface-container-highest text-on-surface rounded-full font-button text-sm flex items-center gap-2 hover:bg-surface-variant transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">{locating ? 'hourglass_empty' : 'my_location'}</span>
+                  {locating ? 'Locating...' : (userLocation ? 'Update Location' : 'Use My Location')}
+                </button>
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="text-primary font-button flex items-center gap-1 hover:underline"
+                >
+                  View all <span className="material-symbols-outlined">arrow_forward</span>
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
               {loading ? (

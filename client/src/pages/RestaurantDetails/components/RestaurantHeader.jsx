@@ -1,12 +1,12 @@
 import React from 'react';
 
-const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite }) => {
+const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, restaurant, loading }) => {
   return (
     <header className="relative w-full h-[300px] md:h-[400px]">
       <div
         className="absolute inset-0 w-full h-full bg-cover bg-center"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80')`,
+          backgroundImage: `url('${restaurant?.images?.banner || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80'}')`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
@@ -15,17 +15,25 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite })
         <div className="flex flex-col md:flex-row items-start md:items-end gap-stack_md md:gap-gutter text-white relative z-10">
           {/* Logo */}
           <div className="w-24 h-24 md:w-32 md:h-32 rounded-16 bg-white overflow-hidden shadow-sm border border-surface-variant flex-shrink-0 flex items-center justify-center p-2">
-            <img
-              className="w-full h-full object-contain"
-              alt="Bella Cucina Logo"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCr_PgCupy8gxV-xkmlOvxOHL3--utxFavAEg7w4xpJdmfULAzkNMCU2XEJlw99GTagtpQARK95RNrYOtmOnzOUZPkSl6XY9xdJrEptavcuC56K-iuHnLviG1AI9cmZDfV9AFE7yCHJDorUtfmPiydbHfh8GagagsIUJh8raatKdm7B9K_T2arrM4xtwwckZBTCWKTPrv1tYLoXr5tKfv18y2VGSqRh2gVlttcHcAvFoiVpOy8bYyTuDA"
-            />
+            {loading ? (
+              <div className="w-full h-full animate-pulse bg-surface-variant rounded-full"></div>
+            ) : (
+              <img
+                className="w-full h-full object-contain"
+                alt={`${restaurant?.name || 'Restaurant'} Logo`}
+                src={restaurant?.images?.logo || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100"}
+              />
+            )}
           </div>
           {/* Details */}
           <div className="flex-1">
-            <h1 className="font-h1-mobile md:font-h1 text-h1-mobile md:text-h1 text-white mb-2">
-              Bella Cucina Italiana
-            </h1>
+            {loading ? (
+              <div className="h-8 w-48 bg-white/20 animate-pulse rounded mb-2"></div>
+            ) : (
+              <h1 className="font-h1-mobile md:font-h1 text-h1-mobile md:text-h1 text-white mb-2">
+                {restaurant?.name || 'Loading...'}
+              </h1>
+            )}
             <div className="flex items-center gap-3 flex-wrap text-surface-container-lowest font-body text-body opacity-90">
               <span className="flex items-center gap-1">
                 <span
@@ -34,18 +42,17 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite })
                 >
                   star
                 </span>{' '}
-                4.8 (500+ ratings)
+                {restaurant?.rating || 'New'} {restaurant?.ratingCount ? `(${restaurant.ratingCount}+ ratings)` : ''}
               </span>
               <span className="w-1 h-1 rounded-full bg-surface-container-lowest"></span>
-              <span>$$$</span>
+              <span>{restaurant?.priceRange || '$$'}</span>
               <span className="w-1 h-1 rounded-full bg-surface-container-lowest"></span>
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-lg">location_on</span> 123
-                Culinary Ave, Milano
+                <span className="material-symbols-outlined text-lg">location_on</span> {restaurant?.location?.address || 'Location unavailable'}
               </span>
               <span className="w-1 h-1 rounded-full bg-surface-container-lowest"></span>
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-lg">schedule</span> 30-45 min
+                <span className="material-symbols-outlined text-lg">schedule</span> {restaurant?.deliveryTime || '30-45'} min
               </span>
             </div>
           </div>

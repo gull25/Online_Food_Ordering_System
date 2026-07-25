@@ -22,7 +22,7 @@ const protect = asyncHandler(async (req, res, next) => {
                 throw new ApiError(404, 'User not found');
             }
 
-            if (req.user.role === 'admin') {
+            if (req.user.role === 'restaurant_admin') {
                 const restaurant = await Restaurant.findOne({ owner: req.user._id });
                 if (restaurant) {
                     req.user.restaurantId = restaurant._id.toString();
@@ -40,4 +40,27 @@ const protect = asyncHandler(async (req, res, next) => {
     }
 });
 
-module.exports = { protect };
+const optionalAuth = asyncHandler(async (req, res, next) => {
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            const token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secretkey123');
+            req.user = await User.findById(decoded.id);
+
+            if (req.user && req.user.role === 'restaurant_admin') {
+                const restaurant = await Restaurant.findOne({ owner: req.user._id });
+                if (restaurant) {
+                    req.user.restaurantId = restaurant._id.toString();
+                }
+            }
+        } catch (error) {
+            // Do nothing if token is invalid
+        }
+    }
+    next();
+});
+
+module.exports = { protect, optionalAuth };

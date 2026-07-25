@@ -77,10 +77,10 @@ const AdminOrdersPage = () => {
   // Dynamic calculations for Bento Grid metrics based on CURRENT filtered subset
   const metrics = useMemo(() => {
     const totalToday = filteredOrders.length;
-    const pendingCount = filteredOrders.filter((o) => o.status === 'PENDING').length;
-    const completedCount = filteredOrders.filter((o) => o.status === 'DELIVERED').length;
+    const pendingCount = filteredOrders.filter((o) => ['Pending', 'Preparing', 'Ready', 'Out For Delivery'].includes(o.status)).length;
+    const completedCount = filteredOrders.filter((o) => o.status === 'Delivered').length;
     const revenueSum = filteredOrders
-      .filter((o) => o.status !== 'CANCELLED')
+      .filter((o) => o.status !== 'Cancelled')
       .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
     return {
@@ -211,15 +211,17 @@ const AdminOrdersPage = () => {
                   <p className="font-label text-label text-secondary uppercase text-right mb-1">Status</p>
                   <span
                     className={`status-badge block text-center ${
-                      selectedOrder.status === 'DELIVERED'
+                      selectedOrder.status === 'Delivered'
                         ? 'bg-green-100 text-green-700'
-                        : selectedOrder.status === 'PREPARING'
-                        ? 'bg-orange-100 text-orange-700'
-                        : selectedOrder.status === 'OUT FOR DELIVERY'
-                        ? 'bg-blue-100 text-blue-700'
-                        : selectedOrder.status === 'CANCELLED'
+                        : selectedOrder.status === 'Cancelled'
                         ? 'bg-red-100 text-red-700'
-                        : 'bg-gray-100 text-gray-700'
+                        : selectedOrder.status === 'Pending'
+                        ? 'bg-gray-100 text-gray-700'
+                        : ['Preparing', 'Ready'].includes(selectedOrder.status)
+                        ? 'bg-orange-100 text-orange-700'
+                        : ['Out For Delivery'].includes(selectedOrder.status)
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-surface-variant text-on-surface-variant'
                     }`}
                   >
                     {selectedOrder.status}
@@ -242,11 +244,13 @@ const AdminOrdersPage = () => {
                   }}
                   className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-white font-button text-small outline-none focus:border-primary cursor-pointer"
                 >
-                  <option value="PENDING">PENDING</option>
-                  <option value="PREPARING">PREPARING</option>
-                  <option value="OUT FOR DELIVERY">OUT FOR DELIVERY</option>
-                  <option value="DELIVERED">DELIVERED</option>
-                  <option value="CANCELLED">CANCELLED</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Preparing">Preparing</option>
+                  <option value="Ready">Ready</option>
+                  <option value="Out For Delivery">Out For Delivery</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
                 </select>
                 <button
                   onClick={() => setSelectedOrder(null)}
@@ -334,11 +338,13 @@ const AdminOrdersPage = () => {
           <div className="flex flex-wrap gap-2">
             {[
               { id: 'ALL', label: 'All Orders' },
-              { id: 'PENDING', label: 'Pending' },
-              { id: 'PREPARING', label: 'Preparing' },
-              { id: 'OUT FOR DELIVERY', label: 'Out for Delivery' },
-              { id: 'DELIVERED', label: 'Delivered' },
-              { id: 'CANCELLED', label: 'Cancelled' },
+              { id: 'Pending', label: 'Pending' },
+              { id: 'Preparing', label: 'Preparing' },
+              { id: 'Ready', label: 'Ready' },
+              { id: 'Out For Delivery', label: 'Out For Delivery' },
+              { id: 'Delivered', label: 'Delivered' },
+              { id: 'Completed', label: 'Completed' },
+              { id: 'Cancelled', label: 'Cancelled' },
             ].map((btn) => (
               <button
                 key={btn.id}
@@ -427,15 +433,17 @@ const AdminOrdersPage = () => {
                     <td className="px-6 py-4">
                       <span
                         className={`status-badge inline-block ${
-                          order.status === 'DELIVERED'
+                          order.status === 'Delivered'
                             ? 'bg-green-100 text-green-700'
-                            : order.status === 'PREPARING'
-                            ? 'bg-orange-100 text-orange-700'
-                            : order.status === 'OUT FOR DELIVERY'
-                            ? 'bg-blue-100 text-blue-700'
-                            : order.status === 'CANCELLED'
+                            : order.status === 'Cancelled'
                             ? 'bg-red-100 text-red-700'
-                            : 'bg-gray-100 text-gray-700'
+                            : order.status === 'Pending'
+                            ? 'bg-gray-100 text-gray-700'
+                            : ['Preparing', 'Ready'].includes(order.status)
+                            ? 'bg-orange-100 text-orange-700'
+                            : ['Out For Delivery'].includes(order.status)
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-surface-variant text-on-surface-variant'
                         }`}
                       >
                         {order.status}

@@ -13,6 +13,6 @@ const router = express.Router();
 router.post('/', protect, createOrder);
 router.get('/my-orders', protect, getMyOrders);
 router.get('/:id', protect, getOrderById);
-router.put('/:id/status', protect, authorize('admin', 'super_admin'), updateOrderStatus);
+router.put('/:id/status', protect, authorize('restaurant_admin'), updateOrderStatus);
 
 module.exports = router;

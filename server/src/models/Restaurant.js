@@ -8,6 +8,56 @@ const restaurantSchema = new mongoose.Schema(
             trim: true,
             maxlength: [50, 'Name cannot be more than 50 characters']
         },
+        slug: {
+            type: String,
+            unique: true,
+            sparse: true
+        },
+        email: {
+            type: String,
+            match: [
+                /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+                'Please add a valid email'
+            ]
+        },
+        phone: {
+            type: String,
+            maxlength: [20, 'Phone number cannot be longer than 20 characters']
+        },
+        website: {
+            type: String,
+            match: [
+                /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
+                'Please use a valid URL with HTTP or HTTPS'
+            ]
+        },
+        address: {
+            type: String,
+            required: [true, 'Please add an address']
+        },
+        city: {
+            type: String,
+            required: [true, 'Please add a city']
+        },
+        state: {
+            type: String,
+            required: [true, 'Please add a state']
+        },
+        zipCode: {
+            type: String,
+            required: [true, 'Please add a zip code']
+        },
+        location: {
+            type: {
+                type: String,
+                enum: ['Point'],
+                default: 'Point'
+            },
+            coordinates: {
+                type: [Number],
+                default: [0, 0] // [longitude, latitude]
+            }
+        },
         description: {
             type: String,
             required: [true, 'Please add a description'],
@@ -17,13 +67,38 @@ const restaurantSchema = new mongoose.Schema(
             type: [String],
             required: true,
         },
-        image: {
+        images: {
+            logo: { type: String, default: 'no-photo.jpg' },
+            banner: { type: String, default: 'no-photo.jpg' },
+            gallery: { type: [String], default: [] }
+        },
+        openingTime: {
             type: String,
-            default: 'no-photo.jpg'
+            default: '09:00 AM'
+        },
+        closingTime: {
+            type: String,
+            default: '10:00 PM'
+        },
+        status: {
+            type: String,
+            enum: ['Open', 'Closed'],
+            default: 'Open'
+        },
+        socialMedia: {
+            facebook: { type: String, default: '' },
+            instagram: { type: String, default: '' },
+            tiktok: { type: String, default: '' },
+            whatsapp: { type: String, default: '' }
+        },
+        policies: {
+            refund: { type: String, default: '' },
+            delivery: { type: String, default: '' },
+            privacy: { type: String, default: '' }
         },
         rating: {
             type: Number,
-            min: [1, 'Rating must be at least 1'],
+            min: [0, 'Rating must be at least 0'],
             max: [5, 'Rating cannot be more than 5'],
             default: 0
         },
@@ -31,9 +106,17 @@ const restaurantSchema = new mongoose.Schema(
             type: Number,
             default: 0
         },
-        deliveryTime: {
+        estimatedDeliveryTime: {
             type: String,
             default: '25-35 min'
+        },
+        deliveryFee: {
+            type: Number,
+            default: 0
+        },
+        deliveryRadius: {
+            type: Number,
+            default: 5
         },
         minOrder: {
             type: Number,
@@ -43,6 +126,15 @@ const restaurantSchema = new mongoose.Schema(
             type: Boolean,
             default: true
         },
+
+        stripeAccountId: {
+            type: String,
+            default: ''
+        },
+        stripeOnboardingComplete: {
+            type: Boolean,
+            default: false
+        },
         isFeatured: {
             type: Boolean,
             default: false
@@ -50,12 +142,15 @@ const restaurantSchema = new mongoose.Schema(
         owner: {
             type: mongoose.Schema.ObjectId,
             ref: 'User',
-            required: [true, 'Restaurant must have an owner (admin)']
+            required: [true, 'Restaurant must have an owner (restaurant_admin)']
         }
     },
     {
         timestamps: true,
     }
 );
+
+// Geospatial index for location
+restaurantSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Restaurant', restaurantSchema);

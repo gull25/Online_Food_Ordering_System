@@ -12,13 +12,17 @@ router.get("/status", (req, res) => {
     });
 });
 
+const categoryRoutes = require('./category.routes');
+
 router.use('/auth', require('./auth.routes'));
 router.use('/users', require('./user.routes'));
 router.use('/restaurants', require('./restaurant.routes'));
 router.use('/orders', require('./order.routes'));
-router.use('/admin', require('./admin.routes'));
+
 router.use('/public', require('./public.routes'));
 router.use('/payments', require('./payment.routes'));
+router.use('/stripe', require('./stripe.routes'));
 router.use('/reviews', require('./review.routes'));
+router.use('/categories', categoryRoutes);
 
 module.exports = router;

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../../features/auth/authSlice';
 import { clearCart } from '../../../features/cart/cartSlice';
+import api from '../../../api/axios';
 
 /**
  * Navbar — conditionally renders links based on Redux auth state.
@@ -24,12 +25,27 @@ const Navbar = () => {
 
   // ── Auth from Redux (source of truth) ──────────────────────────────────────
   const { isAuthenticated, user } = useSelector((state) => state.auth);
-  const isAdmin = isAuthenticated && user?.role === 'admin';
+  const isAdmin = isAuthenticated && user?.role === 'restaurant_admin';
 
   // ── Cart item count ─────────────────────────────────────────────────────────
   const { totalQuantity: totalItems } = useSelector((state) => state.cart);
 
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  
+  const [restaurants, setRestaurants] = React.useState([]);
+  const [isResDropdownOpen, setIsResDropdownOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const res = await api.get('/restaurants');
+        setRestaurants(res.data.data);
+      } catch (err) {
+        console.error('Failed to load restaurants', err);
+      }
+    };
+    fetchRestaurants();
+  }, []);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleLogout = () => {
@@ -65,12 +81,41 @@ const Navbar = () => {
             {!isAuthenticated && (
               <Link className={getLinkClass('/')} to="/">Home</Link>
             )}
-            <Link
-              className={getLinkClass('/restaurant/bella-cucina')}
-              to={isAuthenticated || location.pathname !== '/' ? '/restaurant/bella-cucina' : '/auth'}
+            {/* Dynamic Restaurants Dropdown */}
+            <div 
+              className="relative h-full flex items-center"
+              onMouseEnter={() => setIsResDropdownOpen(true)}
+              onMouseLeave={() => setIsResDropdownOpen(false)}
             >
-              Restaurants
-            </Link>
+              <div
+                onClick={() => setIsResDropdownOpen(!isResDropdownOpen)}
+                className={`text-on-secondary-container dark:text-secondary-fixed-dim hover:text-primary transition-colors font-body text-body flex items-center h-full hover:opacity-90 hover:scale-[1.02] cursor-pointer ${location.pathname.includes('/restaurant') ? 'text-primary border-b-2 border-primary font-bold pb-1 mt-[2px]' : 'mt-[2px]'}`}
+              >
+                Restaurants
+                <span className="material-symbols-outlined text-[18px] ml-1">expand_more</span>
+              </div>
+              
+              {isResDropdownOpen && (
+                <div className="absolute top-[60px] -left-4 w-64 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg z-50 flex flex-col py-2 animate-in fade-in zoom-in-95 max-h-[400px] overflow-y-auto">
+                  {restaurants.map(rest => (
+                    <Link
+                      key={rest._id}
+                      onClick={() => setIsResDropdownOpen(false)}
+                      to={isAuthenticated || location.pathname !== '/' ? `/restaurant/${rest._id}` : '/auth'}
+                      className="text-left px-4 py-3 hover:bg-surface-variant font-body text-body text-on-surface transition-colors cursor-pointer flex items-center gap-3 border-b border-outline-variant/10 last:border-0"
+                    >
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
+                        <img src={rest.images?.logo || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100'} alt={rest.name} className="w-full h-full object-cover" />
+                      </div>
+                      <span className="truncate font-semibold">{rest.name}</span>
+                    </Link>
+                  ))}
+                  {restaurants.length === 0 && (
+                    <div className="px-4 py-3 text-secondary text-sm font-body">No restaurants found</div>
+                  )}
+                </div>
+              )}
+            </div>
             <Link
               className={getLinkClass('/offers')}
               to={isAuthenticated || location.pathname !== '/' ? '/offers' : '/auth'}

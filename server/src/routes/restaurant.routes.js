@@ -10,22 +10,32 @@ const {
     updateMenuItem,
     deleteMenuItem
 } = require('../controllers/restaurant.controller');
-const { protect } = require('../middlewares/auth.middleware');
+const { protect, optionalAuth } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/authorize.middleware');
 
 const router = express.Router();
 
-router.get('/', getRestaurants);
-router.get('/:id', getRestaurantById);
-router.get('/:id/menu', getRestaurantMenu);
+router.get('/', optionalAuth, getRestaurants);
+router.get('/:id', optionalAuth, getRestaurantById);
+router.get('/:id/menu', optionalAuth, getRestaurantMenu);
 
-// Admin routes
-router.post('/', protect, authorize('admin', 'super_admin'), createRestaurant);
-router.put('/:id', protect, authorize('admin', 'super_admin'), updateRestaurant);
-router.delete('/:id', protect, authorize('admin', 'super_admin'), deleteRestaurant);
+const upload = require('../middlewares/upload.middleware');
 
-router.post('/:id/menu', protect, authorize('admin', 'super_admin'), createMenuItem);
-router.put('/menu/:menuId', protect, authorize('admin', 'super_admin'), updateMenuItem);
-router.delete('/menu/:menuId', protect, authorize('admin', 'super_admin'), deleteMenuItem);
+// Protected admin routes
+router.post('/', protect, authorize('restaurant_admin'), upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'banner', maxCount: 1 }
+]), createRestaurant);
+
+router.put('/:id', protect, authorize('restaurant_admin'), upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'banner', maxCount: 1 }
+]), updateRestaurant);
+
+router.delete('/:id', protect, authorize('restaurant_admin'), deleteRestaurant);
+
+router.post('/:id/menu', protect, authorize('restaurant_admin'), upload.single('image'), createMenuItem);
+router.put('/menu/:menuId', protect, authorize('restaurant_admin'), upload.single('image'), updateMenuItem);
+router.delete('/menu/:menuId', protect, authorize('restaurant_admin'), deleteMenuItem);
 
 module.exports = router;

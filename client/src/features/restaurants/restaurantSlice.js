@@ -4,9 +4,13 @@ import axios from 'axios';
 // Async thunks
 export const fetchFeaturedRestaurants = createAsyncThunk(
     'restaurants/fetchFeatured',
-    async (_, { rejectWithValue }) => {
+    async (params, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/restaurants?featured=true');
+            let url = '/api/restaurants?featured=true';
+            if (params && params.lat && params.lng) {
+                url += `&lat=${params.lat}&lng=${params.lng}`;
+            }
+            const response = await axios.get(url);
             return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch featured restaurants');
@@ -31,6 +35,7 @@ const initialState = {
     currentRestaurant: null,
     loading: false,
     error: null,
+    userLocation: null, // { lat, lng }
 };
 
 const restaurantSlice = createSlice({
@@ -39,6 +44,9 @@ const restaurantSlice = createSlice({
     reducers: {
         clearCurrentRestaurant: (state) => {
             state.currentRestaurant = null;
+        },
+        setUserLocation: (state, action) => {
+            state.userLocation = action.payload;
         }
     },
     extraReducers: (builder) => {
@@ -72,5 +80,5 @@ const restaurantSlice = createSlice({
     },
 });
 
-export const { clearCurrentRestaurant } = restaurantSlice.actions;
+export const { clearCurrentRestaurant, setUserLocation } = restaurantSlice.actions;
 export default restaurantSlice.reducer;

@@ -61,23 +61,31 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
           <span className="material-symbols-outlined">receipt_long</span>
           <span>Orders</span>
         </button>
-        {user?.role === 'super_admin' && (
-          <button
-            onClick={() => navigate('/admin/restaurants')}
-            className={getTabClass('restaurants')}
-          >
-            <span className="material-symbols-outlined">storefront</span>
-            <span>Restaurants</span>
-          </button>
-        )}
-        {user?.role === 'admin' && (
-          <button
-            onClick={() => navigate('/admin/my-restaurant')}
-            className={getTabClass('my-restaurant')}
-          >
-            <span className="material-symbols-outlined">storefront</span>
-            <span>My Restaurant</span>
-          </button>
+
+        {user?.role === 'restaurant_admin' && (
+          <>
+            <button
+              onClick={() => navigate('/admin/my-restaurant')}
+              className={getTabClass('my-restaurant')}
+            >
+              <span className="material-symbols-outlined">storefront</span>
+              <span>My Restaurant</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/categories')}
+              className={getTabClass('categories')}
+            >
+              <span className="material-symbols-outlined">category</span>
+              <span>Categories</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/products')}
+              className={getTabClass('products')}
+            >
+              <span className="material-symbols-outlined">fastfood</span>
+              <span>Products</span>
+            </button>
+          </>
         )}
         <button
           onClick={() => navigate('/admin/analytics')}
@@ -87,10 +95,10 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
           <span>Analytics</span>
         </button>
       </nav>
-      {setIsModalOpen && (
+      {!user?.restaurantId && user?.role === 'restaurant_admin' && (
         <div className="p-6">
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => navigate('/admin/onboarding')}
             className="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-button text-button hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
           >
             <span className="material-symbols-outlined">add_circle</span>
@@ -139,7 +147,7 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-label text-label text-on-surface truncate">{user?.name || 'Admin'}</p>
-            <p className="text-[10px] text-secondary font-semibold uppercase">{user?.role === 'super_admin' ? 'Super Admin' : 'Restaurant Admin'}</p>
+            <p className="text-[10px] text-secondary font-semibold uppercase">Restaurant Admin</p>
           </div>
           <span className={`material-symbols-outlined text-[16px] text-secondary transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`}>
             expand_less

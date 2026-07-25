@@ -7,10 +7,19 @@ const MenuItem = require('../models/MenuItem');
 // @access  Public
 exports.getRestaurants = asyncHandler(async (req, res, next) => {
     let restaurants;
+    const options = {};
+    
+    let query = {};
+    if (req.query.lat && req.query.lng) {
+        query.lat = req.query.lat;
+        query.lng = req.query.lng;
+    }
+
     if (req.query.featured === 'true') {
-        restaurants = await restaurantService.getFeaturedRestaurants();
+        // Pass lat/lng into featured too if provided
+        restaurants = await restaurantService.getFeaturedRestaurants(query, options);
     } else {
-        restaurants = await restaurantService.getRestaurants();
+        restaurants = await restaurantService.getRestaurants(query, options);
     }
     
     res.status(200).json({
@@ -24,7 +33,11 @@ exports.getRestaurants = asyncHandler(async (req, res, next) => {
 // @route   GET /api/restaurants/:id
 // @access  Public
 exports.getRestaurantById = asyncHandler(async (req, res, next) => {
-    const restaurant = await restaurantService.getRestaurantDetails(req.params.id);
+    // If the requester is the owner, they can see their own restaurant
+    const isOwner = req.user && req.user.restaurantId?.toString() === req.params.id;
+    const options = { includeUnapproved: isOwner };
+
+    const restaurant = await restaurantService.getRestaurantDetails(req.params.id, options);
 
     res.status(200).json({
         success: true,
@@ -36,7 +49,11 @@ exports.getRestaurantById = asyncHandler(async (req, res, next) => {
 // @route   GET /api/restaurants/:id/menu
 // @access  Public
 exports.getRestaurantMenu = asyncHandler(async (req, res, next) => {
-    const menuItems = await restaurantService.getRestaurantMenu(req.params.id);
+    // If the requester is the owner, they can see their own restaurant
+    const isOwner = req.user && req.user.restaurantId?.toString() === req.params.id;
+    const options = { includeUnapproved: isOwner };
+
+    const menuItems = await restaurantService.getRestaurantMenu(req.params.id, options);
 
     res.status(200).json({
         success: true,
@@ -49,8 +66,20 @@ exports.getRestaurantMenu = asyncHandler(async (req, res, next) => {
 // @route   POST /api/restaurants
 // @access  Private/Admin
 exports.createRestaurant = asyncHandler(async (req, res, next) => {
-    // Add user to req.body if not provided by superAdmin
+    // Add user to req.body
     req.body.owner = req.body.owner || req.user.id;
+    
+    req.body.images = req.body.images || {};
+
+    if (req.files) {
+        const { uploadImage } = require('../services/upload.service');
+        if (req.files.logo && req.files.logo[0]) {
+            req.body.images.logo = await uploadImage(req.files.logo[0].buffer, 'foodora/logos');
+        }
+        if (req.files.banner && req.files.banner[0]) {
+            req.body.images.banner = await uploadImage(req.files.banner[0].buffer, 'foodora/banners');
+        }
+    }
 
     const restaurant = await restaurantService.createRestaurant(req.body);
 
@@ -64,11 +93,24 @@ exports.createRestaurant = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/restaurants/:id
 // @access  Private/Admin
 exports.updateRestaurant = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'admin' && req.params.id !== req.user.restaurantId?.toString()) {
+    if (req.user.role === 'restaurant_admin' && req.params.id !== req.user.restaurantId?.toString()) {
         return res.status(403).json({ success: false, message: 'Not authorized to update this restaurant' });
     }
 
-    const restaurant = await restaurantService.updateRestaurant(req.params.id, req.body);
+    req.body.images = req.body.images || {};
+
+    if (req.files) {
+        const { uploadImage } = require('../services/upload.service');
+        if (req.files.logo && req.files.logo[0]) {
+            req.body.images.logo = await uploadImage(req.files.logo[0].buffer, 'foodora/logos');
+        }
+        if (req.files.banner && req.files.banner[0]) {
+            req.body.images.banner = await uploadImage(req.files.banner[0].buffer, 'foodora/banners');
+        }
+    }
+
+    const options = {};
+    const restaurant = await restaurantService.updateRestaurant(req.params.id, req.body, options);
 
     res.status(200).json({
         success: true,
@@ -80,7 +122,7 @@ exports.updateRestaurant = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/restaurants/:id
 // @access  Private/Admin
 exports.deleteRestaurant = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'admin' && req.params.id !== req.user.restaurantId?.toString()) {
+    if (req.user.role === 'restaurant_admin' && req.params.id !== req.user.restaurantId?.toString()) {
         return res.status(403).json({ success: false, message: 'Not authorized to delete this restaurant' });
     }
 
@@ -96,8 +138,13 @@ exports.deleteRestaurant = asyncHandler(async (req, res, next) => {
 // @route   POST /api/restaurants/:id/menu
 // @access  Private/Admin
 exports.createMenuItem = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'admin' && req.params.id !== req.user.restaurantId?.toString()) {
+    if (req.user.role === 'restaurant_admin' && req.params.id !== req.user.restaurantId?.toString()) {
         return res.status(403).json({ success: false, message: 'Not authorized to add menu items to this restaurant' });
+    }
+
+    if (req.file) {
+        const { uploadImage } = require('../services/upload.service');
+        req.body.image = await uploadImage(req.file.buffer, 'foodora/menu');
     }
 
     const menuItem = await restaurantService.createMenuItem(req.params.id, req.body);
@@ -112,11 +159,16 @@ exports.createMenuItem = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/restaurants/menu/:menuId
 // @access  Private/Admin
 exports.updateMenuItem = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'restaurant_admin') {
         const menuItem = await MenuItem.findById(req.params.menuId);
         if (!menuItem || menuItem.restaurant.toString() !== req.user.restaurantId?.toString()) {
             return res.status(403).json({ success: false, message: 'Not authorized to update this menu item' });
         }
+    }
+
+    if (req.file) {
+        const { uploadImage } = require('../services/upload.service');
+        req.body.image = await uploadImage(req.file.buffer, 'foodora/menu');
     }
 
     const menuItem = await restaurantService.updateMenuItem(req.params.menuId, req.body);
@@ -131,7 +183,7 @@ exports.updateMenuItem = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/restaurants/menu/:menuId
 // @access  Private/Admin
 exports.deleteMenuItem = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'restaurant_admin') {
         const menuItem = await MenuItem.findById(req.params.menuId);
         if (!menuItem || menuItem.restaurant.toString() !== req.user.restaurantId?.toString()) {
             return res.status(403).json({ success: false, message: 'Not authorized to delete this menu item' });

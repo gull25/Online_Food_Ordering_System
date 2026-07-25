@@ -1,5 +1,17 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+export const generateCartItemId = (item) => {
+    let id = item._id || item.id;
+    if (item.selectedSize) {
+        id += `-${item.selectedSize.name}`;
+    }
+    if (item.selectedAddOns && item.selectedAddOns.length > 0) {
+        const addOnNames = item.selectedAddOns.map(a => a.name).sort().join('-');
+        id += `-${addOnNames}`;
+    }
+    return id;
+};
+
 const initialState = {
   items: {},
   totalQuantity: 0,
@@ -11,20 +23,21 @@ const cartSlice = createSlice({
   reducers: {
     addToCart: (state, action) => {
       const item = action.payload;
-      if (!state.items[item.id]) {
-        state.items[item.id] = { item, quantity: 1 };
+      const cartItemId = generateCartItemId(item);
+      if (!state.items[cartItemId]) {
+        state.items[cartItemId] = { item, quantity: 1, cartItemId };
       } else {
-        state.items[item.id].quantity++;
+        state.items[cartItemId].quantity++;
       }
       state.totalQuantity++;
     },
     removeFromCart: (state, action) => {
-      const itemId = action.payload;
-      if (state.items[itemId]) {
-        if (state.items[itemId].quantity > 1) {
-          state.items[itemId].quantity--;
+      const cartItemId = action.payload;
+      if (state.items[cartItemId]) {
+        if (state.items[cartItemId].quantity > 1) {
+          state.items[cartItemId].quantity--;
         } else {
-          delete state.items[itemId];
+          delete state.items[cartItemId];
         }
         state.totalQuantity--;
       }

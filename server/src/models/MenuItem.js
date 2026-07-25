@@ -17,10 +17,36 @@ const menuItemSchema = new mongoose.Schema(
             type: Number,
             required: [true, 'Please add a price']
         },
-        category: {
-            type: String,
-            required: [true, 'Please add a category'] // e.g., 'Starters', 'Mains', 'Desserts'
+        discount: {
+            type: Number,
+            default: 0
         },
+        ingredients: {
+            type: [String],
+            default: []
+        },
+        vegNonVeg: {
+            type: String,
+            enum: ['Veg', 'Non-Veg', 'N/A'],
+            default: 'N/A'
+        },
+        category: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Category',
+            required: [true, 'Please add a category']
+        },
+        sizes: [
+            {
+                name: { type: String, required: true },
+                additionalPrice: { type: Number, required: true, default: 0 }
+            }
+        ],
+        addOns: [
+            {
+                name: { type: String, required: true },
+                price: { type: Number, required: true, default: 0 }
+            }
+        ],
         image: {
             type: String,
             default: 'no-photo.jpg'
