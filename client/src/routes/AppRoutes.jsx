@@ -27,6 +27,7 @@ const AdminDashboardPage   = React.lazy(() => import('../pages/Admin/AdminDashbo
 const AdminOrdersPage      = React.lazy(() => import('../pages/Admin/AdminOrdersPage'));
 const AdminMyRestaurantPage = React.lazy(() => import('../pages/Admin/AdminMyRestaurantPage'));
 const AdminCategoriesPage  = React.lazy(() => import('../pages/Admin/AdminCategoriesPage'));
+const AdminOffersPage      = React.lazy(() => import('../pages/Admin/AdminOffersPage'));
 const AdminProductsPage    = React.lazy(() => import('../pages/Admin/AdminProductsPage'));
 const AdminAnalyticsPage   = React.lazy(() => import('../pages/Admin/AdminAnalyticsPage'));
 const RestaurantOnboardingPage = React.lazy(() => import('../pages/Admin/RestaurantOnboardingPage'));
@@ -69,6 +70,7 @@ const AppRoutes = () => {
             <Route path="/admin/analytics"     element={<AdminAnalyticsPage />} />
             <Route path="/admin/my-restaurant" element={<AdminMyRestaurantPage />} />
             <Route path="/admin/categories"    element={<AdminCategoriesPage />} />
+            <Route path="/admin/offers"        element={<AdminOffersPage />} />
             <Route path="/admin/products"      element={<AdminProductsPage />} />
             <Route path="/admin/stripe/return" element={<StripeReturnPage />} />
             <Route path="/admin/stripe/refresh" element={<StripeReturnPage />} />

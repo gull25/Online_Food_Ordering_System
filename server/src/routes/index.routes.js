@@ -24,5 +24,7 @@ router.use('/payments', require('./payment.routes'));
 router.use('/stripe', require('./stripe.routes'));
 router.use('/reviews', require('./review.routes'));
 router.use('/categories', categoryRoutes);
+router.use('/offers', require('./offer.routes'));
+router.use('/admin', require('./admin.routes'));
 
 module.exports = router;

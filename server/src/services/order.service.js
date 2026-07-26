@@ -20,6 +20,15 @@ class OrderService {
             throw new ApiError(400, 'One or more items in your cart are invalid or no longer exist.');
         }
 
+        // Single Restaurant Context Enforcement:
+        // Ensure all menu items actually belong to the restaurant specified in the order
+        const allItemsValid = menuItemsFromDb.every(
+            item => item.restaurant.toString() === data.restaurant.toString()
+        );
+        if (!allItemsValid) {
+            throw new ApiError(400, 'Your cart contains items from multiple restaurants. You can only order from one restaurant at a time.');
+        }
+
         // 2. Map items to a dictionary for quick lookup
         const dbItems = {};
         menuItemsFromDb.forEach(item => {

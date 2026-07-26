@@ -13,6 +13,8 @@ const AdminOrdersPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
+  const showToast = (message) => toast.success(message);
+
   const { orders, loading } = useSelector((state) => state.admin);
 
   useEffect(() => {

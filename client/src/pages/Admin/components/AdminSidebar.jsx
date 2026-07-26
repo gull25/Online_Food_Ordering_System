@@ -79,6 +79,13 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
               <span>Categories</span>
             </button>
             <button
+              onClick={() => navigate('/admin/offers')}
+              className={getTabClass('offers')}
+            >
+              <span className="material-symbols-outlined">local_offer</span>
+              <span>Offers</span>
+            </button>
+            <button
               onClick={() => navigate('/admin/products')}
               className={getTabClass('products')}
             >

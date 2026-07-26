@@ -1,61 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import TopNavBar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import NewsletterSignup from './components/NewsletterSignup';
 import FlashSaleBanner from './components/FlashSaleBanner';
 import OffersFilter from './components/OffersFilter';
 import NewUserDiscounts from './components/NewUserDiscounts';
-
-// Dynamic list of promotions and deals
-const OFFERS_DATA = [
-  {
-    id: 'bogo-burger',
-    type: 'BOGO',
-    restaurant: 'Burger Theory',
-    logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCAURaMYrzmdPpz3yO2fblUdSDMD5WUJWTJuIkDJBYHy-q-QEbUgpBjZYeXi6F-WsBB9NqRscznY2RB9JhFByeHpbxw_52mlgUewnGq3hZow6YrnVIPSS0ntDJOzcTmpMBqmJjHxpoqCcpeHL81NCvCkDrzzcE7iXS4C4tnOlXXdKHAacGfzApG4Z5JyS30yNJ_Fi0yfzmU6FP_PFpsALUkoM5OW-os5WQggqlg0fIfS9ShcwlnQ18kNQ',
-    title: 'Double Classic Burger',
-    description: 'Applicable on all Classic & Specialty burgers.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA1auuzHQXfGBE-aNPB34ROpo0uFPWkwzvGDj7l4dv_fxFbBY62btB3M2Jmx0JzOYYOx6WBjZpE-M_wDgsxseO-pDLsdo9fupS__ohBx3GgU4HEJxPYq6BSAHpPf1RosY_TASAUM3EFEEf2D94iD8D56IXuXJOImbscxvQD26O7BOBCvpfkAGg9tZWrrCu3_xKIxg9ZJ8AvppsfQ7yUzKgL-wddyAN2glmCe-itd8PhUkAAzdix9g7UuQ',
-    expiry: 'Expires in 2 days',
-    code: 'BOGOBURG',
-  },
-  {
-    id: 'bogo-sushi',
-    type: 'BOGO',
-    restaurant: 'Sakura Sushi',
-    logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDR0psMFAjbJheHAost2oHcJPfy1pctKPksNEihdVl32WRTO_B3ZBRr4IIFPLVRPhfsFWJc6jYGYALNx3qfkMvewJM5KBtjyR7jTau4StGhoih0OT_Q4SYDNc_UvBcyUMJevdOFoH5dwjqSmj-sQacmUsXMjlvTMvszNVIQ7anPl8Eu9VvCg0qrMrcJMdVDAmDcpT6woft3kqnXCF4gOsfU9hlyOWddAvEQiapOBwWYaHPTBNeDy2HoQ',
-    title: 'Crunchy Roll Combo',
-    description: 'Buy any signature roll, get a second one free.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFvzAxt8N2ql_weP0OdeppuDiPgVVnVK4vn_Yvic7mg64WjGhPCyElORBg5jss5EErZ5aL0Y_icFMAu9XU2cnABerz22YbCgNs7DDwBxgULzKQh6woWeBY4pZiApEcBA5KlXeEMgxj370Fh2A0rEBFjJWHlsh8YoPv61qWbmKotaSC7dlIpo36M6i4BGglo9rCpuFX246cJZlB_QTt3XP-ktXgcje43MXPmNct7gOuE3LI1U09sG15Vg',
-    expiry: 'Limited Time',
-    code: 'BOGOSUSHI',
-  },
-  {
-    id: 'bogo-pizza',
-    type: 'BOGO',
-    restaurant: "Luigi's Pizza",
-    logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXQFQge6Qw84e_MLkwjFjlqpr208L3EW5K82-IjOG2VepyJaCIXP2jbT1KCCkX0yD5m0SyaT9z24P-d4pWfF5GucT5ApiXVto-DE1dhYooMK_mhydsSqRdZJinFk9VpL_TdLG4jAfgWsM_yDqNVcyx2tHuy8d810FocZfC-R4NpWV4vRUTgbfQuU5Tvy1lkGbGmekeXOGt2EHlmmrKmgiw_8Mo6fMWwXmxs8v8WQvH_gsEeUDMqYBYAA',
-    title: 'Any Large Pizza',
-    description: 'Excludes customized toppings. T&C apply.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUekzqKiIVpCifGUdd-ffJ7t18FHsnoR_TRYcpGqUNYUOCFqo3L-BRMM1BE-5RNfCBLp6qAis1cFs8rqZdGKVVaLY5xos8yDRxBH7EM5OAVOQKbJDizmh75EIutk7Pe-wjlWuJTdI30W1l5kaNfwS6iBoyFBa0W2kEzhTV_qTQLJISjzcrKW0H6qbUlHf4hL2WGtsLWlhFIt_jLVKMWLwseeps8GTJego5okv-AUteOrHN9fErppRWYQ',
-    expiry: 'Weekend Special',
-    code: 'BOGOPIZZA',
-  },
-  {
-    id: 'exclusive-taco',
-    type: 'EXCLUSIVE',
-    restaurant: 'Taco Lab',
-    logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuACFceSK_MCE11YMCPQiALjUwmdpjeebNpvzMrNpgBk9PkALXayIXQL4cSg09d1hvkCjkIvrAqklomSKcQK3bZJXY7I1SAXMeFYfc6wJefg3Z-bclMbFmWn0NpSJBCW1LdJ0S8jONevVrTJSqCJcBF9vtnxT7blR-QDO7_HbyGoaWqoYIS1hjTRzsQmnKqUOHMb6QstySulwUC8lGZVddF4O8sKF3cAicEEmQoy4Edgn4xAabad_H7lFQ',
-    title: '$10 OFF Order',
-    description: 'Exclusive for Foodora Pro members.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAbJXSBnaDup6cDfPEj8EnGUFJxbQyt6Y_r033xxmu5umCcYdN7dRXalrBzu-_opqoyOY6QZdPvjNkGc7NPsl1S2hZR6Eq3VOVFIyuu-9mZE8oYADr_kRcL8Yj3HC5elmeoZqRIPBn-Lj1eLlNd_mPxvZt8BmsD1NlRUGmgASTEKbwkK6EjE9MqkKQOZeUKv7sC5RRzeMxRCOqMqGihy5ZbqrasQjyilsDWZ794rxJltq-HiWvJgthWtA',
-    expiry: 'Pro Exclusives',
-    code: 'TACO10',
-  },
-];
+import api from '../../api/axios';
+import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 
 const OffersPage = () => {
+  // Offers state
+  const [offersData, setOffersData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   // Search query state
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -68,6 +27,27 @@ const OffersPage = () => {
 
   // Countdown timer state: 2h 45m 12s -> 9912 seconds total
   const [timeLeft, setTimeLeft] = useState(9912);
+
+  // Get active restaurant context
+  const { restaurantId: cartRestaurantId } = useSelector((state) => state.cart);
+  const { currentRestaurant } = useSelector((state) => state.restaurants);
+  const activeRestaurantId = cartRestaurantId || currentRestaurant?._id;
+
+  // Fetch dynamic offers
+  useEffect(() => {
+    const fetchOffers = async () => {
+      try {
+        const url = activeRestaurantId ? `/offers/active?restaurantId=${activeRestaurantId}` : '/offers/active';
+        const res = await api.get(url);
+        setOffersData(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to load offers', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOffers();
+  }, [activeRestaurantId]);
 
   // Handle countdown ticking
   useEffect(() => {
@@ -92,14 +72,14 @@ const OffersPage = () => {
 
   // Filter BOGO & Exclusive deals based on search query
   const filteredOffers = useMemo(() => {
-    if (!searchQuery.trim()) return OFFERS_DATA;
-    return OFFERS_DATA.filter(
+    if (!searchQuery.trim()) return offersData;
+    return offersData.filter(
       (offer) =>
         offer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        offer.restaurant.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        offer.description.toLowerCase().includes(searchQuery.toLowerCase())
+        (offer.restaurantId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (offer.description || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
+  }, [searchQuery, offersData]);
 
   // Copy promo code helper
   const copyPromoCode = (code) => {
@@ -117,6 +97,8 @@ const OffersPage = () => {
       setTimeout(() => setNewsletterSubscribed(false), 5000);
     }
   };
+
+  if (loading) return <LoadingSkeleton />;
 
   return (
     <div className="bg-background text-on-background font-body min-h-screen relative flex flex-col">
@@ -150,14 +132,14 @@ const OffersPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
             {filteredOffers.map((offer) => (
               <div
-                key={offer.id}
+                key={offer._id}
                 className="bg-surface-container-lowest border border-outline-variant/30 rounded-[16px] overflow-hidden flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 group"
               >
                 <div className="relative h-48 overflow-hidden bg-surface-container-low">
                   <img
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     alt={offer.title}
-                    src={offer.image}
+                    src={offer.image !== 'no-photo.jpg' ? offer.image : (offer.restaurantId?.image || 'https://via.placeholder.com/400x300')}
                   />
                   <div
                     className={`absolute top-3 left-3 font-bold px-3 py-1 rounded-lg text-small text-white shadow-sm ${
@@ -168,7 +150,7 @@ const OffersPage = () => {
                   </div>
                   <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/60 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-full">
                     <span className="material-symbols-outlined text-[12px]">schedule</span>{' '}
-                    {offer.expiry}
+                    Valid until {new Date(offer.validUntil).toLocaleDateString()}
                   </div>
                 </div>
                 <div className="p-4 flex-grow flex flex-col justify-between">
@@ -178,12 +160,12 @@ const OffersPage = () => {
                       <div className="w-8 h-8 rounded-full bg-surface-container overflow-hidden border border-outline-variant/30 flex-shrink-0">
                         <img
                           className="w-full h-full object-cover"
-                          alt={offer.restaurant}
-                          src={offer.logo}
+                          alt={offer.restaurantId?.name}
+                          src={offer.restaurantId?.image || 'https://via.placeholder.com/150'}
                         />
                       </div>
                       <span className="font-button text-small text-on-surface truncate">
-                        {offer.restaurant}
+                        {offer.restaurantId?.name}
                       </span>
                     </div>
                     <h4 className="font-h3 text-[18px] mb-1 font-bold text-on-surface">
@@ -205,7 +187,7 @@ const OffersPage = () => {
                       {copiedCode === offer.code ? 'Copied!' : 'Copy Code'}
                     </button>
                     <Link
-                      to="/restaurant/bella-cucina"
+                      to={`/restaurant/${offer.restaurantId?._id}`}
                       className="px-4 py-3.5 rounded-xl bg-surface-container text-on-surface-variant hover:bg-primary-container hover:text-white hover:shadow-sm font-button text-button text-center transition-all flex items-center justify-center"
                     >
                       <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>

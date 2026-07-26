@@ -11,6 +11,7 @@ import FloatingCartSummary from './components/FloatingCartSummary';
 import ReviewsSection from './components/ReviewsSection';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart } from '../../features/cart/cartSlice';
+import { toast } from 'react-hot-toast';
 
 import { fetchRestaurantDetails } from '../../features/restaurants/restaurantSlice';
 import { fetchRestaurantMenu } from '../../features/menu/menuSlice';
@@ -24,9 +25,17 @@ const RestaurantDetailPage = () => {
   
   const { currentRestaurant, loading: restaurantLoading } = useSelector((state) => state.restaurants);
   const { items: menuItems, loading: menuLoading } = useSelector((state) => state.menu);
-  const { items: cart, totalQuantity: totalCartCount } = useSelector((state) => state.cart);
+  const { items: cart, totalQuantity: totalCartCount, restaurantId: cartRestaurantId } = useSelector((state) => state.cart);
 
-  const handleAddToCart = useCallback((item) => dispatch(addToCart(item)), [dispatch]);
+  const handleAddToCart = useCallback((item) => {
+    const itemRestId = item.restaurant || item.restaurantId || item.restaurant?._id;
+    if (cartRestaurantId && cartRestaurantId !== itemRestId) {
+      toast.error('Your cart contains items from another restaurant. Please clear your cart first.');
+      return;
+    }
+    dispatch(addToCart(item));
+  }, [dispatch, cartRestaurantId]);
+  
   const handleRemoveFromCart = useCallback((itemId) => dispatch(removeFromCart(itemId)), [dispatch]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [shareText, setShareText] = useState('Share');

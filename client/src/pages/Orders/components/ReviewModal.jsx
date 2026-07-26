@@ -18,7 +18,7 @@ const ReviewModal = ({ order, onClose, onSuccess }) => {
     setIsSubmitting(true);
     try {
       await api.post('/reviews', {
-        restaurantId: order.restaurant,
+        restaurantId: typeof order.restaurant === 'object' ? order.restaurant._id : order.restaurant,
         orderId: order._id,
         rating,
         comment

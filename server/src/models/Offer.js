@@ -7,6 +7,12 @@ const offerSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    type: {
+        type: String,
+        enum: ['BOGO', 'PERCENTAGE', 'FLAT', 'EXCLUSIVE'],
+        default: 'PERCENTAGE',
+        required: true
+    },
     title: {
         type: String,
         required: true,

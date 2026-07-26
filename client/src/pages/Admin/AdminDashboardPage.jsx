@@ -5,7 +5,7 @@ import { fetchAdminAnalytics, fetchAdminOrders, updateAdminOrderStatus } from '.
 import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import StatCard from './components/StatCard';
-import RecentOrdersTable from './components/RecentOrdersTable';
+import OrderStatusSimulator from './components/OrderStatusSimulator';
 import { generateChartPaths } from '../../utils/chartUtils';
 
 // We use dynamic charting instead of static now
@@ -77,26 +77,18 @@ const AdminDashboardPage = () => {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  // Filter orders by search query
-  const filteredOrders = useMemo(() => {
-    // Map backend orders to format expected by RecentOrdersTable
-    const mappedOrders = orders.slice(0, 5).map(o => ({
-      id: `#${o._id.substring(o._id.length - 6).toUpperCase()}`,
-      originalId: o._id,
-      customer: o.user?.name || 'Unknown User',
-      avatar: o.user?.avatar || `https://ui-avatars.com/api/?name=${o.user?.name || 'U'}`,
-      itemsCount: o.items?.length || 0,
-      amount: o.totalAmount || 0,
-      status: o.status
-    }));
-
-    if (!searchQuery.trim()) return mappedOrders;
-    return mappedOrders.filter(
-      (order) =>
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [orders, searchQuery]);
+  // Find the most recent active order to simulate
+  const activeOrderRaw = orders.find(o => !['Delivered', 'Completed', 'Cancelled'].includes(o.status)) || orders[0];
+  
+  const activeOrder = activeOrderRaw ? {
+    id: `#${activeOrderRaw._id.substring(activeOrderRaw._id.length - 6).toUpperCase()}`,
+    originalId: activeOrderRaw._id,
+    customer: activeOrderRaw.user?.name || 'Unknown User',
+    avatar: activeOrderRaw.user?.avatar || `https://ui-avatars.com/api/?name=${activeOrderRaw.user?.name || 'U'}&background=ae3200&color=fff`,
+    itemsCount: activeOrderRaw.items?.length || 0,
+    amount: activeOrderRaw.totalAmount || 0,
+    status: activeOrderRaw.status
+  } : null;
 
   // Update order status from action dropdown
   const handleUpdateStatus = (orderId, newStatus) => {
@@ -333,11 +325,9 @@ const AdminDashboardPage = () => {
 
         {/* Orders Table & Quick Actions Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-          {/* Recent Orders List */}
-          <RecentOrdersTable 
-            filteredOrders={filteredOrders}
-            activeDropdownId={activeDropdownId}
-            setActiveDropdownId={setActiveDropdownId}
+          {/* Active Order Simulator */}
+          <OrderStatusSimulator 
+            activeOrder={activeOrder}
             handleUpdateStatus={handleUpdateStatus}
           />
 

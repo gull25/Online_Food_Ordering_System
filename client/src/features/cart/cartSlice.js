@@ -15,6 +15,7 @@ export const generateCartItemId = (item) => {
 const initialState = {
   items: {},
   totalQuantity: 0,
+  restaurantId: null,
 };
 
 const cartSlice = createSlice({
@@ -23,6 +24,12 @@ const cartSlice = createSlice({
   reducers: {
     addToCart: (state, action) => {
       const item = action.payload;
+      
+      // If cart is empty, lock it to this item's restaurant
+      if (state.totalQuantity === 0) {
+        state.restaurantId = item.restaurant || item.restaurantId;
+      }
+
       const cartItemId = generateCartItemId(item);
       if (!state.items[cartItemId]) {
         state.items[cartItemId] = { item, quantity: 1, cartItemId };
@@ -45,6 +52,7 @@ const cartSlice = createSlice({
     clearCart: (state) => {
       state.items = {};
       state.totalQuantity = 0;
+      state.restaurantId = null;
     },
   },
 });

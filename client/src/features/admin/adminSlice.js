@@ -6,7 +6,7 @@ export const fetchAdminOrders = createAsyncThunk(
   'admin/fetchOrders',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get('/api/admin/orders');
+      const response = await axiosInstance.get('/admin/orders');
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
@@ -21,7 +21,7 @@ export const updateAdminOrderStatus = createAsyncThunk(
   'admin/updateOrderStatus',
   async ({ orderId, status }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.put(`/api/orders/${orderId}/status`, { status });
+      const response = await axiosInstance.put(`/orders/${orderId}/status`, { status });
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
@@ -36,7 +36,7 @@ export const fetchAdminAnalytics = createAsyncThunk(
   'admin/fetchAnalytics',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get('/api/admin/analytics');
+      const response = await axiosInstance.get('/admin/analytics');
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
