@@ -76,17 +76,18 @@ class OrderService {
         // 4. Apply Promo Codes
         let discountPercent = 0;
         if (data.promoCode) {
-            const code = data.promoCode.trim().toUpperCase();
+            const code = data.promoCode.trim();
             const offer = await Offer.findOne({ 
-                code: code, 
+                code: new RegExp(`^${code}$`, 'i'), 
                 isActive: true,
-                validUntil: { $gte: new Date() }
+                validUntil: { $gte: new Date() },
+                restaurantId: data.restaurant
             });
 
             if (offer) {
                 discountPercent = offer.discountPercentage;
             } else {
-                throw new ApiError(400, 'Invalid or expired promo code');
+                throw new ApiError(400, 'Invalid, expired, or inapplicable promo code');
             }
         }
 

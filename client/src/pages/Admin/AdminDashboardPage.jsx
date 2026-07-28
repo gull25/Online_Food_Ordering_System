@@ -355,7 +355,7 @@ const AdminDashboardPage = () => {
                 </button>
 
                 <Link
-                  to="/offers"
+                  to="/admin/offers"
                   className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all group w-full text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-3">

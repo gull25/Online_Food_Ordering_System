@@ -3,17 +3,22 @@ import { useNavigate } from 'react-router-dom';
 
 const RestaurantCard = ({ restaurant }) => {
   const navigate = useNavigate();
-  const { id, name, rating, tags, time, minOrder, image, freeDelivery, promo } = restaurant;
+  const { _id, id, name, rating, cuisine, tags, estimatedDeliveryTime, time, minOrder, images, image, deliveryFee, promo } = restaurant;
+  const cardId = _id || id;
+  const cardTags = cuisine || tags || [];
+  const cardTime = estimatedDeliveryTime || time || '30 min';
+  const cardImage = images?.banner || images?.logo || image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80';
+  const freeDelivery = deliveryFee === 0 || restaurant.freeDelivery;
 
   return (
     <div
-      onClick={() => navigate(`/restaurant/${id}`)}
+      onClick={() => navigate(`/restaurant/${cardId}`)}
       className="bg-white rounded-2xl border border-outline-variant overflow-hidden hover:shadow-xl transition-all cursor-pointer"
     >
       <div className="h-52 relative">
         <div
           className="w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url('${image}')` }}
+          style={{ backgroundImage: `url('${cardImage}')` }}
         ></div>
         <div className="absolute top-4 left-4 flex gap-2">
           {freeDelivery && (
@@ -35,10 +40,10 @@ const RestaurantCard = ({ restaurant }) => {
             <span className="material-symbols-outlined text-[16px] fill">star</span> {rating}
           </div>
         </div>
-        <p className="text-body text-secondary mb-4">{tags.join(' • ')}</p>
+        <p className="text-body text-secondary mb-4">{cardTags.join(' • ')}</p>
         <div className="flex items-center gap-4 text-small text-secondary border-t border-outline-variant pt-4">
           <div className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[18px]">schedule</span> {time}
+            <span className="material-symbols-outlined text-[18px]">schedule</span> {cardTime}
           </div>
           <div className="flex items-center gap-1">
             <span className="material-symbols-outlined text-[18px]">payments</span> Min. ${minOrder}

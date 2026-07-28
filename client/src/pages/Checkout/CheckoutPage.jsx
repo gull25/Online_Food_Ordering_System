@@ -24,6 +24,7 @@ const CheckoutPage = () => {
 
   // Read cart from Redux
   const cartItemsObj = useSelector((state) => state.cart.items);
+  const cartRestaurantId = useSelector((state) => state.cart.restaurantId);
   // Convert { itemId: { item, quantity } } to an array for rendering
   const cartItems = useMemo(() => {
     return Object.values(cartItemsObj).map(cartItem => ({
@@ -40,6 +41,7 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('visa');
   const [deliveryPreference, setDeliveryPreference] = useState('meet');
   const [formError, setFormError] = useState('');
+  const [currentStep, setCurrentStep] = useState(1);
   
   // Payment Modal State
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -78,6 +80,17 @@ const CheckoutPage = () => {
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (formError) setFormError('');
+    setCurrentStep(1);
+  };
+
+  const handleDeliveryPreferenceChange = (pref) => {
+    setDeliveryPreference(pref);
+    setCurrentStep(1);
+  };
+
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    setCurrentStep(2);
   };
 
   const updateQuantity = (cartItemId, delta) => {
@@ -105,9 +118,13 @@ const CheckoutPage = () => {
     if (!code) return;
 
     try {
+      if (!cartRestaurantId) {
+        setPromoMessage('Please add items to your cart first.');
+        return;
+      }
       setPromoMessage('Validating...');
       const { default: api } = await import('../../api/axios');
-      const response = await api.get(`/public/offers/validate/${code}`);
+      const response = await api.get(`/public/offers/validate/${code}?restaurantId=${cartRestaurantId}`);
       
       setDiscountPercent(response.data.data.discountPercentage);
       setPromoMessage(`Promo code ${code} applied! ${response.data.data.discountPercentage}% discount on subtotal.`);
@@ -156,6 +173,8 @@ const CheckoutPage = () => {
     try {
         const resultAction = await dispatch(createOrderThunk(orderPayload)).unwrap();
         
+        setCurrentStep(3);
+
         if (resultAction.clientSecret) {
             // Open the Stripe modal
             setClientSecret(resultAction.clientSecret);
@@ -215,7 +234,7 @@ const CheckoutPage = () => {
 
       <main className="pt-24 pb-16 px-margin_mobile md:px-margin_desktop max-w-container_max mx-auto flex-grow w-full">
         {/* Progress Indicator */}
-        <CheckoutProgress />
+        <CheckoutProgress currentStep={currentStep} />
 
         {formError && (
           <div className="max-w-4xl mx-auto p-4 mb-6 bg-error-container text-on-error-container rounded-xl font-body text-small flex items-center gap-2 shadow-sm animate-in fade-in">
@@ -267,7 +286,7 @@ const CheckoutPage = () => {
               handleInputChange={handleInputChange}
               handleSubmitOrder={handleSubmitOrder}
               deliveryPreference={deliveryPreference}
-              setDeliveryPreference={setDeliveryPreference}
+              setDeliveryPreference={handleDeliveryPreferenceChange}
             />
           </div>
 
@@ -293,7 +312,7 @@ const CheckoutPage = () => {
               {/* Payment selection methods */}
               <PaymentMethods
                 paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
+                setPaymentMethod={handlePaymentMethodChange}
               />
 
               {/* Submit Checkout Button */}

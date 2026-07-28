@@ -81,6 +81,19 @@ const OffersPage = () => {
     );
   }, [searchQuery, offersData]);
 
+  // Extract best offers for the banners
+  const flashOffer = useMemo(() => {
+    return offersData.slice().sort((a, b) => (b.discountPercentage || 0) - (a.discountPercentage || 0))[0] || null;
+  }, [offersData]);
+
+  const newOffers = useMemo(() => {
+    const filtered = offersData.filter(o => o._id !== flashOffer?._id);
+    return {
+      welcome: filtered[0] || null,
+      delivery: filtered[1] || null
+    };
+  }, [offersData, flashOffer]);
+
   // Copy promo code helper
   const copyPromoCode = (code) => {
     navigator.clipboard.writeText(code);
@@ -110,13 +123,18 @@ const OffersPage = () => {
           formattedTime={formattedTime} 
           copyPromoCode={copyPromoCode} 
           copiedCode={copiedCode} 
+          offer={flashOffer}
         />
 
         {/* Search Bar for Offers */}
         <OffersFilter searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
         {/* New User Discounts (Bento Style Layout) */}
-        <NewUserDiscounts copyPromoCode={copyPromoCode} copiedCode={copiedCode} />
+        <NewUserDiscounts 
+          copyPromoCode={copyPromoCode} 
+          copiedCode={copiedCode} 
+          offers={newOffers} 
+        />
 
         {/* BOGO & Exclusive Deals Section */}
         <section className="mb-stack_lg">

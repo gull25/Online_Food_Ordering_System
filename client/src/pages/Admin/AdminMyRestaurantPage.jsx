@@ -150,6 +150,17 @@ const AdminMyRestaurantPage = () => {
     }
   };
 
+  const handleToggleFeatured = async () => {
+    try {
+      const newStatus = !restaurant.isFeatured;
+      await api.put(`/restaurants/${restaurant._id}`, { isFeatured: newStatus });
+      setRestaurant({ ...restaurant, isFeatured: newStatus });
+      toast.success(newStatus ? 'Restaurant is now featured!' : 'Restaurant is no longer featured.');
+    } catch (err) {
+      toast.error('Failed to update featured status');
+    }
+  };
+
   // Search filter
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return menuItems;
@@ -260,7 +271,17 @@ const AdminMyRestaurantPage = () => {
                 <h3 className="font-h3 text-h3 text-primary font-bold">{restaurant.name}</h3>
               </div>
             </div>
-            <div className="flex gap-stack_sm">
+            <div className="flex gap-stack_sm items-center">
+              <label className="flex items-center gap-2 cursor-pointer bg-surface-variant/30 px-4 py-2 rounded-xl border border-outline-variant/30 mr-2 transition-colors hover:bg-surface-variant/50">
+                <input
+                  type="checkbox"
+                  checked={restaurant.isFeatured || false}
+                  onChange={handleToggleFeatured}
+                  className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer"
+                />
+                <span className="font-label text-label font-bold text-on-surface">Featured</span>
+              </label>
+
               <button
                 onClick={() => openModal()}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-button text-button hover:opacity-90 transition-all shadow-md cursor-pointer"
