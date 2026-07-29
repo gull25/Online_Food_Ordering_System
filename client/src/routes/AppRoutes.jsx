@@ -14,28 +14,28 @@ import LoadingSkeleton from '../components/common/LoadingSkeleton';
 
 // ── Lazy-loaded Pages ─────────────────────────────────────────────────────────
 // Customer-facing (each page already renders its own Navbar internally)
-const HomePage             = React.lazy(() => import('../pages/Home/HomePage'));
-const AuthPage             = React.lazy(() => import('../pages/Auth/AuthPage'));
+const HomePage = React.lazy(() => import('../pages/Home/HomePage'));
+const AuthPage = React.lazy(() => import('../pages/Auth/AuthPage'));
 const RestaurantDetailPage = React.lazy(() => import('../pages/RestaurantDetails/RestaurantDetailPage'));
-const OffersPage           = React.lazy(() => import('../pages/Offers/OffersPage'));
-const TrackOrderPage       = React.lazy(() => import('../pages/Orders/TrackOrderPage'));
-const CheckoutPage         = React.lazy(() => import('../pages/Checkout/CheckoutPage'));
-const ProfilePage          = React.lazy(() => import('../pages/Profile/ProfilePage'));
+const OffersPage = React.lazy(() => import('../pages/Offers/OffersPage'));
+const TrackOrderPage = React.lazy(() => import('../pages/Orders/TrackOrderPage'));
+const CheckoutPage = React.lazy(() => import('../pages/Checkout/CheckoutPage'));
+const ProfilePage = React.lazy(() => import('../pages/Profile/ProfilePage'));
 
 // Admin-facing
-const AdminDashboardPage   = React.lazy(() => import('../pages/Admin/AdminDashboardPage'));
-const AdminOrdersPage      = React.lazy(() => import('../pages/Admin/AdminOrdersPage'));
+const AdminDashboardPage = React.lazy(() => import('../pages/Admin/AdminDashboardPage'));
+const AdminOrdersPage = React.lazy(() => import('../pages/Admin/AdminOrdersPage'));
 const AdminMyRestaurantPage = React.lazy(() => import('../pages/Admin/AdminMyRestaurantPage'));
-const AdminCategoriesPage  = React.lazy(() => import('../pages/Admin/AdminCategoriesPage'));
-const AdminOffersPage      = React.lazy(() => import('../pages/Admin/AdminOffersPage'));
-const AdminProductsPage    = React.lazy(() => import('../pages/Admin/AdminProductsPage'));
-const AdminAnalyticsPage   = React.lazy(() => import('../pages/Admin/AdminAnalyticsPage'));
+const AdminCategoriesPage = React.lazy(() => import('../pages/Admin/AdminCategoriesPage'));
+const AdminOffersPage = React.lazy(() => import('../pages/Admin/AdminOffersPage'));
+const AdminProductsPage = React.lazy(() => import('../pages/Admin/AdminProductsPage'));
+const AdminAnalyticsPage = React.lazy(() => import('../pages/Admin/AdminAnalyticsPage'));
 const RestaurantOnboardingPage = React.lazy(() => import('../pages/Admin/RestaurantOnboardingPage'));
-const StripeReturnPage     = React.lazy(() => import('../pages/Admin/StripeReturnPage'));
+const StripeReturnPage = React.lazy(() => import('../pages/Admin/StripeReturnPage'));
 
 // Utility
-const NotFoundPage         = React.lazy(() => import('../pages/NotFound/NotFoundPage'));
-const UnauthorizedPage     = React.lazy(() => import('../pages/Unauthorized/UnauthorizedPage'));
+const NotFoundPage = React.lazy(() => import('../pages/NotFound/NotFoundPage'));
+const UnauthorizedPage = React.lazy(() => import('../pages/Unauthorized/UnauthorizedPage'));
 
 // ── Route Tree ────────────────────────────────────────────────────────────────
 const AppRoutes = () => {
@@ -44,34 +44,34 @@ const AppRoutes = () => {
       <Routes>
 
         {/* ── Public Routes ─────────────────────────────────────────────── */}
-        <Route path="/"               element={<HomePage />} />
-        <Route path="/restaurant/:id" element={<RestaurantDetailPage />} />
-        <Route path="/offers"         element={<OffersPage />} />
-        <Route path="/unauthorized"   element={<UnauthorizedPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         {/* ── Guest-only Routes (redirect authenticated users away) ──────── */}
         <Route element={<GuestRoute />}>
-          <Route path="/auth"         element={<AuthPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/auth" element={<AuthPage />} />
         </Route>
 
         {/* ── Authenticated Customer Routes ─────────────────────────────── */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/track-order"  element={<TrackOrderPage />} />
-          <Route path="/checkout"     element={<CheckoutPage />} />
-          <Route path="/profile"      element={<ProfilePage />} />
+          <Route path="/restaurant/:id" element={<RestaurantDetailPage />} />
+          <Route path="/offers" element={<OffersPage />} />
+          <Route path="/track-order" element={<TrackOrderPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
         {/* ── Admin Routes (requires isAuthenticated + role === 'admin') ─── */}
         <Route element={<AdminRoute />}>
           <Route element={<AdminLayout />}>
-            <Route path="/admin"               element={<AdminDashboardPage />} />
-            <Route path="/admin/onboarding"    element={<RestaurantOnboardingPage />} />
-            <Route path="/admin/orders"        element={<AdminOrdersPage />} />
-            <Route path="/admin/analytics"     element={<AdminAnalyticsPage />} />
+            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin/onboarding" element={<RestaurantOnboardingPage />} />
+            <Route path="/admin/orders" element={<AdminOrdersPage />} />
+            <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
             <Route path="/admin/my-restaurant" element={<AdminMyRestaurantPage />} />
-            <Route path="/admin/categories"    element={<AdminCategoriesPage />} />
-            <Route path="/admin/offers"        element={<AdminOffersPage />} />
-            <Route path="/admin/products"      element={<AdminProductsPage />} />
+            <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+            <Route path="/admin/offers" element={<AdminOffersPage />} />
+            <Route path="/admin/products" element={<AdminProductsPage />} />
             <Route path="/admin/stripe/return" element={<StripeReturnPage />} />
             <Route path="/admin/stripe/refresh" element={<StripeReturnPage />} />
           </Route>

@@ -10,7 +10,7 @@ exports.getActiveOffers = asyncHandler(async (req, res, next) => {
         isActive: true,
         validUntil: { $gte: new Date() }
     };
-    
+
     // Optional: Context filter for single-restaurant view
     if (req.query.restaurantId) {
         query.restaurantId = req.query.restaurantId;

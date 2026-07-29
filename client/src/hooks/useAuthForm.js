@@ -69,12 +69,24 @@ export const useAuthForm = () => {
         setIsSuccess(true);
 
         // Admins go straight to their dashboard.
-        // Customers land on the home page.
-        setTimeout(() => {
-          if (response.user.role === 'restaurant_admin') {
+        // Customers land on the first restaurant.
+        setTimeout(async () => {
+          if (response.user.role === 'restaurant_admin' || response.user.role === 'admin') {
             navigate('/admin');
           } else {
-            navigate('/');
+            try {
+              // Note: using dynamic import for api to avoid top-level circular dependency if any, 
+              // or just importing it at the top would be better. Let's do it here.
+              const { default: api } = await import('../api/axios');
+              const res = await api.get('/restaurants');
+              if (res.data?.data?.length > 0) {
+                navigate(`/restaurant/${res.data.data[0]._id}`);
+              } else {
+                navigate('/');
+              }
+            } catch (err) {
+              navigate('/');
+            }
           }
         }, 1500);
       }

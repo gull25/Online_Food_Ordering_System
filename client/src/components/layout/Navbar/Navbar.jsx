@@ -31,7 +31,7 @@ const Navbar = () => {
   const { totalQuantity: totalItems } = useSelector((state) => state.cart);
 
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-  
+
   const [restaurants, setRestaurants] = React.useState([]);
   const [isResDropdownOpen, setIsResDropdownOpen] = React.useState(false);
 
@@ -82,7 +82,7 @@ const Navbar = () => {
               <Link className={getLinkClass('/')} to="/">Home</Link>
             )}
             {/* Dynamic Restaurants Dropdown */}
-            <div 
+            <div
               className="relative h-full flex items-center"
               onMouseEnter={() => setIsResDropdownOpen(true)}
               onMouseLeave={() => setIsResDropdownOpen(false)}
@@ -94,7 +94,7 @@ const Navbar = () => {
                 Restaurants
                 <span className="material-symbols-outlined text-[18px] ml-1">expand_more</span>
               </div>
-              
+
               {isResDropdownOpen && (
                 <div className="absolute top-[60px] -left-4 w-64 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg z-50 flex flex-col py-2 animate-in fade-in zoom-in-95 max-h-[400px] overflow-y-auto">
                   {restaurants.map(rest => (
@@ -179,7 +179,7 @@ const Navbar = () => {
                 {/* Dropdown */}
                 {isDropdownOpen && (
                   <div className="absolute right-0 top-12 mt-2 w-48 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg z-50 flex flex-col py-2 animate-in fade-in zoom-in-95">
-                    <button 
+                    <button
                       onClick={() => {
                         setIsDropdownOpen(false);
                         navigate('/profile');

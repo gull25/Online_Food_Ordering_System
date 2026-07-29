@@ -10,11 +10,11 @@ const AdminOffersPage = () => {
   const { user } = useSelector((state) => state.auth);
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -122,7 +122,7 @@ const AdminOffersPage = () => {
       <AdminSidebar activeTab="offers" />
 
       <main className="ml-64 p-margin_desktop flex-1">
-        <AdminHeader 
+        <AdminHeader
           title="Offers & Promotions"
           subtitle="Manage your promotional deals."
         />
@@ -161,9 +161,9 @@ const AdminOffersPage = () => {
                   {offers.map((offer) => (
                     <tr key={offer._id} className="border-b border-outline-variant/30 hover:bg-surface-variant/10 transition-colors">
                       <td className="px-6 py-4">
-                         <div className="w-12 h-12 rounded overflow-hidden bg-surface-container">
-                             <img src={offer.image !== 'no-photo.jpg' ? offer.image : 'https://via.placeholder.com/150'} alt={offer.title} className="w-full h-full object-cover" />
-                         </div>
+                        <div className="w-12 h-12 rounded overflow-hidden bg-surface-container">
+                          <img src={offer.image !== 'no-photo.jpg' ? offer.image : 'https://via.placeholder.com/150'} alt={offer.title} className="w-full h-full object-cover" />
+                        </div>
                       </td>
                       <td className="px-6 py-4 font-bold text-on-surface">{offer.title}</td>
                       <td className="px-6 py-4"><span className="px-2 py-1 bg-surface-container rounded text-primary font-mono text-sm">{offer.code}</span></td>
@@ -203,7 +203,7 @@ const AdminOffersPage = () => {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="space-y-1">
                 <label className="font-label text-label text-on-surface-variant uppercase">Offer Title</label>
@@ -211,7 +211,7 @@ const AdminOffersPage = () => {
                   type="text"
                   required
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                   placeholder="e.g. 50% Off First Order"
                 />
@@ -222,64 +222,64 @@ const AdminOffersPage = () => {
                 <input
                   type="text"
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                   placeholder="Applicable on orders above $20"
                 />
               </div>
 
               <div className="flex gap-4">
-                  <div className="space-y-1 flex-1">
-                    <label className="font-label text-label text-on-surface-variant uppercase">Promo Code</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.code}
-                      onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
-                      className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none uppercase"
-                      placeholder="e.g. WELCOME50"
-                    />
-                  </div>
+                <div className="space-y-1 flex-1">
+                  <label className="font-label text-label text-on-surface-variant uppercase">Promo Code</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                    className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none uppercase"
+                    placeholder="e.g. WELCOME50"
+                  />
+                </div>
 
-                  <div className="space-y-1 flex-1">
-                    <label className="font-label text-label text-on-surface-variant uppercase">Valid Until</label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.validUntil}
-                      onChange={(e) => setFormData({...formData, validUntil: e.target.value})}
-                      className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                    />
-                  </div>
+                <div className="space-y-1 flex-1">
+                  <label className="font-label text-label text-on-surface-variant uppercase">Valid Until</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.validUntil}
+                    onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
+                    className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-4">
-                  <div className="space-y-1 flex-1">
-                    <label className="font-label text-label text-on-surface-variant uppercase">Offer Type</label>
-                    <select
-                      value={formData.type}
-                      onChange={(e) => setFormData({...formData, type: e.target.value})}
-                      className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none appearance-none"
-                    >
-                        <option value="PERCENTAGE">Percentage</option>
-                        <option value="FLAT">Flat Discount</option>
-                        <option value="BOGO">BOGO (Buy 1 Get 1)</option>
-                        <option value="EXCLUSIVE">Exclusive</option>
-                    </select>
-                  </div>
+                <div className="space-y-1 flex-1">
+                  <label className="font-label text-label text-on-surface-variant uppercase">Offer Type</label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none appearance-none"
+                  >
+                    <option value="PERCENTAGE">Percentage</option>
+                    <option value="FLAT">Flat Discount</option>
+                    <option value="BOGO">BOGO (Buy 1 Get 1)</option>
+                    <option value="EXCLUSIVE">Exclusive</option>
+                  </select>
+                </div>
 
-                  <div className="space-y-1 flex-1">
-                    <label className="font-label text-label text-on-surface-variant uppercase">Discount %</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={formData.discountPercentage}
-                      onChange={(e) => setFormData({...formData, discountPercentage: Number(e.target.value)})}
-                      className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                      disabled={formData.type !== 'PERCENTAGE'}
-                    />
-                  </div>
+                <div className="space-y-1 flex-1">
+                  <label className="font-label text-label text-on-surface-variant uppercase">Discount %</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.discountPercentage}
+                    onChange={(e) => setFormData({ ...formData, discountPercentage: Number(e.target.value) })}
+                    className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    disabled={formData.type !== 'PERCENTAGE'}
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -295,15 +295,15 @@ const AdminOffersPage = () => {
               <div className="space-y-1">
                 <label className="font-label text-label text-on-surface-variant uppercase">Status</label>
                 <div className="h-12 flex items-center">
-                <label className="flex items-center gap-2 cursor-pointer">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                    className="w-5 h-5 rounded text-primary focus:ring-primary"
+                      type="checkbox"
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                      className="w-5 h-5 rounded text-primary focus:ring-primary"
                     />
                     <span className="font-body text-body">Active</span>
-                </label>
+                  </label>
                 </div>
               </div>
 
