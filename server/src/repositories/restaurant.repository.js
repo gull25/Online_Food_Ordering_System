@@ -37,7 +37,7 @@ class RestaurantRepository {
             ]);
         }
 
-        return await Restaurant.find(query);
+        return await Restaurant.find(query).lean();
     }
 
     async findById(id, options = { includeUnapproved: false }) {
@@ -45,7 +45,7 @@ class RestaurantRepository {
         if (!options.includeUnapproved) {
             query.status = 'Open';
         }
-        return await Restaurant.findOne(query);
+        return await Restaurant.findOne(query).lean();
     }
 
     async create(restaurantData) {

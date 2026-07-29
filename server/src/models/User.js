@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
     }
 );
 
+// Indexes for common queries
+userSchema.index({ role: 1 });
+userSchema.index({ restaurantId: 1 });
+
 // Encrypt password using bcrypt
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) {

@@ -6,15 +6,15 @@ class OrderRepository {
     }
 
     async findById(id) {
-        return await Order.findById(id).populate('restaurant', 'name image').populate('items.menuItem');
+        return await Order.findById(id).populate('restaurant', 'name image').populate('items.menuItem').lean();
     }
 
     async findByUser(userId) {
-        return await Order.find({ user: userId }).sort({ createdAt: -1 }).populate('restaurant', 'name image');
+        return await Order.find({ user: userId }).sort({ createdAt: -1 }).populate('restaurant', 'name image').lean();
     }
 
     async findAll(query = {}) {
-        return await Order.find(query).sort({ createdAt: -1 }).populate('user', 'name image').populate('restaurant', 'name image');
+        return await Order.find(query).sort({ createdAt: -1 }).populate('user', 'name image').populate('restaurant', 'name image').lean();
     }
 
     async updateStatus(id, status) {

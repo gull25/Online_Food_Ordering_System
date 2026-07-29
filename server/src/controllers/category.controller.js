@@ -37,7 +37,7 @@ exports.createCategory = asyncHandler(async (req, res, next) => {
 // @route   GET /api/categories/restaurant/:restaurantId
 // @access  Public
 exports.getCategoriesByRestaurant = asyncHandler(async (req, res, next) => {
-    const categories = await Category.find({ restaurantId: req.params.restaurantId }).sort({ order: 1, createdAt: 1 });
+    const categories = await Category.find({ restaurantId: req.params.restaurantId }).sort({ order: 1, createdAt: 1 }).lean();
 
     res.status(200).json({
         success: true,
