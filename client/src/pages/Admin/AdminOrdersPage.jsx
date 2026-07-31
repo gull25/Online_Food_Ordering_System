@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAdminOrders, updateAdminOrderStatus } from '../../features/admin/adminSlice';
@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import StatCard from './components/StatCard';
+import { socket, connectSocket, joinOrderRoom, leaveOrderRoom, emitRiderLocation } from '../../utils/socket';
+import api from '../../api/axios';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -15,11 +17,90 @@ const AdminOrdersPage = () => {
   
   const showToast = (message) => toast.success(message);
 
+  const { user } = useSelector((state) => state.auth);
   const { orders, loading } = useSelector((state) => state.admin);
 
   useEffect(() => {
     dispatch(fetchAdminOrders());
   }, [dispatch]);
+
+  // ── Real-time: listen for new incoming orders ──────────────────────────────
+  useEffect(() => {
+    if (!user?._id) return;
+    connectSocket(user._id);
+
+    socket.on('order:new', ({ order }) => {
+      toast.success(`🛒 New order received! #${order._id?.slice(-6).toUpperCase()}`, { duration: 6000 });
+      dispatch(fetchAdminOrders()); // refresh order list
+    });
+
+    return () => {
+      socket.off('order:new');
+    };
+  }, [user, dispatch]);
+
+  // ── Rider management state ─────────────────────────────────────────────────
+  const [riders, setRiders] = useState([]);
+  const [assigningOrderId, setAssigningOrderId] = useState(null);
+  const [selectedRiderId, setSelectedRiderId] = useState('');
+
+  const fetchRiders = async () => {
+    try {
+      const res = await api.get('/admin/riders');
+      setRiders(res.data.data || []);
+    } catch { /* riders optional */ }
+  };
+
+  const handleAssignRider = async (orderId) => {
+    if (!selectedRiderId) return toast.error('Select a rider first');
+    try {
+      await api.put(`/orders/${orderId}/rider`, { riderId: selectedRiderId });
+      toast.success('Rider assigned successfully!');
+      setAssigningOrderId(null);
+      setSelectedRiderId('');
+      dispatch(fetchAdminOrders());
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to assign rider');
+    }
+  };
+
+  // ── GPS Simulator state ────────────────────────────────────────────────────
+  const [simOrderId, setSimOrderId] = useState('');
+  const [simRiderId, setSimRiderId] = useState('');
+  const [simRunning, setSimRunning] = useState(false);
+  const simIntervalRef = useRef(null);
+  // Lahore centre as starting point
+  const simPosRef = useRef({ lat: 31.5204, lng: 74.3587 });
+
+  const startSimulation = (orderId, riderId) => {
+    if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+    joinOrderRoom(orderId);
+    setSimRunning(true);
+    setSimOrderId(orderId);
+    setSimRiderId(riderId);
+    simPosRef.current = { lat: 31.5204, lng: 74.3587 };
+    simIntervalRef.current = setInterval(() => {
+      simPosRef.current = {
+        lat: simPosRef.current.lat + (Math.random() - 0.48) * 0.0008,
+        lng: simPosRef.current.lng + (Math.random() - 0.48) * 0.0008,
+      };
+      emitRiderLocation({
+        orderId,
+        riderId,
+        lat: simPosRef.current.lat,
+        lng: simPosRef.current.lng,
+      });
+    }, 3000);
+  };
+
+  const stopSimulation = () => {
+    clearInterval(simIntervalRef.current);
+    simIntervalRef.current = null;
+    setSimRunning(false);
+    if (simOrderId) leaveOrderRoom(simOrderId);
+  };
+
+  useEffect(() => () => clearInterval(simIntervalRef.current), []);
 
   // Selected filter states
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -254,9 +335,72 @@ const AdminOrdersPage = () => {
                   <option value="Completed">Completed</option>
                   <option value="Cancelled">Cancelled</option>
                 </select>
+                {/* ── Rider Assignment Panel ──────────────────────────── */}
+                <div className="mt-4 p-4 bg-surface-variant/20 rounded-xl border border-outline-variant/40">
+                  <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">two_wheeler</span>
+                    Rider Assignment
+                  </h4>
+                  {selectedOrder.rider ? (
+                    <div className="flex items-center gap-3 text-sm text-on-surface">
+                      <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+                      <span>Rider already assigned to this order.</span>
+                    </div>
+                  ) : (
+                    <div className="flex gap-3 items-center flex-wrap">
+                      <select
+                        value={assigningOrderId === selectedOrder._id ? selectedRiderId : ''}
+                        onClick={() => { setAssigningOrderId(selectedOrder._id); fetchRiders(); }}
+                        onChange={(e) => setSelectedRiderId(e.target.value)}
+                        className="flex-1 h-10 px-3 rounded-lg border border-outline-variant bg-white text-sm outline-none focus:border-primary"
+                      >
+                        <option value="">Select a rider...</option>
+                        {riders.map(r => (
+                          <option key={r._id} value={r._id}>{r.name} — {r.status}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => handleAssignRider(selectedOrder._id)}
+                        disabled={!selectedRiderId}
+                        className="px-4 h-10 rounded-lg bg-primary text-white text-sm font-button hover:opacity-90 disabled:opacity-40 transition-opacity"
+                      >
+                        Assign
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ── GPS Simulator (FYP demo) ──────────────────────── */}
+                  {selectedOrder.status === 'Out For Delivery' && selectedOrder.rider && (
+                    <div className="mt-4 pt-4 border-t border-outline-variant/30">
+                      <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px] text-primary animate-pulse">location_on</span>
+                        Live GPS Simulator
+                      </h4>
+                      <p className="text-xs text-secondary mb-3">Simulates the rider moving toward the customer every 3 seconds. The customer's TrackOrderPage map updates in real time.</p>
+                      {simRunning && simOrderId === selectedOrder._id ? (
+                        <button
+                          onClick={stopSimulation}
+                          className="px-4 py-2 bg-error text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">stop</span>
+                          Stop Simulation
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => startSimulation(selectedOrder._id, selectedOrder.rider?._id || selectedOrder.rider)}
+                          className="px-4 py-2 bg-primary text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                          Start GPS Simulation
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <button
                   onClick={() => setSelectedOrder(null)}
-                  className="px-6 h-12 rounded-xl bg-secondary text-on-secondary font-button text-button hover:opacity-90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                  className="px-6 h-12 rounded-xl bg-secondary text-on-secondary font-button text-button hover:opacity-90 transition-colors shadow-sm cursor-pointer whitespace-nowrap mt-2"
                 >
                   Close Details
                 </button>

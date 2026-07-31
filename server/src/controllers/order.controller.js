@@ -44,12 +44,25 @@ exports.getOrderById = asyncHandler(async (req, res, next) => {
 
 // @desc    Update order status
 // @route   PUT /api/orders/:id/status
-// @access  Private/Admin
+// @access  Private/restaurant_admin
 exports.updateOrderStatus = asyncHandler(async (req, res, next) => {
     const order = await orderService.updateOrderStatus(req.params.id, req.body.status);
 
     res.status(200).json({
         success: true,
         data: order
+    });
+});
+
+// @desc    Assign a rider to an order
+// @route   PUT /api/orders/:id/rider
+// @access  Private/restaurant_admin
+exports.assignRider = asyncHandler(async (req, res, next) => {
+    const { riderId } = req.body;
+    const result = await orderService.assignRider(req.params.id, riderId);
+
+    res.status(200).json({
+        success: true,
+        data: result
     });
 });

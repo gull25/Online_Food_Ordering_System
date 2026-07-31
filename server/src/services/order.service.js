@@ -3,6 +3,7 @@ const MenuItem = require('../models/MenuItem');
 const Offer = require('../models/Offer');
 const Restaurant = require('../models/Restaurant');
 const ApiError = require('../utils/ApiError');
+const { geocodeAddress } = require('../utils/geocoder');
 
 const socketManager = require('../socket');
 
@@ -146,6 +147,23 @@ class OrderService {
             data.paymentStatus = 'Unpaid'; 
         }
 
+        // 6. Geocode Delivery Address
+        if (data.deliveryAddress && data.deliveryAddress.streetAddress) {
+            const fullAddress = `${data.deliveryAddress.streetAddress}, ${data.deliveryAddress.city || 'Lahore'}`;
+            const coords = await geocodeAddress(fullAddress);
+            if (coords) {
+                data.deliveryAddress.lat = coords.lat;
+                data.deliveryAddress.lng = coords.lng;
+            } else {
+                // Fallback to a default location if geocoding fails (e.g., Lahore center)
+                data.deliveryAddress.lat = 31.5204;
+                data.deliveryAddress.lng = 74.3587;
+            }
+        }
+
+        // 7. Initialize Status History
+        data.statusHistory = [{ status: 'Pending', timestamp: new Date() }];
+
         const newOrder = await orderRepository.create(data);
 
         // Update Stripe Payment Intent metadata with the real MongoDB Order ID
@@ -156,6 +174,21 @@ class OrderService {
                     orderId: newOrder._id.toString()
                 }
             });
+        }
+
+        // ── Notify restaurant admin via WebSocket ─────────────────────────────
+        // Find the restaurant owner's userId and emit to their socket directly.
+        try {
+            const populatedRestaurant = await Restaurant.findById(data.restaurant).select('owner');
+            if (populatedRestaurant?.owner) {
+                socketManager.emitToUser(
+                    populatedRestaurant.owner.toString(),
+                    'order:new',
+                    { order: newOrder }
+                );
+            }
+        } catch (err) {
+            console.error('[Socket.io] Failed to emit order:new:', err.message);
         }
 
         // Return order with clientSecret so frontend can mount Stripe Elements
@@ -181,7 +214,8 @@ class OrderService {
         }
 
         // Only the user who placed the order or an admin can view it
-        if (order.user.toString() !== userId.toString() && role !== 'admin' && role !== 'super_admin') {
+        const orderUserId = order.user?._id ? order.user._id.toString() : order.user?.toString();
+        if (orderUserId !== userId.toString() && role !== 'admin' && role !== 'super_admin' && role !== 'restaurant_admin') {
             throw new ApiError(403, 'Not authorized to access this order');
         }
 
@@ -193,7 +227,53 @@ class OrderService {
         if (!order) {
             throw new ApiError(404, 'Order not found');
         }
+
+        // ── Push real-time status update to everyone in the order room ─────────
+        // This fires for BOTH the customer's TrackOrderPage and the restaurant dashboard.
+        try {
+            socketManager.emitToOrderRoom(orderId, 'orderStatusUpdate', order);
+        } catch (err) {
+            console.error('[Socket.io] Failed to emit orderStatusUpdate:', err.message);
+        }
+
         return order;
+    }
+
+    async assignRider(orderId, riderId) {
+        const order = await orderRepository.findById(orderId);
+        if (!order) throw new ApiError(404, 'Order not found');
+
+        const Rider = require('../models/Rider');
+        const rider = await Rider.findById(riderId);
+        if (!rider) throw new ApiError(404, 'Rider not found');
+
+        // Update the order with the assigned rider
+        order.rider = riderId;
+        order.status = 'Out For Delivery';
+        order.statusHistory.push({ status: 'Out For Delivery', timestamp: new Date() });
+        await order.save();
+
+        // Mark rider as Busy and link to this order
+        rider.status = 'Busy';
+        rider.currentOrderId = orderId;
+        await rider.save();
+
+        // ── Notify customer of rider assignment ───────────────────────────────
+        try {
+            socketManager.emitToOrderRoom(orderId, 'order:rider_assigned', {
+                orderId,
+                riderName: rider.name,
+                riderPhone: rider.phone,
+                vehicleDetails: rider.vehicleDetails,
+                status: 'Out For Delivery'
+            });
+            // Also emit status update so TrackOrderPage progresses the timeline
+            socketManager.emitToOrderRoom(orderId, 'orderStatusUpdate', order);
+        } catch (err) {
+            console.error('[Socket.io] Failed to emit order:rider_assigned:', err.message);
+        }
+
+        return { order, rider };
     }
 }
 

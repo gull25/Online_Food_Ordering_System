@@ -3,7 +3,8 @@ const {
     createOrder,
     getMyOrders,
     getOrderById,
-    updateOrderStatus
+    updateOrderStatus,
+    assignRider
 } = require('../controllers/order.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/authorize.middleware');
@@ -14,5 +15,6 @@ router.post('/', protect, createOrder);
 router.get('/my-orders', protect, getMyOrders);
 router.get('/:id', protect, getOrderById);
 router.put('/:id/status', protect, authorize('restaurant_admin'), updateOrderStatus);
+router.put('/:id/rider', protect, authorize('restaurant_admin'), assignRider);
 
 module.exports = router;

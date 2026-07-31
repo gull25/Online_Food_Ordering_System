@@ -90,8 +90,14 @@ const orderSchema = new mongoose.Schema({
         phone: String,
         city: String,
         streetAddress: String,
-        instructions: String
+        instructions: String,
+        lat: Number,
+        lng: Number
     },
+    statusHistory: [{
+        status: String,
+        timestamp: { type: Date, default: Date.now }
+    }],
     paymentMethod: {
         type: String,
         required: true,

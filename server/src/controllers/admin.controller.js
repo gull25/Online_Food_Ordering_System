@@ -1,7 +1,9 @@
 const asyncHandler = require('../utils/asyncHandler');
 const Order = require('../models/Order');
 const Restaurant = require('../models/Restaurant');
+const Rider = require('../models/Rider');
 const ApiError = require('../utils/ApiError');
+
 
 // @desc    Get all orders for the admin's restaurant
 // @route   GET /api/admin/orders
@@ -131,5 +133,22 @@ exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
             topItems,
             cuisineDistribution
         }
+    });
+});
+
+// @desc    Get riders for the admin's restaurant
+// @route   GET /api/admin/riders
+// @access  Private (restaurant_admin)
+exports.getRiders = asyncHandler(async (req, res, next) => {
+    const query = req.user.role === 'admin'
+        ? {}
+        : { restaurant: req.user.restaurantId };
+
+    const riders = await Rider.find(query).sort({ name: 1 });
+
+    res.status(200).json({
+        success: true,
+        count: riders.length,
+        data: riders
     });
 });

@@ -6,7 +6,12 @@ class OrderRepository {
     }
 
     async findById(id) {
-        return await Order.findById(id).populate('restaurant', 'name image').populate('items.menuItem').lean();
+        return await Order.findById(id)
+            .populate('restaurant', 'name images location address')
+            .populate('rider', 'name phone vehicleDetails currentLocation')
+            .populate('user', 'name avatar')
+            .populate('items.menuItem')
+            .lean();
     }
 
     async findByUser(userId) {
@@ -18,7 +23,14 @@ class OrderRepository {
     }
 
     async updateStatus(id, status) {
-        return await Order.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
+        return await Order.findByIdAndUpdate(
+            id, 
+            { 
+                status,
+                $push: { statusHistory: { status, timestamp: new Date() } }
+            }, 
+            { new: true, runValidators: true }
+        );
     }
 }
 

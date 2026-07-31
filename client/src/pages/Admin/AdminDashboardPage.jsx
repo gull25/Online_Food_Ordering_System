@@ -6,6 +6,7 @@ import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import StatCard from './components/StatCard';
 import OrderStatusSimulator from './components/OrderStatusSimulator';
+import AdminLiveDeliveries from './components/AdminLiveDeliveries';
 import { generateChartPaths } from '../../utils/chartUtils';
 
 // We use dynamic charting instead of static now
@@ -322,6 +323,9 @@ const AdminDashboardPage = () => {
             </div>
           </div>
         </section>
+
+        {/* Live Deliveries Map */}
+        <AdminLiveDeliveries />
 
         {/* Orders Table & Quick Actions Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">

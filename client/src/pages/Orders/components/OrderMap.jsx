@@ -1,66 +1,164 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
-const OrderMap = ({ currentStep, driverPosition }) => {
+// Fix Leaflet default marker icon path issue with Vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+// Component to dynamically fit bounds of the map to include all pins
+const FitBounds = ({ restaurantLoc, customerLoc, riderLoc }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    const bounds = [];
+    if (restaurantLoc) bounds.push(restaurantLoc);
+    if (customerLoc) bounds.push(customerLoc);
+    if (riderLoc) bounds.push(riderLoc);
+
+    if (bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+  }, [map, restaurantLoc, customerLoc, riderLoc]);
+
+  return null;
+};
+
+// Fixes Leaflet's gray "shredding" tiles bug caused by flexbox/grid layout resizes
+const MapUpdater = () => {
+  const map = useMap();
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [map]);
+  return null;
+};
+
+const OrderMap = ({ restaurantLocation, customerLocation, riderLocation, restaurantName }) => {
+  const defaultCenter = [31.5204, 74.3587]; // Default to Lahore
+
+  // Custom Icons — created inside component to ensure L is initialized
+  const restaurantIcon = useMemo(() => new L.DivIcon({
+    className: '',
+    html: `<div style="width:32px;height:32px;background:#1c1b1f;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
+             <span class="material-symbols-outlined" style="font-size:16px;color:white">restaurant</span>
+           </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  }), []);
+
+  const customerIcon = useMemo(() => new L.DivIcon({
+    className: '',
+    html: `<div style="width:32px;height:32px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #ae3200;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
+             <span class="material-symbols-outlined" style="font-size:16px;color:#ae3200">home</span>
+           </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  }), []);
+
+  const riderIcon = useMemo(() => new L.DivIcon({
+    className: '',
+    html: `<div style="width:40px;height:40px;background:#ae3200;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 12px rgba(174,50,0,0.4)">
+             <span class="material-symbols-outlined fill" style="font-size:20px;color:white">two_wheeler</span>
+           </div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  }), []);
+
+  // Format coordinates for Leaflet ([lat, lng])
+  const restaurantLoc = restaurantLocation?.coordinates
+    ? [restaurantLocation.coordinates[1], restaurantLocation.coordinates[0]] // GeoJSON is [lng, lat]
+    : null;
+
+  const customerLoc = customerLocation?.lat && customerLocation?.lng
+    ? [customerLocation.lat, customerLocation.lng]
+    : null;
+
+  const riderLoc = riderLocation?.lat && riderLocation?.lng
+    ? [riderLocation.lat, riderLocation.lng]
+    : null;
+
+  const center = restaurantLoc || customerLoc || defaultCenter;
+
+  // Build the route polyline points
+  const routePoints = [];
+  if (restaurantLoc) routePoints.push(restaurantLoc);
+  if (riderLoc) routePoints.push(riderLoc); // Connect rider to the middle of the route
+  if (customerLoc) routePoints.push(customerLoc);
+
+  // Lahore City Bounds (Widened to allow smooth panning)
+  const lahoreBounds = [
+    [31.0000, 73.8000], // South-West limit
+    [32.0000, 74.9000]  // North-East limit
+  ];
+
   return (
-    <div className="flex-grow w-full relative bg-surface-container-low min-h-[300px]">
-      {/* Simulated Map Background */}
-      <div
-        className="absolute inset-0 bg-cover bg-center w-full h-full"
-        style={{
-          backgroundImage:
-            "url('https://lh3.googleusercontent.com/aida-public/AB6AXuC7ncUelo04xg3FqSynPFOc3_7ZtnznbFkHIn0vKpX0ZUrI-m8XC1PRRJ5I_DjpDB8xQ3mo7mITOt5KUP5JagYh8U_Suorrnj8w2S9V4N5K6OqeoV7FosuOWWJCxPkMXOhsUb8KxcqLR9PxoBsail0K5HPjnk-e4uJQVR6EFmzU7OrH_cuCP_XoDw29eiNoNwwTJ9_uVTFlAa4XuIpilgGFFCVbHmVVF2TNCtegjkHA4OlpN5ZSPSr9CQ')",
-        }}
-      ></div>
+    <div className="flex-grow w-full relative min-h-[300px] lg:h-full z-0">
+      <MapContainer 
+        center={center} 
+        zoom={13} 
+        minZoom={11}
+        maxBounds={lahoreBounds}
+        maxBoundsViscosity={1.0}
+        style={{ height: '100%', width: '100%', zIndex: 0 }} 
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
-      {/* Restaurant Pin */}
-      <div className="absolute top-1/4 left-1/3 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-        <div className="bg-surface-container-lowest p-2 rounded-lg shadow-md mb-1 whitespace-nowrap border border-surface-variant">
-          <span className="font-label text-label text-on-surface">Burger Joint</span>
-        </div>
-        <div className="w-8 h-8 bg-on-surface text-surface-container-lowest rounded-full flex items-center justify-center shadow-lg border-2 border-surface-container-lowest">
-          <span className="material-symbols-outlined text-white" style={{ fontSize: '16px' }}>
-            restaurant
-          </span>
-        </div>
-      </div>
+        <MapUpdater />
+        <FitBounds restaurantLoc={restaurantLoc} customerLoc={customerLoc} riderLoc={riderLoc} />
 
-      {/* Destination Pin */}
-      <div className="absolute bottom-1/3 right-1/4 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-        <div className="w-8 h-8 bg-surface-container-lowest text-primary rounded-full flex items-center justify-center shadow-lg border-2 border-primary">
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-            home
-          </span>
-        </div>
-      </div>
+        {restaurantLoc && (
+          <Marker position={restaurantLoc} icon={restaurantIcon}>
+            <Popup className="font-button text-small">
+              <strong>{restaurantName || 'Restaurant'}</strong>
+            </Popup>
+          </Marker>
+        )}
 
-      {/* Driver Pin (Simulated real-time motion) */}
-      {currentStep === 2 && (
-        <div
-          className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 transition-all duration-1000 ease-out"
-          style={{
-            top: driverPosition.top,
-            left: driverPosition.left,
-          }}
-        >
-          <div className="w-10 h-10 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-lg border-2 border-surface-container-lowest animate-pulse">
-            <span className="material-symbols-outlined fill text-white" style={{ fontSize: '20px' }}>
-              two_wheeler
-            </span>
+        {customerLoc && (
+          <Marker position={customerLoc} icon={customerIcon}>
+            <Popup className="font-button text-small">
+              <strong>Delivery Address</strong>
+            </Popup>
+          </Marker>
+        )}
+
+        {riderLoc && (
+          <Marker position={riderLoc} icon={riderIcon}>
+            <Popup className="font-button text-small">
+              <strong>Rider</strong>
+            </Popup>
+          </Marker>
+        )}
+
+        {/* Dashed line representing the route */}
+        {routePoints.length > 1 && (
+          <Polyline
+            positions={routePoints}
+            pathOptions={{ color: '#ae3200', weight: 4, dashArray: '8, 8', opacity: 0.6 }}
+          />
+        )}
+      </MapContainer>
+
+      {/* No locations placeholder */}
+      {!restaurantLoc && !customerLoc && !riderLoc && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-2 shadow-md">
+            <span className="material-symbols-outlined text-secondary">location_off</span>
+            <span className="font-label text-label text-on-surface-variant">Location data unavailable</span>
           </div>
         </div>
       )}
-
-      {/* Route Line (Decorative SVG) */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
-        <path
-          className="opacity-60"
-          d="M 330 180 Q 500 220 500 350 T 750 420"
-          fill="none"
-          stroke="#ae3200"
-          strokeDasharray="8,8"
-          strokeWidth="4"
-        ></path>
-      </svg>
     </div>
   );
 };

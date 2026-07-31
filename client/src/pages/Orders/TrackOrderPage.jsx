@@ -8,38 +8,39 @@ import OrderStatusSteps from './components/OrderStatusSteps';
 import OrderMap from './components/OrderMap';
 import DeliveryDetails from './components/DeliveryDetails';
 import ReviewModal from './components/ReviewModal';
-import { socket, connectSocket, disconnectSocket } from '../../utils/socket';
+import { socket, connectSocket, joinOrderRoom, leaveOrderRoom } from '../../utils/socket';
 import { setCurrentOrder } from '../../features/orders/orderSlice';
+import { toast } from 'react-hot-toast';
 
-const TIMELINE_STEPS = [
+const BASE_TIMELINE_STEPS = [
   {
+    status: 'Pending',
     title: 'Order Placed',
     description: "We've received your order.",
-    time: '8:05 PM',
     icon: 'check',
   },
   {
+    status: 'Preparing',
     title: 'Preparing Food',
     description: 'The kitchen is preparing your meal.',
-    time: '8:15 PM',
     icon: 'restaurant_menu',
   },
   {
+    status: 'Ready',
     title: 'Ready',
     description: 'Your order is ready to be picked up.',
-    time: '8:25 PM',
     icon: 'done_all',
   },
   {
+    status: 'Out For Delivery',
     title: 'Out For Delivery',
     description: 'Your driver is on the way.',
-    time: '8:30 PM',
     icon: 'two_wheeler',
   },
   {
+    status: 'Delivered',
     title: 'Delivered',
     description: 'Enjoy your meal!',
-    time: '8:45 PM',
     icon: 'home',
   },
 ];
@@ -54,28 +55,54 @@ const TrackOrderPage = () => {
 
   useEffect(() => {
     if (orderId) {
+      // Clear any stale previous order first
+      dispatch(setCurrentOrder(null));
       dispatch(fetchOrderByIdThunk(orderId));
     }
+    // Cleanup: clear order from Redux when leaving the page
+    return () => {
+      dispatch(setCurrentOrder(null));
+    };
   }, [dispatch, orderId]);
 
-  // WebSocket Integration for Real-Time Status Updates
+  // WebSocket Integration for Real-Time Updates
   useEffect(() => {
-    if (user && user._id) {
-      connectSocket(user._id);
+    if (!user?._id || !orderId) return;
 
-      socket.on('orderStatusUpdate', (updatedOrder) => {
-        // If the update is for the currently viewed order
-        if (updatedOrder._id === orderId) {
-          dispatch(setCurrentOrder(updatedOrder));
-        }
-      });
+    // 1. Connect and register this user
+    connectSocket(user._id);
 
-      return () => {
-        socket.off('orderStatusUpdate');
-        // We can optionally disconnect the socket entirely here, or leave it alive.
-        // For now, we'll leave it alive but remove the listener to prevent memory leaks.
-      };
-    }
+    // 2. Join the specific order room so we receive events for this order only
+    joinOrderRoom(orderId);
+
+    // 3. Listen for status updates (restaurant admin changed status)
+    socket.on('orderStatusUpdate', (updatedOrder) => {
+      if (updatedOrder._id === orderId || updatedOrder._id?.toString() === orderId) {
+        dispatch(setCurrentOrder(updatedOrder));
+      }
+    });
+
+    // 4. Listen for rider assignment notification
+    socket.on('order:rider_assigned', (data) => {
+      if (data.orderId === orderId || data.orderId?.toString() === orderId) {
+        setAssignedRider({ name: data.riderName, phone: data.riderPhone, vehicle: data.vehicleDetails });
+        toast.success(`🏄 ${data.riderName} has been assigned to your order!`, { duration: 5000 });
+      }
+    });
+
+    // 5. Listen for REAL rider GPS location (replaces simulation)
+    socket.on('rider:location', (data) => {
+      if (data.orderId === orderId || data.orderId?.toString() === orderId) {
+        setRiderGpsPosition({ lat: data.lat, lng: data.lng });
+      }
+    });
+
+    return () => {
+      socket.off('orderStatusUpdate');
+      socket.off('order:rider_assigned');
+      socket.off('rider:location');
+      leaveOrderRoom(orderId);
+    };
   }, [user, orderId, dispatch]);
 
   // Derived state for timeline step based on actual order status
@@ -102,34 +129,56 @@ const TrackOrderPage = () => {
 
   const [isLocationUpdatesActive, setIsLocationUpdatesActive] = useState(true);
   const [driverNotification, setDriverNotification] = useState('');
-  const [driverPosition, setDriverPosition] = useState({ top: '50%', left: '50%' });
+
+  // Real GPS position received from WebSocket rider:location event
+  const [riderGpsPosition, setRiderGpsPosition] = useState(null);
+  // Assigned rider info received from order:rider_assigned event
+  const [assignedRider, setAssignedRider] = useState(null);
+
+  // Set initial assigned rider if order is loaded with one
+  useEffect(() => {
+    if (order?.rider) {
+      setAssignedRider({
+        name: order.rider.name,
+        phone: order.rider.phone,
+        vehicle: order.rider.vehicleDetails,
+        location: order.rider.currentLocation // might be null
+      });
+      if (order.rider.currentLocation?.coordinates) {
+         setRiderGpsPosition({
+            lat: order.rider.currentLocation.coordinates[1],
+            lng: order.rider.currentLocation.coordinates[0]
+         });
+      }
+    }
+  }, [order?.rider]);
+
+  // Combine base timeline with actual timestamps from statusHistory
+  const timelineSteps = BASE_TIMELINE_STEPS.map((step) => {
+    const historyItem = order?.statusHistory?.find((h) => h.status === step.status);
+    return {
+      ...step,
+      time: historyItem 
+        ? new Date(historyItem.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : 'Pending',
+    };
+  });
+
+
+  const handleDriverAction = (action) => {
+    const riderName = assignedRider?.name || 'your rider';
+    setDriverNotification(`${action} ${riderName}...`);
+    setTimeout(() => setDriverNotification(''), 3000);
+  };
 
   // Review Modal State
   const [showReviewModal, setShowReviewModal] = useState(false);
 
-  // Simulate Driver coordinates moving slightly if location updates are active
-  useEffect(() => {
-    if (!isLocationUpdatesActive) return;
-    const interval = setInterval(() => {
-      const offsetTop = (Math.random() - 0.5) * 4; // slight jitter
-      const offsetLeft = (Math.random() - 0.5) * 4;
-      setDriverPosition({
-        top: `calc(50% + ${offsetTop}px)`,
-        left: `calc(50% + ${offsetLeft}px)`,
-      });
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [isLocationUpdatesActive]);
-
-  const handleDriverAction = (action) => {
-    setDriverNotification(`${action} Alex Mercer...`);
-    setTimeout(() => setDriverNotification(''), 3000);
-  };
-
-  if (loading) {
+  if (loading || (!order && orderId && !error)) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center">
-        <p className="text-on-surface-variant">Loading order details...</p>
+      <div className="bg-background min-h-screen flex items-center justify-center flex-col gap-4">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-on-surface-variant font-body">Loading order details...</p>
       </div>
     );
   }
@@ -137,10 +186,11 @@ const TrackOrderPage = () => {
   if (error || !order) {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center">
-        <p className="text-error">{error || 'Order not found.'}</p>
+        <p className="text-error">{error || 'Order not found. Please check your order ID.'}</p>
       </div>
     );
   }
+
 
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col relative">
@@ -156,32 +206,7 @@ const TrackOrderPage = () => {
         </div>
       )}
 
-      {/* Interactive Simulation Controls */}
-      <div className="max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop pt-stack_md w-full">
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-wrap gap-4 items-center justify-between shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">motion_photos_on</span>
-            <span className="font-button text-small text-on-surface">
-              Order Status Simulator:
-            </span>
-          </div>
-          <div className="flex gap-2">
-            {TIMELINE_STEPS.map((step, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentStep(idx)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                  currentStep === idx
-                    ? 'bg-primary text-white border-primary shadow-sm'
-                    : 'bg-white border-surface-variant text-on-surface hover:bg-surface-variant'
-                }`}
-              >
-                Step {idx + 1}: {step.title}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Interactive Simulation Controls Removed */}
 
       {/* Main Content */}
       <main className="flex-grow w-full max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg grid grid-cols-1 lg:grid-cols-12 gap-gutter">
@@ -208,7 +233,7 @@ const TrackOrderPage = () => {
             <div className="h-px w-full bg-surface-variant my-stack_md"></div>
 
             {/* Vertical Timeline */}
-            <OrderStatusSteps TIMELINE_STEPS={TIMELINE_STEPS} currentStep={currentStep} />
+            <OrderStatusSteps TIMELINE_STEPS={timelineSteps} currentStep={currentStep} />
           </div>
 
           {/* Order Details Summary */}
@@ -270,13 +295,19 @@ const TrackOrderPage = () => {
           {/* Map Container */}
           <div className="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col h-[500px] lg:h-full relative">
             {/* Map Area */}
-            <OrderMap currentStep={currentStep} driverPosition={driverPosition} />
+            <OrderMap 
+              restaurantLocation={order?.restaurant?.location}
+              customerLocation={order?.deliveryAddress}
+              riderLocation={riderGpsPosition}
+              restaurantName={order?.restaurant?.name}
+            />
 
             {/* Driver Details Floating Card */}
             <DeliveryDetails
               handleDriverAction={handleDriverAction}
               setIsLocationUpdatesActive={setIsLocationUpdatesActive}
               isLocationUpdatesActive={isLocationUpdatesActive}
+              rider={assignedRider}
             />
           </div>
         </div>
