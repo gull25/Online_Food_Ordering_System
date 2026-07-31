@@ -56,6 +56,17 @@ module.exports = {
                 io.to(`order_${orderId}`).emit("rider:location", { lat, lng, orderId });
 
                 // Persist latest location to MongoDB (best-effort, non-blocking)
+                if (orderId) {
+                    try {
+                        const Order = require("./models/Order");
+                        await Order.findByIdAndUpdate(orderId, {
+                            $push: { routeHistory: { lat, lng, timestamp: new Date() } }
+                        });
+                    } catch (err) {
+                        console.error("[Socket.io] Failed to update order routeHistory in DB:", err.message);
+                    }
+                }
+
                 if (riderId) {
                     try {
                         const Rider = require("./models/Rider");

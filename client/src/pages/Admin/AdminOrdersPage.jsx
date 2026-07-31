@@ -6,10 +6,11 @@ import toast from 'react-hot-toast';
 import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import StatCard from './components/StatCard';
+import AdminDeliveryReplay from './components/AdminDeliveryReplay';
 import { socket, connectSocket, joinOrderRoom, leaveOrderRoom, emitRiderLocation } from '../../utils/socket';
 import api from '../../api/axios';
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 8;
 
 const AdminOrdersPage = () => {
   const navigate = useNavigate();
@@ -19,6 +20,10 @@ const AdminOrdersPage = () => {
 
   const { user } = useSelector((state) => state.auth);
   const { orders, loading } = useSelector((state) => state.admin);
+
+  // UI State
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [replayingOrder, setReplayingOrder] = useState(null);
 
   useEffect(() => {
     dispatch(fetchAdminOrders());
@@ -111,9 +116,6 @@ const AdminOrdersPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [restaurantName, setRestaurantName] = useState('');
   const [cuisineType, setCuisineType] = useState('Italian');
-
-  // Selected Order Details modal overlay
-  const [selectedOrder, setSelectedOrder] = useState(null);
 
   // Add Restaurant form submission
   const handleAddRestaurant = (e) => {
@@ -396,6 +398,22 @@ const AdminOrdersPage = () => {
                       )}
                     </div>
                   )}
+
+                  {(selectedOrder.status === 'Delivered' || selectedOrder.status === 'Completed') && selectedOrder.routeHistory?.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-outline-variant/30">
+                      <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px] text-primary">history</span>
+                        Delivery History
+                      </h4>
+                      <button
+                        onClick={() => setReplayingOrder(selectedOrder)}
+                        className="w-full px-4 py-2 bg-primary text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">play_circle</span>
+                        Replay Delivery Route
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <button
@@ -662,6 +680,10 @@ const AdminOrdersPage = () => {
         </section>
 
       </main>
+
+      {replayingOrder && (
+        <AdminDeliveryReplay order={replayingOrder} onClose={() => setReplayingOrder(null)} />
+      )}
     </div>
   );
 };

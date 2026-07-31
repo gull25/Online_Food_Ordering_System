@@ -98,6 +98,11 @@ const orderSchema = new mongoose.Schema({
         status: String,
         timestamp: { type: Date, default: Date.now }
     }],
+    routeHistory: [{
+        lat: Number,
+        lng: Number,
+        timestamp: { type: Date, default: Date.now }
+    }],
     paymentMethod: {
         type: String,
         required: true,

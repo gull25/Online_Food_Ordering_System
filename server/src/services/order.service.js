@@ -240,7 +240,8 @@ class OrderService {
     }
 
     async assignRider(orderId, riderId) {
-        const order = await orderRepository.findById(orderId);
+        const Order = require('../models/Order');
+        const order = await Order.findById(orderId);
         if (!order) throw new ApiError(404, 'Order not found');
 
         const Rider = require('../models/Rider');
