@@ -83,6 +83,11 @@ exports.createRestaurant = asyncHandler(async (req, res, next) => {
 
     const restaurant = await restaurantService.createRestaurant(req.body);
 
+    // Update the user with the new restaurantId
+    await require('../models/User').findByIdAndUpdate(req.user.id, {
+        restaurantId: restaurant._id
+    });
+
     res.status(201).json({
         success: true,
         data: restaurant

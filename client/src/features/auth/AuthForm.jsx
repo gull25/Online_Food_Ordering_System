@@ -78,6 +78,14 @@ const AuthForm = () => {
               <label className="font-label text-label text-on-surface-variant uppercase tracking-wider">Phone Number</label>
               <input {...register('phone')} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${errors.phone ? 'border-error focus:border-error focus:ring-error/20' : inputErrorClass}`} placeholder="+1 (555) 000-0000" type="tel" />
             </div>
+            <div className="flex flex-col gap-2">
+              <label className="font-label text-label text-on-surface-variant uppercase tracking-wider">Account Type</label>
+              <select {...register('role')} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${errors.role ? 'border-error focus:border-error focus:ring-error/20' : inputErrorClass}`}>
+                <option value="customer">Customer</option>
+                <option value="rider">Rider</option>
+                <option value="restaurant_admin">Restaurant Owner</option>
+              </select>
+            </div>
           </div>
         )}
 

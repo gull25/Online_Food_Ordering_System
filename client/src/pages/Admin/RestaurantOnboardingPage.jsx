@@ -70,7 +70,8 @@ const RestaurantOnboardingPage = () => {
       const newRestaurant = res.data.data;
       
       const updatedUser = { ...user, restaurantId: newRestaurant._id };
-      dispatch(loginSuccess({ user: updatedUser, token }));
+      localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+      dispatch(loginSuccess(updatedUser));
       
       toast.success('Restaurant created successfully!');
       navigate('/admin');

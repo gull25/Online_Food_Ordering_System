@@ -270,8 +270,11 @@ class OrderService {
             });
             // Also emit status update so TrackOrderPage progresses the timeline
             socketManager.emitToOrderRoom(orderId, 'orderStatusUpdate', order);
+            
+            // Notify the rider directly in their own room
+            socketManager.emitToRider(riderId.toString(), 'rider:new_order', { order });
         } catch (err) {
-            console.error('[Socket.io] Failed to emit order:rider_assigned:', err.message);
+            console.error('[Socket.io] Failed to emit order:rider_assigned / rider:new_order:', err.message);
         }
 
         return { order, rider };

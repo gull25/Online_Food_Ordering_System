@@ -15,6 +15,7 @@ const loginSchema = z.object({
 const registerSchema = loginSchema.extend({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
   phone: z.string().optional(),
+  role: z.enum(['customer', 'restaurant_admin', 'rider']).optional(),
 });
 
 export const useAuthForm = () => {
@@ -73,20 +74,10 @@ export const useAuthForm = () => {
         setTimeout(async () => {
           if (response.user.role === 'restaurant_admin' || response.user.role === 'admin') {
             navigate('/admin');
+          } else if (response.user.role === 'rider') {
+            navigate('/rider/dashboard');
           } else {
-            try {
-              // Note: using dynamic import for api to avoid top-level circular dependency if any, 
-              // or just importing it at the top would be better. Let's do it here.
-              const { default: api } = await import('../api/axios');
-              const res = await api.get('/restaurants');
-              if (res.data?.data?.length > 0) {
-                navigate(`/restaurant/${res.data.data[0]._id}`);
-              } else {
-                navigate('/');
-              }
-            } catch (err) {
-              navigate('/');
-            }
+            navigate('/');
           }
         }, 1500);
       }

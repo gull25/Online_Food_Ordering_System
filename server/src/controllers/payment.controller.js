@@ -1,6 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
 const Order = require('../models/Order');
 const socketManager = require('../socket');
+const sendEmail = require('../utils/sendEmail');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
@@ -28,12 +29,33 @@ exports.webhook = asyncHandler(async (req, res, next) => {
         const orderId = paymentIntent.metadata.orderId;
 
         if (orderId) {
-            const order = await Order.findById(orderId);
+            const order = await Order.findById(orderId).populate('user', 'email name');
             if (order) {
                 order.paymentStatus = 'Paid';
                 order.status = 'Preparing'; 
                 await order.save();
                 console.log(`Payment confirmed and Order ${orderId} updated successfully.`);
+
+                // Send Email Receipt
+                if (order.user && order.user.email) {
+                    try {
+                        const receiptHtml = `
+                            <h1>Order Receipt</h1>
+                            <p>Hi ${order.user.name},</p>
+                            <p>Thank you for your order! Your payment of $${order.totalAmount.toFixed(2)} was successful.</p>
+                            <p><strong>Order ID:</strong> ${order._id}</p>
+                            <p>Your food is now being prepared. You can track your order on our website.</p>
+                        `;
+                        await sendEmail({
+                            email: order.user.email,
+                            subject: 'Your Foodora Order Receipt',
+                            html: receiptHtml
+                        });
+                        console.log('Receipt email sent.');
+                    } catch (err) {
+                        console.error('Failed to send receipt email:', err);
+                    }
+                }
 
                 try {
                     const customerSocketId = socketManager.getSocketIdByUserId(order.user._id || order.user);

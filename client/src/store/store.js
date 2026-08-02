@@ -11,6 +11,7 @@ import restaurantReducer from '../features/restaurants/restaurantSlice';
 import menuReducer from '../features/menu/menuSlice';
 import loadingReducer from '../features/loading/loadingSlice';
 import adminReducer from '../features/admin/adminSlice';
+import riderReducer from '../features/rider/riderSlice';
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     menu: menuReducer,
     loading: loadingReducer,
     admin: adminReducer,
+    rider: riderReducer,
   },
   devTools: process.env.NODE_ENV !== 'production',
 });

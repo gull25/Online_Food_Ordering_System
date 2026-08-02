@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const riderSchema = new mongoose.Schema(
     {
+        user: {
+            type: mongoose.Schema.ObjectId,
+            ref: 'User',
+            required: true
+        },
         name: {
             type: String,
             required: [true, 'Please add a name'],
@@ -25,6 +30,18 @@ const riderSchema = new mongoose.Schema(
             ref: 'Restaurant',
             required: [true, 'Rider must be associated with a restaurant']
         },
+        // ── Performance & Earnings Metrics ──────────────────────────────────
+        totalEarnings: { type: Number, default: 0 },
+        weeklyEarnings: { type: Number, default: 0 },
+        totalDeliveries: { type: Number, default: 0 },
+        rating: { type: Number, default: 0, min: 0, max: 5 },
+        totalRatings: { type: Number, default: 0 },
+        tier: {
+            type: String,
+            enum: ['Bronze', 'Silver', 'Gold'],
+            default: 'Bronze'
+        },
+        rewardPoints: { type: Number, default: 0 },
         // ── Live location (updated via WebSocket every few seconds) ───────────
         currentLocation: {
             type: {

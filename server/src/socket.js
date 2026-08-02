@@ -27,6 +27,14 @@ module.exports = {
                 console.log(`[Socket.io] Registered User ${userId} -> socket ${socket.id}`);
             });
 
+            // ── Join rider room ────────────────────────────────────────────────
+            socket.on("rider:join", (riderId) => {
+                if (!riderId) return;
+                const room = `rider_${riderId}`;
+                socket.join(room);
+                console.log(`[Socket.io] Socket ${socket.id} joined rider room ${room}`);
+            });
+
             // ── Join an order room ─────────────────────────────────────────────
             // Both the customer and the restaurant admin join the same room so
             // any order event is broadcast to all relevant parties at once.
@@ -116,6 +124,12 @@ module.exports = {
     emitToOrderRoom: (orderId, event, data) => {
         if (!io) return;
         io.to(`order_${orderId}`).emit(event, data);
+    },
+
+    // Emit to a specific rider room
+    emitToRider: (riderId, event, data) => {
+        if (!io) return;
+        io.to(`rider_${riderId}`).emit(event, data);
     },
 
     getSocketIdByUserId: (userId) => {

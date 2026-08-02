@@ -29,8 +29,9 @@ const AdminRoute = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (user?.role !== 'restaurant_admin') {
-    return <Navigate to="/unauthorized" replace />;
+  if (user?.role !== 'restaurant_admin' && user?.role !== 'admin') {
+    if (user?.role === 'rider') return <Navigate to="/rider/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Intercept Restaurant Admins who don't have a restaurant

@@ -156,7 +156,7 @@ const AdminDashboardPage = () => {
         {/* Header */}
         <AdminHeader 
           title={`Welcome back, ${user?.name?.split(' ')[0] || 'Admin'}`}
-          subtitle={user?.role === 'admin' ? "Here's what's happening with your restaurant today." : "Here's what's happening with Foodora today."}
+          subtitle="Here's what's happening with your restaurant today."
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           showToast={showToast}
@@ -391,44 +391,7 @@ const AdminDashboardPage = () => {
             </div>
 
             {/* Top Performing */}
-            {user?.role === 'super_admin' ? (
-              <div className="bg-inverse-surface p-gutter rounded-2xl text-on-primary shadow-xl">
-                <h3 className="font-h3 text-h3 text-primary-fixed mb-stack_md font-bold">
-                  Top Restaurant
-                </h3>
-                {analytics?.topRestaurants?.length > 0 ? (
-                  <>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex-shrink-0">
-                        <img
-                          className="w-full h-full object-cover"
-                          alt={analytics.topRestaurants[0].name}
-                          src={analytics.topRestaurants[0].image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80'}
-                        />
-                      </div>
-                      <div>
-                        <h4 className="font-button text-button text-white font-semibold line-clamp-1">
-                          {analytics.topRestaurants[0].name}
-                        </h4>
-                        <p className="font-label text-label text-surface-variant/80">
-                          {analytics.topRestaurants[0].rating} ★ (Best Seller)
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                        <p className="font-label text-[10px] text-surface-variant uppercase">
-                          Revenue
-                        </p>
-                        <p className="font-button text-button text-white">${analytics.topRestaurants[0].revenue.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-white">No data yet.</p>
-                )}
-              </div>
-            ) : (
+
               <div className="bg-inverse-surface p-gutter rounded-2xl text-on-primary shadow-xl">
                 <h3 className="font-h3 text-h3 text-primary-fixed mb-stack_md font-bold">
                   Top Selling Item
@@ -461,7 +424,6 @@ const AdminDashboardPage = () => {
                   <p className="text-white">No data yet.</p>
                 )}
               </div>
-            )}
           </div>
         </section>
       </main>

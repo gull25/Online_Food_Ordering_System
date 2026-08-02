@@ -22,6 +22,14 @@ const protect = asyncHandler(async (req, res, next) => {
                 throw new ApiError(404, 'User not found');
             }
 
+            if (req.user.role === 'rider') {
+                const Rider = require('../models/Rider');
+                const rider = await Rider.findOne({ user: req.user._id });
+                if (rider) {
+                    req.user.riderId = rider._id.toString();
+                }
+            }
+
             if (req.user.role === 'restaurant_admin') {
                 const restaurant = await Restaurant.findOne({ owner: req.user._id });
                 if (restaurant) {

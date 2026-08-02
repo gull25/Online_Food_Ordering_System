@@ -2,6 +2,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Rider = require('./src/models/Rider');
 const Restaurant = require('./src/models/Restaurant');
+const User = require('./src/models/User');
 
 const seedRider = async () => {
     try {
@@ -17,9 +18,26 @@ const seedRider = async () => {
             process.exit(1);
         }
 
+        // Check if user already exists
+        let user = await User.findOne({ email: 'rider@foodora.com' });
+        if (!user) {
+            user = await User.create({
+                name: 'Ali (Test Rider)',
+                email: 'rider@foodora.com',
+                password: 'password123',
+                phone: '03001234567',
+                role: 'rider'
+            });
+            console.log('Created rider user account');
+        }
+
+        // Delete existing rider profile for this user if any
+        await Rider.deleteOne({ user: user._id });
+
         const newRider = await Rider.create({
-            name: 'Ali (Test Rider)',
-            phone: '03001234567',
+            user: user._id,
+            name: user.name,
+            phone: user.phone,
             vehicleDetails: 'Honda CD 70',
             status: 'Available',
             restaurant: restaurant._id,

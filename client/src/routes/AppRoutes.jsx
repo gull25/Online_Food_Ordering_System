@@ -2,9 +2,10 @@ import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 // ── Route Guards ──────────────────────────────────────────────────────────────
-import ProtectedRoute from './ProtectedRoute';
+import CustomerRoute from './CustomerRoute';
 import AdminRoute from './AdminRoute';
 import GuestRoute from './GuestRoute';
+import RiderRoute from './RiderRoute';
 
 // ── Layouts ───────────────────────────────────────────────────────────────────
 import AdminLayout from '../layouts/AdminLayout';
@@ -33,6 +34,12 @@ const AdminAnalyticsPage = React.lazy(() => import('../pages/Admin/AdminAnalytic
 const RestaurantOnboardingPage = React.lazy(() => import('../pages/Admin/RestaurantOnboardingPage'));
 const StripeReturnPage = React.lazy(() => import('../pages/Admin/StripeReturnPage'));
 
+// Rider-facing
+const RiderDashboardPage = React.lazy(() => import('../pages/Rider/RiderDashboard'));
+const ActiveDeliveriesPage = React.lazy(() => import('../pages/Rider/ActiveDeliveries'));
+const EarningsPage = React.lazy(() => import('../pages/Rider/Earnings'));
+const RatingsPage = React.lazy(() => import('../pages/Rider/Ratings'));
+
 // Utility
 const NotFoundPage = React.lazy(() => import('../pages/NotFound/NotFoundPage'));
 const UnauthorizedPage = React.lazy(() => import('../pages/Unauthorized/UnauthorizedPage'));
@@ -48,12 +55,12 @@ const AppRoutes = () => {
 
         {/* ── Guest-only Routes (redirect authenticated users away) ──────── */}
         <Route element={<GuestRoute />}>
-          <Route path="/" element={<HomePage />} />
           <Route path="/auth" element={<AuthPage />} />
         </Route>
 
         {/* ── Authenticated Customer Routes ─────────────────────────────── */}
-        <Route element={<ProtectedRoute />}>
+        <Route element={<CustomerRoute />}>
+          <Route path="/" element={<HomePage />} />
           <Route path="/restaurant/:id" element={<RestaurantDetailPage />} />
           <Route path="/offers" element={<OffersPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
@@ -75,6 +82,14 @@ const AppRoutes = () => {
             <Route path="/admin/stripe/return" element={<StripeReturnPage />} />
             <Route path="/admin/stripe/refresh" element={<StripeReturnPage />} />
           </Route>
+        </Route>
+
+        {/* ── Rider Routes (requires isAuthenticated + role === 'rider') ─── */}
+        <Route element={<RiderRoute />}>
+          <Route path="/rider/dashboard" element={<RiderDashboardPage />} />
+          <Route path="/rider/active-deliveries" element={<ActiveDeliveriesPage />} />
+          <Route path="/rider/earnings" element={<EarningsPage />} />
+          <Route path="/rider/ratings" element={<RatingsPage />} />
         </Route>
 
         {/* ── 404 Catch-all ─────────────────────────────────────────────── */}

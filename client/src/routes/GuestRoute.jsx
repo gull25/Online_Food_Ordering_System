@@ -19,18 +19,10 @@ const GuestRoute = () => {
 
     if (user?.role === 'admin' || user?.role === 'restaurant_admin') {
       setRedirectPath('/admin');
+    } else if (user?.role === 'rider') {
+      setRedirectPath('/rider/dashboard');
     } else {
-      api.get('/restaurants')
-        .then((res) => {
-          if (res.data?.data?.length > 0) {
-            setRedirectPath(`/restaurant/${res.data.data[0]._id}`);
-          } else {
-            setRedirectPath('/offers');
-          }
-        })
-        .catch(() => {
-          setRedirectPath('/offers');
-        });
+      setRedirectPath('/');
     }
   }, [isAuthenticated, user]);
 

@@ -18,6 +18,7 @@ router.use('/auth', require('./auth.routes'));
 router.use('/users', require('./user.routes'));
 router.use('/restaurants', require('./restaurant.routes'));
 router.use('/orders', require('./order.routes'));
+router.use('/rider', require('./rider.routes'));
 
 router.use('/public', require('./public.routes'));
 router.use('/payments', require('./payment.routes'));
