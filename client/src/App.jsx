@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { initializeAuth } from './features/auth/authSlice';
-import AppRoutes from './routes/AppRoutes';
+import { initializeAuth } from './redux/authSlice';
+import ConditionalRoutes from './ConditionalRoutes';
 import api from './api/axios';
 import { Toaster } from 'react-hot-toast';
 
@@ -37,7 +37,7 @@ function App() {
   return (
     <>
       <Toaster position="top-right" toastOptions={{ className: 'font-body text-small' }} />
-      <AppRoutes />
+      <ConditionalRoutes />
     </>
   );
 }

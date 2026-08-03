@@ -1,1 +1,0 @@
-Frontend business logic and third-party integrations (Stripe, Firebase, Socket.IO client, local storage service, etc.)

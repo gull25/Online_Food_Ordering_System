@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { store } from '../store/store';
-import { logout } from '../features/auth/authSlice';
-import { clearCart } from '../features/cart/cartSlice';
+import { store } from '../redux/store';
+import { logout } from '../redux/authSlice';
+import { clearCart } from '../redux/cartSlice';
 import toast from 'react-hot-toast';
 
 const api = axios.create({

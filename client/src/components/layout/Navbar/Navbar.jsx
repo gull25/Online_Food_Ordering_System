@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../../../features/auth/authSlice';
-import { clearCart } from '../../../features/cart/cartSlice';
+import { logout } from '../../../redux/authSlice';
+import { clearCart } from '../../../redux/cartSlice';
 import api from '../../../api/axios';
 import ThemeToggle from '../../common/ThemeToggle';
 

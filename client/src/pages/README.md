@@ -1,1 +1,0 @@
-Route-level pages (Home, Login, Register, Restaurant, Cart, Checkout, Profile, etc.)

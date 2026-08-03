@@ -1,1 +1,0 @@
-React Router configuration, protected routes, role-based routes
