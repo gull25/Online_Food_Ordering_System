@@ -91,4 +91,4 @@ const MenuSection = ({ MENU_CATEGORIES, itemsByCategory, searchQuery, cart, addT
   );
 };
 
-export default MenuSection;
+export default React.memo(MenuSection);

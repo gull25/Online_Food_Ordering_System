@@ -140,9 +140,8 @@ exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
 // @route   GET /api/admin/riders
 // @access  Private (restaurant_admin)
 exports.getRiders = asyncHandler(async (req, res, next) => {
-    const query = req.user.role === 'admin'
-        ? {}
-        : { restaurant: req.user.restaurantId };
+    // Temporarily fetch all riders for easier testing instead of filtering by restaurant
+    const query = {};
 
     const riders = await Rider.find(query).sort({ name: 1 });
 

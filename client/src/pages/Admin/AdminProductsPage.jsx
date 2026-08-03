@@ -15,6 +15,8 @@ const AdminProductsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [sizes, setSizes] = useState([]);
+  const [addOns, setAddOns] = useState([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -60,6 +62,8 @@ const AdminProductsPage = () => {
         isAvailable: product.isAvailable ?? true
       });
       setImageFile(null);
+      setSizes(product.sizes || []);
+      setAddOns(product.addOns || []);
     } else {
       setEditingProduct(null);
       setFormData({
@@ -71,6 +75,8 @@ const AdminProductsPage = () => {
         isAvailable: true
       });
       setImageFile(null);
+      setSizes([]);
+      setAddOns([]);
     }
     setIsModalOpen(true);
   };
@@ -95,6 +101,8 @@ const AdminProductsPage = () => {
       if (imageFile) {
         data.append('image', imageFile);
       }
+      data.append('sizes', JSON.stringify(sizes));
+      data.append('addOns', JSON.stringify(addOns));
 
       if (editingProduct) {
         await api.put(`/restaurants/menu/${editingProduct._id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -297,7 +305,35 @@ const AdminProductsPage = () => {
                 </div>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-2 border-t border-outline-variant/30 pt-4">
+                <div className="flex justify-between items-center">
+                  <label className="font-label text-label text-on-surface-variant uppercase">Sizes (Optional)</label>
+                  <button type="button" onClick={() => setSizes([...sizes, {name: '', additionalPrice: 0}])} className="text-primary text-sm font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">add</span> Add Size</button>
+                </div>
+                {sizes.map((size, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <input type="text" placeholder="Size Name" value={size.name} onChange={(e) => { const newSizes = [...sizes]; newSizes[idx].name = e.target.value; setSizes(newSizes); }} className="flex-1 h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" required />
+                    <input type="number" step="0.01" min="0" placeholder="+ Price" value={size.additionalPrice} onChange={(e) => { const newSizes = [...sizes]; newSizes[idx].additionalPrice = parseFloat(e.target.value) || 0; setSizes(newSizes); }} className="w-24 h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" required />
+                    <button type="button" onClick={() => setSizes(sizes.filter((_, i) => i !== idx))} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2 border-t border-outline-variant/30 pt-4">
+                <div className="flex justify-between items-center">
+                  <label className="font-label text-label text-on-surface-variant uppercase">Add-ons (Optional)</label>
+                  <button type="button" onClick={() => setAddOns([...addOns, {name: '', price: 0}])} className="text-primary text-sm font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">add</span> Add Item</button>
+                </div>
+                {addOns.map((addon, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <input type="text" placeholder="Add-on Name" value={addon.name} onChange={(e) => { const newAddOns = [...addOns]; newAddOns[idx].name = e.target.value; setAddOns(newAddOns); }} className="flex-1 h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" required />
+                    <input type="number" step="0.01" min="0" placeholder="+ Price" value={addon.price} onChange={(e) => { const newAddOns = [...addOns]; newAddOns[idx].price = parseFloat(e.target.value) || 0; setAddOns(newAddOns); }} className="w-24 h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" required />
+                    <button type="button" onClick={() => setAddOns(addOns.filter((_, i) => i !== idx))} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-1 border-t border-outline-variant/30 pt-4">
                 <label className="font-label text-label text-on-surface-variant uppercase">Product Image</label>
                 <input
                   type="file"

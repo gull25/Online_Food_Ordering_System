@@ -2,11 +2,11 @@ const MenuItem = require('../models/MenuItem');
 
 class MenuItemRepository {
     async findByRestaurant(restaurantId) {
-        return await MenuItem.find({ restaurant: restaurantId }).populate('category');
+        return await MenuItem.find({ restaurant: restaurantId }).populate('category').lean();
     }
 
     async findById(id) {
-        return await MenuItem.findById(id).populate('category');
+        return await MenuItem.findById(id).populate('category').lean();
     }
 
     async create(menuItemData) {

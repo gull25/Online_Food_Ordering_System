@@ -6,7 +6,6 @@ import CustomerRoute from './CustomerRoute';
 import AdminRoute from './AdminRoute';
 import GuestRoute from './GuestRoute';
 import RiderRoute from './RiderRoute';
-
 // ── Layouts ───────────────────────────────────────────────────────────────────
 import AdminLayout from '../layouts/AdminLayout';
 
@@ -52,6 +51,8 @@ const AppRoutes = () => {
 
         {/* ── Public Routes ─────────────────────────────────────────────── */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        {/* TEMPORARY: Landing page moved out of GuestRoute so developers can view it while logged in */}
+        <Route path="/" element={<HomePage />} />
 
         {/* ── Guest-only Routes (redirect authenticated users away) ──────── */}
         <Route element={<GuestRoute />}>
@@ -60,7 +61,7 @@ const AppRoutes = () => {
 
         {/* ── Authenticated Customer Routes ─────────────────────────────── */}
         <Route element={<CustomerRoute />}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/customer/dashboard" element={<HomePage />} />
           <Route path="/restaurant/:id" element={<RestaurantDetailPage />} />
           <Route path="/offers" element={<OffersPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />

@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 const FeaturedRestaurantsSection = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const { featuredRestaurants, loading, error, userLocation } = useSelector((state) => state.restaurants);
   const [locating, setLocating] = React.useState(false);
 
@@ -52,7 +53,7 @@ const FeaturedRestaurantsSection = () => {
                   {locating ? 'Locating...' : (userLocation ? 'Update Location' : 'Use My Location')}
                 </button>
                 <button
-                  onClick={() => navigate('/auth')}
+                  onClick={() => isAuthenticated ? navigate('/offers') : navigate('/auth', { state: { message: 'Please login or create an account to continue.' } })}
                   className="text-primary font-button flex items-center gap-1 hover:underline"
                 >
                   View all <span className="material-symbols-outlined">arrow_forward</span>

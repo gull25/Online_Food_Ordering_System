@@ -5,8 +5,37 @@ const socketManager = require('../socket');
 
 class RiderService {
     async getProfile(userId) {
-        const rider = await riderRepository.findByUserId(userId);
-        if (!rider) throw new ApiError(404, 'Rider profile not found');
+        let rider = await riderRepository.findByUserId(userId);
+        if (!rider) {
+            const User = require('../models/User');
+            const user = await User.findById(userId);
+            if (!user) throw new ApiError(404, 'User not found');
+            
+            const Restaurant = require('../models/Restaurant');
+            let dummyRestaurant = await Restaurant.findOne();
+            if (!dummyRestaurant) {
+                dummyRestaurant = await Restaurant.create({
+                    owner: user._id,
+                    name: 'System Default Restaurant',
+                    description: 'Auto-generated for riders',
+                    address: '123 Main St',
+                    city: 'Berlin',
+                    state: 'Berlin',
+                    zipCode: '10115',
+                    cuisine: ['Other'],
+                    phone: '000-000-0000',
+                    email: `dummy_${Date.now()}@test.com`
+                });
+            }
+            const Rider = require('../models/Rider');
+            await Rider.create({
+                user: userId,
+                name: user.name,
+                phone: user.phone || '000-000-0000',
+                restaurant: dummyRestaurant._id
+            });
+            rider = await riderRepository.findByUserId(userId);
+        }
         return rider;
     }
 

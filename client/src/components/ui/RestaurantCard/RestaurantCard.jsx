@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 const RestaurantCard = ({ restaurant }) => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const { _id, id, name, rating, cuisine, tags, estimatedDeliveryTime, time, minOrder, images, image, deliveryFee, promo } = restaurant;
   const cardId = _id || id;
   const cardTags = cuisine || tags || [];
@@ -12,7 +14,7 @@ const RestaurantCard = ({ restaurant }) => {
 
   return (
     <div
-      onClick={() => navigate(`/restaurant/${cardId}`)}
+      onClick={() => isAuthenticated ? navigate(`/restaurant/${cardId}`) : navigate('/auth', { state: { message: 'Please login or create an account to continue.' } })}
       className="bg-white rounded-2xl border border-outline-variant overflow-hidden hover:shadow-xl transition-all cursor-pointer"
     >
       <div className="h-52 relative">
@@ -54,4 +56,4 @@ const RestaurantCard = ({ restaurant }) => {
   );
 };
 
-export default RestaurantCard;
+export default React.memo(RestaurantCard);

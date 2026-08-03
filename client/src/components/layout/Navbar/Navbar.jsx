@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../../features/auth/authSlice';
 import { clearCart } from '../../../features/cart/cartSlice';
 import api from '../../../api/axios';
+import ThemeToggle from '../../common/ThemeToggle';
 
 /**
  * Navbar — conditionally renders links based on Redux auth state.
@@ -102,6 +103,7 @@ const Navbar = () => {
                       key={rest._id}
                       onClick={() => setIsResDropdownOpen(false)}
                       to={isAuthenticated || location.pathname !== '/' ? `/restaurant/${rest._id}` : '/auth'}
+                      state={!(isAuthenticated || location.pathname !== '/') ? { message: 'Please login or create an account to continue.' } : undefined}
                       className="text-left px-4 py-3 hover:bg-surface-variant font-body text-body text-on-surface transition-colors cursor-pointer flex items-center gap-3 border-b border-outline-variant/10 last:border-0"
                     >
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
@@ -119,12 +121,14 @@ const Navbar = () => {
             <Link
               className={getLinkClass('/offers')}
               to={isAuthenticated || location.pathname !== '/' ? '/offers' : '/auth'}
+              state={!(isAuthenticated || location.pathname !== '/') ? { message: 'Please login or create an account to continue.' } : undefined}
             >
               Offers
             </Link>
             <Link
               className={getLinkClass('/track-order')}
               to={isAuthenticated || location.pathname !== '/' ? '/track-order' : '/auth'}
+              state={!(isAuthenticated || location.pathname !== '/') ? { message: 'Please login or create an account to continue.' } : undefined}
             >
               Track Order
             </Link>
@@ -201,6 +205,8 @@ const Navbar = () => {
               </div>
             )}
           </div>
+
+          <ThemeToggle />
 
           {/* Mobile Menu Toggle */}
           <button

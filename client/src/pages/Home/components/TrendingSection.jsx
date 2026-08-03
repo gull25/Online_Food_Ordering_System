@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import api from '../../../api/axios';
 
 const TrendingSection = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const [trendingItems, setTrendingItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +51,7 @@ const TrendingSection = () => {
                 trendingItems.map((item) => (
                   <div
                     key={item._id}
-                    onClick={() => navigate(`/restaurant/${item.restaurant?._id || item.restaurant}`)}
+                    onClick={() => isAuthenticated ? navigate(`/restaurant/${item.restaurant?._id || item.restaurant}`) : navigate('/auth', { state: { message: 'Please login or create an account to continue.' } })}
                     className="min-w-[280px] bg-white rounded-2xl border border-outline-variant hover:shadow-lg transition-all group cursor-pointer flex flex-col"
                   >
                     <div className="h-48 rounded-t-2xl overflow-hidden relative">
@@ -69,7 +71,11 @@ const TrendingSection = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/restaurant/${item.restaurant?._id || item.restaurant}`);
+                          if (isAuthenticated) {
+                            navigate(`/restaurant/${item.restaurant?._id || item.restaurant}`);
+                          } else {
+                            navigate('/auth', { state: { message: 'Please login or create an account to continue.' } });
+                          }
                         }}
                         className="mt-auto w-full py-2 border-2 border-primary-container text-primary-container font-button rounded-xl hover:bg-primary-container hover:text-white transition-all"
                       >

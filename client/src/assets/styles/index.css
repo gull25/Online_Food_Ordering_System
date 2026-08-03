@@ -84,6 +84,34 @@
   html {
     scroll-behavior: smooth;
   }
+
+  :root.dark {
+    --color-background: #131313;
+    --color-on-background: #e5e2e1;
+    --color-primary: #ffb59e;
+    --color-on-primary: #5e1700;
+    --color-primary-container: #ff5a1f;
+    --color-on-primary-container: #541400;
+    --color-secondary: #4ae183;
+    --color-on-secondary: #003919;
+    --color-secondary-container: #06bb63;
+    --color-on-secondary-container: #00431f;
+    --color-tertiary: #92ccff;
+    --color-on-tertiary: #003351;
+    --color-tertiary-container: #3599dc;
+    --color-on-tertiary-container: #002e49;
+    --color-surface: #131313;
+    --color-on-surface: #e5e2e1;
+    --color-surface-variant: #353534;
+    --color-on-surface-variant: #e4beb3;
+    --color-outline: #ab897f;
+    --color-outline-variant: #5b4038;
+    --color-surface-container-highest: #353534;
+    --color-surface-container-high: #2a2a2a;
+    --color-surface-container: #201f1f;
+    --color-surface-container-low: #1c1b1b;
+    --color-surface-container-lowest: #0e0e0e;
+  }
 }
 
 @layer utilities {

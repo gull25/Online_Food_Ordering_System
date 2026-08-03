@@ -1,10 +1,12 @@
 import React from 'react';
 import '../../assets/styles/AuthPage.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthForm from '../../features/auth/AuthForm';
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const message = location.state?.message;
 
   return (
     <main className="flex h-screen w-full flex-col md:flex-row bg-background text-on-background overflow-hidden">
@@ -37,8 +39,14 @@ const AuthPage = () => {
       </section>
 
       {/* Right Side: Authentication Shell */}
-      <section className="w-full h-2/3 md:w-1/2 md:h-full bg-surface-container-lowest overflow-y-auto px-margin_mobile py-stack_lg flex">
-        <div className="m-auto w-full flex justify-center">
+      <section className="w-full h-2/3 md:w-1/2 md:h-full bg-surface-container-lowest overflow-y-auto px-margin_mobile py-stack_lg flex flex-col items-center justify-center">
+        {message && (
+          <div className="max-w-md w-full mb-6 p-4 bg-tertiary-container text-on-tertiary-container rounded-xl flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4">
+            <span className="material-symbols-outlined">info</span>
+            <p className="font-body text-body font-medium">{message}</p>
+          </div>
+        )}
+        <div className="w-full flex justify-center">
           <AuthForm />
         </div>
       </section>

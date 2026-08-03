@@ -151,6 +151,13 @@ exports.createMenuItem = asyncHandler(async (req, res, next) => {
         const { uploadImage } = require('../services/upload.service');
         req.body.image = await uploadImage(req.file.buffer, 'foodora/menu');
     }
+    
+    if (typeof req.body.sizes === 'string') {
+        try { req.body.sizes = JSON.parse(req.body.sizes); } catch(e){}
+    }
+    if (typeof req.body.addOns === 'string') {
+        try { req.body.addOns = JSON.parse(req.body.addOns); } catch(e){}
+    }
 
     const menuItem = await restaurantService.createMenuItem(req.params.id, req.body);
 
@@ -174,6 +181,13 @@ exports.updateMenuItem = asyncHandler(async (req, res, next) => {
     if (req.file) {
         const { uploadImage } = require('../services/upload.service');
         req.body.image = await uploadImage(req.file.buffer, 'foodora/menu');
+    }
+
+    if (typeof req.body.sizes === 'string') {
+        try { req.body.sizes = JSON.parse(req.body.sizes); } catch(e){}
+    }
+    if (typeof req.body.addOns === 'string') {
+        try { req.body.addOns = JSON.parse(req.body.addOns); } catch(e){}
     }
 
     const menuItem = await restaurantService.updateMenuItem(req.params.menuId, req.body);

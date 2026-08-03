@@ -254,7 +254,7 @@ const AdminOrdersPage = () => {
       {/* Order Details Drawer Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-surface-container-lowest max-w-lg w-full rounded-2xl p-gutter border border-outline-variant/30 shadow-2xl animate-in zoom-in-95">
+          <div className="bg-surface-container-lowest max-w-md max-h-[90vh] overflow-y-auto w-full rounded-2xl p-gutter border border-outline-variant/30 shadow-2xl animate-in zoom-in-95">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-h3 text-h3 font-bold text-on-surface">Order Details: {selectedOrder.id}</h3>
               <button
@@ -315,114 +315,115 @@ const AdminOrdersPage = () => {
               </div>
             </div>
 
-              <div className="flex gap-2">
-                <select
-                  value={selectedOrder.status}
-                  onChange={(e) => {
-                    const newStatus = e.target.value;
-                    dispatch(updateAdminOrderStatus({ orderId: selectedOrder._id, status: newStatus }))
-                      .unwrap()
-                      .then((updatedOrder) => {
-                        setSelectedOrder(updatedOrder);
-                        toast.success(`Status updated to ${newStatus}`);
-                      });
-                  }}
-                  className="w-full h-12 px-4 rounded-xl border border-outline-variant bg-white font-button text-small outline-none focus:border-primary cursor-pointer"
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Preparing">Preparing</option>
-                  <option value="Ready">Ready</option>
-                  <option value="Out For Delivery">Out For Delivery</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-                {/* ── Rider Assignment Panel ──────────────────────────── */}
-                <div className="mt-4 p-4 bg-surface-variant/20 rounded-xl border border-outline-variant/40">
+            {/* ── Rider Assignment Panel ──────────────────────────── */}
+            <div className="mt-6 p-4 bg-surface-variant/20 rounded-xl border border-outline-variant/40">
+              <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">two_wheeler</span>
+                Rider Assignment
+              </h4>
+              {selectedOrder.rider ? (
+                <div className="flex items-center gap-3 text-sm text-on-surface">
+                  <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+                  <span>Rider already assigned to this order.</span>
+                </div>
+              ) : (
+                <div className="flex gap-3 items-center flex-wrap">
+                  <select
+                    value={assigningOrderId === selectedOrder._id ? selectedRiderId : ''}
+                    onClick={() => { setAssigningOrderId(selectedOrder._id); fetchRiders(); }}
+                    onChange={(e) => setSelectedRiderId(e.target.value)}
+                    className="flex-1 h-10 px-3 rounded-lg border border-outline-variant bg-white text-sm outline-none focus:border-primary"
+                  >
+                    <option value="">Select a rider...</option>
+                    {riders.map(r => (
+                      <option key={r._id} value={r._id}>{r.name} — {r.status}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAssignRider(selectedOrder._id)}
+                    disabled={!selectedRiderId}
+                    className="px-4 h-10 rounded-lg bg-primary text-white text-sm font-button hover:opacity-90 disabled:opacity-40 transition-opacity"
+                  >
+                    Assign
+                  </button>
+                </div>
+              )}
+
+              {/* ── GPS Simulator (FYP demo) ──────────────────────── */}
+              {selectedOrder.status === 'Out For Delivery' && selectedOrder.rider && (
+                <div className="mt-4 pt-4 border-t border-outline-variant/30">
                   <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px]">two_wheeler</span>
-                    Rider Assignment
+                    <span className="material-symbols-outlined text-[18px] text-primary animate-pulse">location_on</span>
+                    Live GPS Simulator
                   </h4>
-                  {selectedOrder.rider ? (
-                    <div className="flex items-center gap-3 text-sm text-on-surface">
-                      <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
-                      <span>Rider already assigned to this order.</span>
-                    </div>
+                  <p className="text-xs text-secondary mb-3">Simulates the rider moving toward the customer every 3 seconds. The customer's TrackOrderPage map updates in real time.</p>
+                  {simRunning && simOrderId === selectedOrder._id ? (
+                    <button
+                      onClick={stopSimulation}
+                      className="px-4 py-2 bg-error text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">stop</span>
+                      Stop Simulation
+                    </button>
                   ) : (
-                    <div className="flex gap-3 items-center flex-wrap">
-                      <select
-                        value={assigningOrderId === selectedOrder._id ? selectedRiderId : ''}
-                        onClick={() => { setAssigningOrderId(selectedOrder._id); fetchRiders(); }}
-                        onChange={(e) => setSelectedRiderId(e.target.value)}
-                        className="flex-1 h-10 px-3 rounded-lg border border-outline-variant bg-white text-sm outline-none focus:border-primary"
-                      >
-                        <option value="">Select a rider...</option>
-                        {riders.map(r => (
-                          <option key={r._id} value={r._id}>{r.name} — {r.status}</option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() => handleAssignRider(selectedOrder._id)}
-                        disabled={!selectedRiderId}
-                        className="px-4 h-10 rounded-lg bg-primary text-white text-sm font-button hover:opacity-90 disabled:opacity-40 transition-opacity"
-                      >
-                        Assign
-                      </button>
-                    </div>
-                  )}
-
-                  {/* ── GPS Simulator (FYP demo) ──────────────────────── */}
-                  {selectedOrder.status === 'Out For Delivery' && selectedOrder.rider && (
-                    <div className="mt-4 pt-4 border-t border-outline-variant/30">
-                      <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px] text-primary animate-pulse">location_on</span>
-                        Live GPS Simulator
-                      </h4>
-                      <p className="text-xs text-secondary mb-3">Simulates the rider moving toward the customer every 3 seconds. The customer's TrackOrderPage map updates in real time.</p>
-                      {simRunning && simOrderId === selectedOrder._id ? (
-                        <button
-                          onClick={stopSimulation}
-                          className="px-4 py-2 bg-error text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">stop</span>
-                          Stop Simulation
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => startSimulation(selectedOrder._id, selectedOrder.rider?._id || selectedOrder.rider)}
-                          className="px-4 py-2 bg-primary text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                          Start GPS Simulation
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {(selectedOrder.status === 'Delivered' || selectedOrder.status === 'Completed') && selectedOrder.routeHistory?.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-outline-variant/30">
-                      <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px] text-primary">history</span>
-                        Delivery History
-                      </h4>
-                      <button
-                        onClick={() => setReplayingOrder(selectedOrder)}
-                        className="w-full px-4 py-2 bg-primary text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">play_circle</span>
-                        Replay Delivery Route
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => startSimulation(selectedOrder._id, selectedOrder.rider?._id || selectedOrder.rider)}
+                      className="px-4 py-2 bg-primary text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                      Start GPS Simulation
+                    </button>
                   )}
                 </div>
+              )}
 
-                <button
-                  onClick={() => setSelectedOrder(null)}
-                  className="px-6 h-12 rounded-xl bg-secondary text-on-secondary font-button text-button hover:opacity-90 transition-colors shadow-sm cursor-pointer whitespace-nowrap mt-2"
-                >
-                  Close Details
-                </button>
-              </div>
+              {(selectedOrder.status === 'Delivered' || selectedOrder.status === 'Completed') && selectedOrder.routeHistory?.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-outline-variant/30">
+                  <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-primary">history</span>
+                    Delivery History
+                  </h4>
+                  <button
+                    onClick={() => setReplayingOrder(selectedOrder)}
+                    className="w-full px-4 py-2 bg-primary text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">play_circle</span>
+                    Replay Delivery Route
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <select
+                value={selectedOrder.status}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  dispatch(updateAdminOrderStatus({ orderId: selectedOrder._id, status: newStatus }))
+                    .unwrap()
+                    .then((updatedOrder) => {
+                      setSelectedOrder(updatedOrder);
+                      toast.success(`Status updated to ${newStatus}`);
+                    });
+                }}
+                className="flex-1 h-12 px-4 rounded-xl border border-outline-variant bg-white font-button text-small outline-none focus:border-primary cursor-pointer"
+              >
+                <option value="Pending">Pending</option>
+                <option value="Preparing">Preparing</option>
+                <option value="Ready">Ready</option>
+                <option value="Out For Delivery">Out For Delivery</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="px-6 h-12 rounded-xl bg-secondary text-on-secondary font-button text-button hover:opacity-90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+              >
+                Close Details
+              </button>
+            </div>
           </div>
         </div>
       )}

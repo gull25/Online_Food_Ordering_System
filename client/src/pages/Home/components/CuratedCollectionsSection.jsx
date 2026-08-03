@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import api from '../../../api/axios';
 
 const CuratedCollectionsSection = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,7 +48,7 @@ const CuratedCollectionsSection = () => {
                   return (
                     <div
                       key={item._id || index}
-                      onClick={() => navigate('/auth')}
+                      onClick={() => isAuthenticated ? navigate('/offers') : navigate('/auth', { state: { message: 'Please login or create an account to continue.' } })}
                       className="relative h-64 rounded-2xl overflow-hidden group cursor-pointer shadow-sm"
                     >
                       <div

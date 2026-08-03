@@ -26,14 +26,27 @@ class AuthService {
         // Auto-create Rider profile if role is 'rider'
         if (user.role === 'rider') {
             const Rider = require('../models/Rider');
-            // Provide dummy restaurant and phone to pass validation for now
-            // Normally rider selects restaurant during onboarding
-            const dummyRestaurant = await require('../models/Restaurant').findOne() || null;
+            const Restaurant = require('../models/Restaurant');
+            let dummyRestaurant = await Restaurant.findOne();
+            if (!dummyRestaurant) {
+                dummyRestaurant = await Restaurant.create({
+                    owner: user._id,
+                    name: 'System Default Restaurant',
+                    description: 'Auto-generated for riders',
+                    address: '123 Main St',
+                    city: 'Berlin',
+                    state: 'Berlin',
+                    zipCode: '10115',
+                    cuisine: ['Other'],
+                    phone: '000-000-0000',
+                    email: `dummy_${Date.now()}@test.com`
+                });
+            }
             await Rider.create({
                 user: user._id,
                 name: user.name,
                 phone: user.phone || '000-000-0000',
-                restaurant: dummyRestaurant ? dummyRestaurant._id : null
+                restaurant: dummyRestaurant._id
             });
         }
 

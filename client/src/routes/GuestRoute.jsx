@@ -9,32 +9,14 @@ import LoadingSkeleton from '../components/common/LoadingSkeleton';
  * Waits for isInitialized before redirecting to prevent flash on page refresh.
  */
 const GuestRoute = () => {
-  const { isAuthenticated, isInitialized, user } = useSelector(
-    (state) => state.auth
-  );
-  const [redirectPath, setRedirectPath] = useState(null);
+  const { isAuthenticated, isInitialized, user } = useSelector((state) => state.auth);
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    if (user?.role === 'admin' || user?.role === 'restaurant_admin') {
-      setRedirectPath('/admin');
-    } else if (user?.role === 'rider') {
-      setRedirectPath('/rider/dashboard');
-    } else {
-      setRedirectPath('/');
-    }
-  }, [isAuthenticated, user]);
-
-  if (!isInitialized) {
-    return null;
-  }
+  if (!isInitialized) return <LoadingSkeleton />;
 
   if (isAuthenticated) {
-    if (!redirectPath) {
-      return <LoadingSkeleton />;
-    }
-    return <Navigate to={redirectPath} replace />;
+    if (user?.role === 'restaurant_admin') return <Navigate to="/admin" replace />;
+    if (user?.role === 'rider') return <Navigate to="/rider/dashboard" replace />;
+    return <Navigate to="/customer/dashboard" replace />;
   }
 
   return <Outlet />;

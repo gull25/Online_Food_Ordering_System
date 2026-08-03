@@ -29,14 +29,14 @@ export const disconnectSocket = () => {
 // ── Join an order room (customer + restaurant both call this) ─────────────────
 // Both parties join "order_<orderId>" so all order events reach them.
 export const joinOrderRoom = (orderId) => {
-    if (orderId && socket.connected) {
+    if (orderId) {
         socket.emit('join:order_room', orderId);
     }
 };
 
 // ── Leave an order room ───────────────────────────────────────────────────────
 export const leaveOrderRoom = (orderId) => {
-    if (orderId && socket.connected) {
+    if (orderId) {
         socket.emit('leave:order_room', orderId);
     }
 };

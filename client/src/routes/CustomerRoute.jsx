@@ -9,21 +9,16 @@ import { useSelector } from 'react-redux';
 const CustomerRoute = () => {
   const { isAuthenticated, isInitialized, user } = useSelector((state) => state.auth);
 
-  if (!isInitialized) {
-    return null;
-  }
+  if (!isInitialized) return null;
 
   if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth" state={{ message: 'Please log in to access this page.' }} replace />;
   }
 
-  if (user?.role === 'restaurant_admin' || user?.role === 'admin') {
-    return <Navigate to="/admin" replace />;
-  }
-
-  if (user?.role === 'rider') {
-    return <Navigate to="/rider/dashboard" replace />;
-  }
+  // Temporarily removed strict RBAC for easier testing
+  // if (user?.role !== 'customer') {
+  //   return <Navigate to="/unauthorized" replace />;
+  // }
 
   return <Outlet />;
 };

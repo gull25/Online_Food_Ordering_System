@@ -1,4 +1,5 @@
 import React from 'react';
+import ThemeToggle from '../../../components/common/ThemeToggle';
 
 const AdminHeader = ({ title, subtitle, searchQuery, setSearchQuery, showToast, actions }) => {
   return (
@@ -25,6 +26,9 @@ const AdminHeader = ({ title, subtitle, searchQuery, setSearchQuery, showToast, 
           </div>
         )}
         {actions}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-xl overflow-hidden">
+          <ThemeToggle />
+        </div>
         <button
           onClick={() => showToast && showToast('No new notifications')}
           className="w-12 h-12 flex items-center justify-center bg-surface-container-low border border-outline-variant/30 rounded-xl hover:bg-surface-variant transition-colors relative"
