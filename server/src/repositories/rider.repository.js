@@ -38,7 +38,7 @@ class RiderRepository {
     async getAssignedOrder(riderId) {
         return await Order.findOne({
             rider: riderId,
-            status: { $in: ['Out For Delivery'] }
+            status: { $in: ['RIDER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY'] }
         })
         .populate('restaurant', 'name location address')
         .populate('user', 'name phone')
@@ -47,7 +47,7 @@ class RiderRepository {
     }
 
     async getCompletedOrders(riderId, filters = {}) {
-        const query = { rider: riderId, status: 'Completed', ...filters };
+        const query = { rider: riderId, status: 'DELIVERED', ...filters };
         return await Order.find(query).sort({ createdAt: -1 }).lean();
     }
 

@@ -36,9 +36,7 @@ const RiderHeader = ({ profile, showStatusToggle = false }) => {
                     </div>
                 )}
                 <ThemeToggle />
-                <button className="text-on-surface-variant hover:bg-surface-container p-2 rounded-full transition-colors duration-200">
-                    <span className="material-symbols-outlined">notifications</span>
-                </button>
+
                 <RiderProfileDropdown />
             </div>
         </header>

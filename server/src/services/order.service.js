@@ -61,7 +61,7 @@ class OrderService {
                         securePrice += addOnFromDb.price;
                         addOn.price = addOnFromDb.price; // Override with DB price
                     } else {
-                         throw new ApiError(400, `Invalid add-on ${addOn.name} for item ${dbItem.name}`);
+                        throw new ApiError(400, `Invalid add-on ${addOn.name} for item ${dbItem.name}`);
                     }
                 });
             }
@@ -78,8 +78,8 @@ class OrderService {
         let discountPercent = 0;
         if (data.promoCode) {
             const code = data.promoCode.trim();
-            const offer = await Offer.findOne({ 
-                code: new RegExp(`^${code}$`, 'i'), 
+            const offer = await Offer.findOne({
+                code: new RegExp(`^${code}$`, 'i'),
                 isActive: true,
                 validUntil: { $gte: new Date() },
                 restaurantId: data.restaurant
@@ -104,47 +104,67 @@ class OrderService {
         data.serviceFee = serviceFee;
         data.totalAmount = Math.max(0, calculatedTotal);
 
-        // 5. Generate Payment Intent (Stripe Live)
+        // 5. Setup Payment Gateway
         let clientSecret = null;
-        if (data.paymentMethod !== 'cash' && data.paymentMethod !== 'cod') {
+        let paymentUrl = null;
+        data.paymentGateway = data.paymentMethod === 'cash' ? 'cod' : data.paymentMethod;
+
+        if (data.paymentGateway === 'stripe') {
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
             const amountInCents = Math.round(data.totalAmount * 100);
-            
-            // Get Restaurant for Stripe Connect
-            const restaurant = await Restaurant.findById(data.restaurant);
-            if (!restaurant) {
-                throw new ApiError(404, 'Restaurant not found');
-            }
 
+            const restaurant = await Restaurant.findById(data.restaurant);
+            if (!restaurant) throw new ApiError(404, 'Restaurant not found');
+
+            const customer = await stripe.customers.create();
             const paymentIntentPayload = {
                 amount: amountInCents,
                 currency: 'usd',
-                metadata: {
-                    integration_check: 'accept_a_payment'
-                }
+                customer: customer.id,
+                payment_method_types: ['card'],
+                metadata: { integration_check: 'accept_a_payment' }
             };
 
-            // Setup Stripe Connect split payment if onboarded
             if (restaurant.stripeAccountId && restaurant.stripeOnboardingComplete) {
-                // Platform fee: 10% of subtotal + $2.50 flat service fee
                 const platformFee = (subtotal * 0.10) + serviceFee;
-                const platformFeeInCents = Math.round(platformFee * 100);
-
-                // Ensure the platform fee is not greater than the total amount
-                const finalFeeInCents = Math.min(platformFeeInCents, amountInCents);
+                const finalFeeInCents = Math.min(Math.round(platformFee * 100), amountInCents);
 
                 paymentIntentPayload.application_fee_amount = finalFeeInCents;
-                paymentIntentPayload.transfer_data = {
-                    destination: restaurant.stripeAccountId
-                };
+                paymentIntentPayload.transfer_data = { destination: restaurant.stripeAccountId };
             }
 
             const paymentIntent = await stripe.paymentIntents.create(paymentIntentPayload);
-            
             data.stripePaymentIntentId = paymentIntent.id;
             clientSecret = paymentIntent.client_secret;
+            data.paymentStatus = 'PENDING';
+            data.status = 'PENDING_PAYMENT';
+
+        } else if (data.paymentGateway === 'easypaisa') {
+            // Mock Easypaisa deep link / URL
+            paymentUrl = `https://easypaisa.com.pk/checkout?amount=${data.totalAmount}&store=Foodora`;
+            data.paymentStatus = 'PENDING';
+            data.status = 'PENDING_PAYMENT';
+
+        } else if (data.paymentGateway === 'jazzcash') {
+            // Mock JazzCash deep link / URL
+            paymentUrl = `https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform?amount=${data.totalAmount}&store=Foodora`;
+            data.paymentStatus = 'PENDING';
+            data.status = 'PENDING_PAYMENT';
+
+        } else if (data.paymentGateway === 'meezan') {
+            paymentUrl = `/bank-transfer?bank=meezan&amount=${data.totalAmount}`;
+            data.paymentStatus = 'PENDING';
+            data.status = 'PENDING_PAYMENT';
+
+        } else if (data.paymentGateway === 'ubl') {
+            paymentUrl = `/bank-transfer?bank=ubl&amount=${data.totalAmount}`;
+            data.paymentStatus = 'PENDING';
+            data.status = 'PENDING_PAYMENT';
+
         } else {
-            data.paymentStatus = 'Unpaid'; 
+            // COD
+            data.paymentStatus = 'COD_PENDING';
+            data.status = 'PLACED';
         }
 
         // 6. Geocode Delivery Address
@@ -162,50 +182,50 @@ class OrderService {
         }
 
         // 7. Initialize Status History
-        data.statusHistory = [{ status: 'Pending', timestamp: new Date() }];
+        data.statusHistory = [{ status: data.status, timestamp: new Date() }];
 
         const newOrder = await orderRepository.create(data);
-
-        // Increment orderCount for each menu item to track popularity for Trending Section
-        try {
-            for (const cartItem of data.items) {
-                await MenuItem.findByIdAndUpdate(cartItem.menuItem, {
-                    $inc: { orderCount: cartItem.quantity }
-                });
-            }
-        } catch (err) {
-            console.error('[OrderService] Failed to increment order counts:', err.message);
-        }
 
         // Update Stripe Payment Intent metadata with the real MongoDB Order ID
         if (data.stripePaymentIntentId) {
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
             await stripe.paymentIntents.update(data.stripePaymentIntentId, {
-                metadata: {
-                    orderId: newOrder._id.toString()
-                }
+                metadata: { orderId: newOrder._id.toString() }
             });
         }
 
-        // ── Notify restaurant admin via WebSocket ─────────────────────────────
-        // Find the restaurant owner's userId and emit to their socket directly.
-        try {
-            const populatedRestaurant = await Restaurant.findById(data.restaurant).select('owner');
-            if (populatedRestaurant?.owner) {
-                socketManager.emitToUser(
-                    populatedRestaurant.owner.toString(),
-                    'order:new',
-                    { order: newOrder }
-                );
+        // Only increment order counts and notify restaurant if it's COD
+        // Online payments will do this in the webhook upon success.
+        if (data.paymentGateway === 'cod') {
+            try {
+                for (const cartItem of data.items) {
+                    await MenuItem.findByIdAndUpdate(cartItem.menuItem, {
+                        $inc: { orderCount: cartItem.quantity }
+                    });
+                }
+            } catch (err) {
+                console.error('[OrderService] Failed to increment order counts:', err.message);
             }
-        } catch (err) {
-            console.error('[Socket.io] Failed to emit order:new:', err.message);
+
+            try {
+                const populatedRestaurant = await Restaurant.findById(data.restaurant).select('owner');
+                if (populatedRestaurant?.owner) {
+                    socketManager.emitToUser(
+                        populatedRestaurant.owner.toString(),
+                        'order:new',
+                        { order: newOrder }
+                    );
+                }
+            } catch (err) {
+                console.error('[Socket.io] Failed to emit order:new:', err.message);
+            }
         }
 
-        // Return order with clientSecret so frontend can mount Stripe Elements
+        // Return order with clientSecret or paymentUrl so frontend can proceed
         return {
             order: newOrder,
-            clientSecret
+            clientSecret,
+            paymentUrl
         };
     }
 
@@ -219,7 +239,7 @@ class OrderService {
 
     async getOrderById(orderId, userId, role) {
         const order = await orderRepository.findById(orderId);
-        
+
         if (!order) {
             throw new ApiError(404, 'Order not found');
         }
@@ -233,59 +253,79 @@ class OrderService {
         return order;
     }
 
-    async updateOrderStatus(orderId, status) {
-        const order = await orderRepository.updateStatus(orderId, status);
-        if (!order) {
-            throw new ApiError(404, 'Order not found');
-        }
+    async updateOrderStatus(orderId, newStatus, role = 'admin', additionalData = {}) {
+        const Order = require('../models/order.model');
+        const { enforceTransition } = require('../utils/orderStatusMachine');
+        
+        let order = await Order.findById(orderId);
+        if (!order) throw new ApiError(404, 'Order not found');
 
-        // ── Push real-time status update to everyone in the order room ─────────
-        // This fires for BOTH the customer's TrackOrderPage and the restaurant dashboard.
+        // Enforce state machine rules
+        enforceTransition(order.status, newStatus, role);
+
+        // Update fields
+        order.status = newStatus;
+        order.statusHistory.push({ status: newStatus, timestamp: new Date() });
+
+        if (additionalData.estimatedDeliveryTime) order.estimatedDeliveryTime = additionalData.estimatedDeliveryTime;
+        if (additionalData.rejectionReason) order.rejectionReason = additionalData.rejectionReason;
+        if (additionalData.cancelledBy) order.cancelledBy = additionalData.cancelledBy;
+        if (additionalData.rider) order.rider = additionalData.rider;
+
+        await order.save();
+        order = await orderRepository.findById(orderId); // get populated version
+
+        // Socket notifications based on status
         try {
             socketManager.emitToOrderRoom(orderId, 'orderStatusUpdate', order);
+            
+            switch (newStatus) {
+                case 'ACCEPTED':
+                    socketManager.emitToOrderRoom(orderId, 'order:accepted', { orderId });
+                    break;
+                case 'REJECTED':
+                    socketManager.emitToOrderRoom(orderId, 'order:rejected', { orderId, reason: additionalData.rejectionReason });
+                    break;
+                case 'PREPARING':
+                    socketManager.emitToOrderRoom(orderId, 'order:preparing', { orderId });
+                    break;
+                case 'READY_FOR_PICKUP':
+                    socketManager.emitToOrderRoom(orderId, 'order:ready', { orderId });
+                    // In a real app, emit to nearby riders. For now, we rely on riders polling available deliveries.
+                    break;
+                case 'CANCELLED':
+                    socketManager.emitToOrderRoom(orderId, 'order:cancelled', { orderId });
+                    break;
+            }
         } catch (err) {
-            console.error('[Socket.io] Failed to emit orderStatusUpdate:', err.message);
+            console.error('[Socket.io] Failed to emit order updates:', err.message);
         }
 
         return order;
     }
 
-    async assignRider(orderId, riderId) {
-        const Order = require('../models/order.model');
-        const order = await Order.findById(orderId);
-        if (!order) throw new ApiError(404, 'Order not found');
-
+    async assignRider(orderId, riderId, role = 'admin') {
         const Rider = require('../models/rider.model');
         const rider = await Rider.findById(riderId);
         if (!rider) throw new ApiError(404, 'Rider not found');
 
-        // Update the order with the assigned rider
-        order.rider = riderId;
-        order.status = 'Out For Delivery';
-        order.statusHistory.push({ status: 'Out For Delivery', timestamp: new Date() });
-        await order.save();
+        // Update order status to RIDER_ASSIGNED
+        const order = await this.updateOrderStatus(orderId, 'RIDER_ASSIGNED', role, { rider: riderId });
 
-        // Mark rider as Busy and link to this order
-        rider.status = 'Busy';
-        rider.currentOrderId = orderId;
-        await rider.save();
-
-        // ── Notify customer of rider assignment ───────────────────────────────
+        // Notify customer
         try {
             socketManager.emitToOrderRoom(orderId, 'order:rider_assigned', {
                 orderId,
                 riderName: rider.name,
                 riderPhone: rider.phone,
                 vehicleDetails: rider.vehicleDetails,
-                status: 'Out For Delivery'
+                status: 'RIDER_ASSIGNED'
             });
-            // Also emit status update so TrackOrderPage progresses the timeline
-            socketManager.emitToOrderRoom(orderId, 'orderStatusUpdate', order);
-            
-            // Notify the rider directly in their own room
-            socketManager.emitToRider(riderId.toString(), 'rider:new_order', { order });
+
+            // Notify the rider directly
+            socketManager.emitToUser(rider.user.toString(), 'rider:new_delivery', { order });
         } catch (err) {
-            console.error('[Socket.io] Failed to emit order:rider_assigned / rider:new_order:', err.message);
+            console.error('[Socket.io] Failed to emit assignment:', err.message);
         }
 
         return { order, rider };

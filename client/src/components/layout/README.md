@@ -1,1 +1,0 @@
-Layout-related components (Navbar, Footer, Sidebar, Header, MobileMenu, etc.)

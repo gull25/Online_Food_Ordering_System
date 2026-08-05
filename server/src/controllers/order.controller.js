@@ -1,9 +1,6 @@
 const asyncHandler = require('../utils/asyncHandler');
 const orderService = require('../services/order.service');
 
-// @desc    Place a new order
-// @route   POST /api/orders
-// @access  Private
 exports.createOrder = asyncHandler(async (req, res, next) => {
     // Inject user ID into the body
     req.body.user = req.user.id;
@@ -17,9 +14,6 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     });
 });
 
-// @desc    Get logged in user orders
-// @route   GET /api/orders/my-orders
-// @access  Private
 exports.getMyOrders = asyncHandler(async (req, res, next) => {
     const orders = await orderService.getMyOrders(req.user.id);
 
@@ -30,9 +24,6 @@ exports.getMyOrders = asyncHandler(async (req, res, next) => {
     });
 });
 
-// @desc    Get order by ID
-// @route   GET /api/orders/:id
-// @access  Private
 exports.getOrderById = asyncHandler(async (req, res, next) => {
     const order = await orderService.getOrderById(req.params.id, req.user.id, req.user.role);
 
@@ -42,11 +33,8 @@ exports.getOrderById = asyncHandler(async (req, res, next) => {
     });
 });
 
-// @desc    Update order status
-// @route   PUT /api/orders/:id/status
-// @access  Private/restaurant_admin
 exports.updateOrderStatus = asyncHandler(async (req, res, next) => {
-    const order = await orderService.updateOrderStatus(req.params.id, req.body.status);
+    const order = await orderService.updateOrderStatus(req.params.id, req.body.status, req.user.role, req.body);
 
     res.status(200).json({
         success: true,
@@ -54,12 +42,9 @@ exports.updateOrderStatus = asyncHandler(async (req, res, next) => {
     });
 });
 
-// @desc    Assign a rider to an order
-// @route   PUT /api/orders/:id/rider
-// @access  Private/restaurant_admin
 exports.assignRider = asyncHandler(async (req, res, next) => {
     const { riderId } = req.body;
-    const result = await orderService.assignRider(req.params.id, riderId);
+    const result = await orderService.assignRider(req.params.id, riderId, req.user.role);
 
     res.status(200).json({
         success: true,

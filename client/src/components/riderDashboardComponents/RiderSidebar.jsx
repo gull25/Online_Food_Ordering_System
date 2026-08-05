@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { RIDER_SIDEBAR_LINKS } from '../../data';
 
 const RiderSidebar = ({ activeTab }) => {
     return (
@@ -9,22 +10,12 @@ const RiderSidebar = ({ activeTab }) => {
                 <p className="text-label-bold font-label-bold text-on-surface-variant opacity-60">Utility Logistics</p>
             </div>
             <nav className="flex-grow flex flex-col px-3 gap-1">
-                <Link to="/rider/dashboard" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-transform active:scale-95 ${activeTab === 'dashboard' ? 'text-primary font-bold border-l-4 border-primary bg-surface-container-high' : 'text-on-surface-variant hover:bg-surface-container-low'}`}>
-                    <span className="material-symbols-outlined" style={activeTab === 'dashboard' ? { fontVariationSettings: "'FILL' 1" } : {}}>dashboard</span>
-                    <span className="font-inter text-xs font-bold leading-4">Overview</span>
-                </Link>
-                <Link to="/rider/active-deliveries" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-transform active:scale-95 ${activeTab === 'active-deliveries' ? 'text-primary font-bold border-l-4 border-primary bg-surface-container-high' : 'text-on-surface-variant hover:bg-surface-container-low'}`}>
-                    <span className="material-symbols-outlined" style={activeTab === 'active-deliveries' ? { fontVariationSettings: "'FILL' 1" } : {}}>local_shipping</span>
-                    <span className="font-inter text-xs font-bold leading-4">Active Deliveries</span>
-                </Link>
-                <Link to="/rider/earnings" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-transform active:scale-95 ${activeTab === 'earnings' ? 'text-primary font-bold border-l-4 border-primary bg-surface-container-high' : 'text-on-surface-variant hover:bg-surface-container-low'}`}>
-                    <span className="material-symbols-outlined" style={activeTab === 'earnings' ? { fontVariationSettings: "'FILL' 1" } : {}}>payments</span>
-                    <span className="font-inter text-xs font-bold leading-4">Earnings</span>
-                </Link>
-                <Link to="/rider/ratings" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-transform active:scale-95 ${activeTab === 'ratings' ? 'text-primary font-bold border-l-4 border-primary bg-surface-container-high' : 'text-on-surface-variant hover:bg-surface-container-low'}`}>
-                    <span className="material-symbols-outlined" style={activeTab === 'ratings' ? { fontVariationSettings: "'FILL' 1" } : {}}>star</span>
-                    <span className="font-inter text-xs font-bold leading-4">Ratings</span>
-                </Link>
+                {RIDER_SIDEBAR_LINKS.map(link => (
+                    <Link key={link.id} to={link.path} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-transform active:scale-95 ${activeTab === link.id ? 'text-primary font-bold border-l-4 border-primary bg-surface-container-high' : 'text-on-surface-variant hover:bg-surface-container-low'}`}>
+                        <span className="material-symbols-outlined" style={activeTab === link.id ? { fontVariationSettings: "'FILL' 1" } : {}}>{link.icon}</span>
+                        <span className="font-inter text-xs font-bold leading-4">{link.label}</span>
+                    </Link>
+                ))}
                 <a className="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-transform active:scale-95" href="#">
                     <span className="material-symbols-outlined">settings</span>
                     <span className="font-inter text-xs font-bold leading-4">Settings</span>

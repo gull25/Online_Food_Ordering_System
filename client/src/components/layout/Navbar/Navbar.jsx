@@ -5,6 +5,7 @@ import { logout } from '../../../redux/authSlice';
 import { clearCart } from '../../../redux/cartSlice';
 import api from '../../../api/axios';
 import ThemeToggle from '../../common/ThemeToggle';
+import { APP_ROUTES, LOCAL_STORAGE_KEYS, USER_ROLES } from '../../../constants';
 
 /**
  * Navbar — conditionally renders links based on Redux auth state.
@@ -26,7 +27,7 @@ const Navbar = () => {
 
   // ── Auth from Redux (source of truth) ──────────────────────────────────────
   const { isAuthenticated, user } = useSelector((state) => state.auth);
-  const isAdmin = isAuthenticated && user?.role === 'restaurant_admin';
+  const isAdmin = isAuthenticated && user?.role === USER_ROLES.RESTAURANT_ADMIN;
 
   // ── Cart item count ─────────────────────────────────────────────────────────
   const { totalQuantity: totalItems } = useSelector((state) => state.cart);
@@ -50,12 +51,12 @@ const Navbar = () => {
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleLogout = () => {
-    localStorage.removeItem('foodoraToken');
-    localStorage.removeItem('userInfo');
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_INFO);
     dispatch(clearCart());
     dispatch(logout());
     setIsDropdownOpen(false);
-    navigate('/');
+    navigate(APP_ROUTES.HOME);
   };
 
   // ── Styles ──────────────────────────────────────────────────────────────────
@@ -73,14 +74,14 @@ const Navbar = () => {
 
         {/* Brand */}
         <div className="flex items-center gap-stack_lg h-full">
-          <Link to="/" className="font-h3 text-h3 text-primary dark:text-primary-fixed font-bold cursor-pointer hover:opacity-90 flex items-center gap-2 h-full">
+          <Link to={APP_ROUTES.HOME} className="font-h3 text-h3 text-primary dark:text-primary-fixed font-bold cursor-pointer hover:opacity-90 flex items-center gap-2 h-full">
             Foodora
           </Link>
 
           {/* Navigation Links (Hidden on Mobile) */}
           <div className="hidden md:flex gap-gutter items-center h-full">
             {!isAuthenticated && (
-              <Link className={getLinkClass('/')} to="/">Home</Link>
+              <Link className={getLinkClass(APP_ROUTES.HOME)} to={APP_ROUTES.HOME}>Home</Link>
             )}
             {/* Dynamic Restaurants Dropdown */}
             <div
@@ -102,8 +103,8 @@ const Navbar = () => {
                     <Link
                       key={rest._id}
                       onClick={() => setIsResDropdownOpen(false)}
-                      to={isAuthenticated || location.pathname !== '/' ? `/restaurant/${rest._id}` : '/auth'}
-                      state={!(isAuthenticated || location.pathname !== '/') ? { message: 'Please login or create an account to continue.' } : undefined}
+                      to={isAuthenticated || location.pathname !== APP_ROUTES.HOME ? APP_ROUTES.RESTAURANT_DETAIL(rest._id) : APP_ROUTES.AUTH}
+                      state={!(isAuthenticated || location.pathname !== APP_ROUTES.HOME) ? { message: 'Please login or create an account to continue.' } : undefined}
                       className="text-left px-4 py-3 hover:bg-surface-variant font-body text-body text-on-surface transition-colors cursor-pointer flex items-center gap-3 border-b border-outline-variant/10 last:border-0"
                     >
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
@@ -119,16 +120,16 @@ const Navbar = () => {
               )}
             </div>
             <Link
-              className={getLinkClass('/offers')}
-              to={isAuthenticated || location.pathname !== '/' ? '/offers' : '/auth'}
-              state={!(isAuthenticated || location.pathname !== '/') ? { message: 'Please login or create an account to continue.' } : undefined}
+              className={getLinkClass(APP_ROUTES.OFFERS)}
+              to={isAuthenticated || location.pathname !== APP_ROUTES.HOME ? APP_ROUTES.OFFERS : APP_ROUTES.AUTH}
+              state={!(isAuthenticated || location.pathname !== APP_ROUTES.HOME) ? { message: 'Please login or create an account to continue.' } : undefined}
             >
               Offers
             </Link>
             <Link
-              className={getLinkClass('/track-order')}
-              to={isAuthenticated || location.pathname !== '/' ? '/track-order' : '/auth'}
-              state={!(isAuthenticated || location.pathname !== '/') ? { message: 'Please login or create an account to continue.' } : undefined}
+              className={getLinkClass(APP_ROUTES.TRACK_ORDER)}
+              to={isAuthenticated || location.pathname !== APP_ROUTES.HOME ? APP_ROUTES.TRACK_ORDER : APP_ROUTES.AUTH}
+              state={!(isAuthenticated || location.pathname !== APP_ROUTES.HOME) ? { message: 'Please login or create an account to continue.' } : undefined}
             >
               Track Order
             </Link>
@@ -140,9 +141,9 @@ const Navbar = () => {
         <div className="flex items-center gap-stack_md">
 
           {/* Cart icon — hidden on home page */}
-          {location.pathname !== '/' && (
+          {location.pathname !== APP_ROUTES.HOME && (
             <Link
-              to="/checkout"
+              to={APP_ROUTES.CHECKOUT}
               aria-label="Cart"
               className="relative p-2 hover:opacity-90 hover:scale-[1.02] transition-all cursor-pointer active:scale-95 duration-200 text-on-surface hover:bg-surface-variant rounded-full flex items-center justify-center hidden md:flex"
             >
@@ -161,7 +162,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-stack_sm ml-2">
             {!isAuthenticated ? (
               <Link
-                to="/auth"
+                to={APP_ROUTES.AUTH}
                 className="px-stack_md py-2 text-primary font-button border border-primary rounded-xl hover:bg-primary-fixed transition-all flex items-center justify-center"
               >
                 Login
@@ -186,13 +187,22 @@ const Navbar = () => {
                     <button
                       onClick={() => {
                         setIsDropdownOpen(false);
-                        navigate('/profile');
+                        navigate(APP_ROUTES.PROFILE);
                       }}
                       className="text-left px-4 py-2 hover:bg-surface-variant font-body text-body text-on-surface transition-colors cursor-pointer"
                     >
                       Profile Setting
                     </button>
-
+                    
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        navigate(APP_ROUTES.ORDERS);
+                      }}
+                      className="text-left px-4 py-2 hover:bg-surface-variant font-body text-body text-on-surface transition-colors cursor-pointer"
+                    >
+                      My Orders
+                    </button>
 
                     <button
                       onClick={handleLogout}

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/authSlice';
 import { clearCart } from '../../redux/cartSlice';
+import { ADMIN_SIDEBAR_LINKS } from '../../data';
+import { LOCAL_STORAGE_KEYS, APP_ROUTES } from '../../constants';
 
 const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
   const navigate = useNavigate();
@@ -24,11 +26,11 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('foodoraToken');
-    localStorage.removeItem('userInfo');
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_INFO);
     dispatch(clearCart());
     dispatch(logout());
-    navigate('/');
+    navigate(APP_ROUTES.HOME);
   };
 
   const getTabClass = (tabName) => {
@@ -47,65 +49,21 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
         </p>
       </div>
       <nav className="flex-1 flex flex-col gap-1 overflow-y-auto px-2">
-        <button
-          onClick={() => navigate('/admin')}
-          className={getTabClass('dashboard')}
-        >
-          <span className="material-symbols-outlined">dashboard</span>
-          <span>Dashboard</span>
-        </button>
-        <button
-          onClick={() => navigate('/admin/orders')}
-          className={getTabClass('orders')}
-        >
-          <span className="material-symbols-outlined">receipt_long</span>
-          <span>Orders</span>
-        </button>
-
-        {user?.role === 'restaurant_admin' && (
-          <>
-            <button
-              onClick={() => navigate('/admin/my-restaurant')}
-              className={getTabClass('my-restaurant')}
-            >
-              <span className="material-symbols-outlined">storefront</span>
-              <span>My Restaurant</span>
-            </button>
-            <button
-              onClick={() => navigate('/admin/categories')}
-              className={getTabClass('categories')}
-            >
-              <span className="material-symbols-outlined">category</span>
-              <span>Categories</span>
-            </button>
-            <button
-              onClick={() => navigate('/admin/offers')}
-              className={getTabClass('offers')}
-            >
-              <span className="material-symbols-outlined">local_offer</span>
-              <span>Offers</span>
-            </button>
-            <button
-              onClick={() => navigate('/admin/products')}
-              className={getTabClass('products')}
-            >
-              <span className="material-symbols-outlined">fastfood</span>
-              <span>Products</span>
-            </button>
-          </>
-        )}
-        <button
-          onClick={() => navigate('/admin/analytics')}
-          className={getTabClass('analytics')}
-        >
-          <span className="material-symbols-outlined">analytics</span>
-          <span>Analytics</span>
-        </button>
+        {ADMIN_SIDEBAR_LINKS.filter(link => link.roles.length === 0 || link.roles.includes(user?.role)).map(link => (
+          <button
+            key={link.id}
+            onClick={() => navigate(link.path)}
+            className={getTabClass(link.id)}
+          >
+            <span className="material-symbols-outlined">{link.icon}</span>
+            <span>{link.label}</span>
+          </button>
+        ))}
       </nav>
       {!user?.restaurantId && user?.role === 'restaurant_admin' && (
         <div className="p-6">
           <button
-            onClick={() => navigate('/admin/onboarding')}
+            onClick={() => navigate(APP_ROUTES.ADMIN_ONBOARDING)}
             className="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-button text-button hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
           >
             <span className="material-symbols-outlined">add_circle</span>
@@ -122,7 +80,7 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
             <button 
               onClick={() => {
                 setIsProfileOpen(false);
-                navigate('/profile');
+                navigate(APP_ROUTES.PROFILE);
               }}
               className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-on-surface transition-colors cursor-pointer flex items-center gap-3"
             >

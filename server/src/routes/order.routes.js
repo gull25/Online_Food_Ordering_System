@@ -14,7 +14,7 @@ const router = express.Router();
 router.post('/', protect, createOrder);
 router.get('/my-orders', protect, getMyOrders);
 router.get('/:id', protect, getOrderById);
-router.put('/:id/status', protect, authorize('restaurant_admin'), updateOrderStatus);
-router.put('/:id/rider', protect, authorize('restaurant_admin'), assignRider);
+router.put('/:id/status', protect, authorize('restaurant_admin', 'rider', 'customer', 'admin'), updateOrderStatus);
+router.put('/:id/rider', protect, authorize('restaurant_admin', 'admin'), assignRider);
 
 module.exports = router;

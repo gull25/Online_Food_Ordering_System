@@ -5,17 +5,14 @@ import { setWishlist } from './redux/wishlistSlice';
 import ConditionalRoutes from './ConditionalRoutes';
 import api from './api/axios';
 import { Toaster } from 'react-hot-toast';
+import { LOCAL_STORAGE_KEYS } from './constants';
 
-// Root React component — hydrates auth state from localStorage then renders routes.
 function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // Attempt to restore auth session from localStorage.
-    // initializeAuth sets isInitialized=true in both branches so route guards
-    // can safely make redirect decisions after this runs.
-    const token = localStorage.getItem('foodoraToken');
-    const userInfoString = localStorage.getItem('userInfo');
+    const token = localStorage.getItem(LOCAL_STORAGE_KEYS.TOKEN);
+    const userInfoString = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_INFO);
 
     if (token && userInfoString) {
       try {
@@ -25,14 +22,12 @@ function App() {
           dispatch(setWishlist(userInfo.favorites));
         }
       } catch {
-        // Corrupted data — treat as guest but mark initialization done.
         dispatch(initializeAuth(null));
       }
     } else {
       dispatch(initializeAuth(null));
     }
 
-    // Optional: verify backend connectivity.
     api.get('/status').catch(() => {
       console.warn('Backend connection check failed.');
     });

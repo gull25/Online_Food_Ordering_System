@@ -1,11 +1,14 @@
 import React from 'react';
 
 const STATUS_STEPS = [
-  { status: 'Pending', icon: 'receipt_long', label: 'Order Placed' },
-  { status: 'Preparing', icon: 'restaurant_menu', label: 'Preparing Food' },
-  { status: 'Ready', icon: 'done_all', label: 'Ready for Pickup' },
-  { status: 'Out For Delivery', icon: 'two_wheeler', label: 'Out for Delivery' },
-  { status: 'Delivered', icon: 'home', label: 'Delivered' }
+  { status: 'PLACED', icon: 'receipt_long', label: 'Order Placed' },
+  { status: 'ACCEPTED', icon: 'thumb_up', label: 'Order Accepted' },
+  { status: 'PREPARING', icon: 'restaurant_menu', label: 'Preparing Food' },
+  { status: 'READY_FOR_PICKUP', icon: 'done_all', label: 'Ready for Pickup' },
+  { status: 'RIDER_ASSIGNED', icon: 'person', label: 'Rider Assigned' },
+  { status: 'PICKED_UP', icon: 'shopping_bag', label: 'Picked Up' },
+  { status: 'OUT_FOR_DELIVERY', icon: 'two_wheeler', label: 'Out for Delivery' },
+  { status: 'DELIVERED', icon: 'home', label: 'Delivered' }
 ];
 
 const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {

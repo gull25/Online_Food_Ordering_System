@@ -73,8 +73,8 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Preparing', 'Ready', 'Out For Delivery', 'Delivered', 'Completed', 'Cancelled'],
-        default: 'Pending'
+        enum: ['PENDING_PAYMENT', 'PAYMENT_FAILED', 'PLACED', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'RIDER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REJECTED', 'REFUNDED'],
+        default: 'PLACED'
     },
     rider: {
         type: mongoose.Schema.Types.ObjectId,
@@ -105,16 +105,32 @@ const orderSchema = new mongoose.Schema({
     }],
     paymentMethod: {
         type: String,
-        required: true,
-        default: 'visa'
+        required: true
+    },
+    paymentGateway: {
+        type: String,
+        enum: ['cod', 'stripe', 'easypaisa', 'jazzcash']
     },
     paymentStatus: {
         type: String,
-        enum: ['Unpaid', 'Paid', 'Failed'],
-        default: 'Unpaid'
+        enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED', 'COD_PENDING', 'COD_PAID'],
+        default: 'PENDING'
     },
     stripePaymentIntentId: {
         type: String
+    },
+    gatewayTransactionId: {
+        type: String
+    },
+    estimatedDeliveryTime: {
+        type: Date
+    },
+    rejectionReason: {
+        type: String
+    },
+    cancelledBy: {
+        type: String,
+        enum: ['customer', 'restaurant', 'system']
     }
 }, {
     timestamps: true
@@ -124,6 +140,7 @@ const orderSchema = new mongoose.Schema({
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ restaurant: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
+orderSchema.index({ rider: 1, status: 1 });
 orderSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Order', orderSchema);

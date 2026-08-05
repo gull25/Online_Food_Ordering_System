@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../api/axios';
-import { toast } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
+import { useDebounce } from '../../../../helper/useDebounce';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
 import LoadingSkeleton from '../../../../components/common/LoadingSkeleton';
 
@@ -15,6 +16,7 @@ const AdminMyRestaurantPage = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Edit Item modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -162,13 +164,13 @@ const AdminMyRestaurantPage = () => {
 
   // Search filter
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return menuItems;
+    if (!debouncedSearchQuery.trim()) return menuItems;
     return menuItems.filter(
       (item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase())
+        item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
     );
-  }, [menuItems, searchQuery]);
+  }, [menuItems, debouncedSearchQuery]);
 
   // Group items by category to render sections
   const itemsByCategory = useMemo(() => {

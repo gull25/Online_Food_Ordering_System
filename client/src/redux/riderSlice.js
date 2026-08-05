@@ -26,6 +26,18 @@ export const fetchDashboardThunk = createAsyncThunk(
     }
 );
 
+export const fetchAvailableDeliveriesThunk = createAsyncThunk(
+    'rider/fetchAvailableDeliveries',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.get('/rider/available');
+            return response.data.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch available deliveries');
+        }
+    }
+);
+
 export const fetchActiveOrderThunk = createAsyncThunk(
     'rider/fetchActiveOrder',
     async (_, { rejectWithValue }) => {
@@ -34,6 +46,18 @@ export const fetchActiveOrderThunk = createAsyncThunk(
             return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch active order');
+        }
+    }
+);
+
+export const fetchDeliveryHistoryThunk = createAsyncThunk(
+    'rider/fetchDeliveryHistory',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.get('/rider/history');
+            return response.data.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch delivery history');
         }
     }
 );
@@ -50,6 +74,20 @@ export const updateRiderStatusThunk = createAsyncThunk(
     }
 );
 
+export const acceptDeliveryThunk = createAsyncThunk(
+    'rider/acceptDelivery',
+    async (orderId, { rejectWithValue }) => {
+        try {
+            const response = await api.put(`/rider/accept/${orderId}`);
+            toast.success('Delivery accepted!');
+            return response.data.data;
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to accept delivery');
+            return rejectWithValue(error.response?.data?.message);
+        }
+    }
+);
+
 export const confirmPickupThunk = createAsyncThunk(
     'rider/confirmPickup',
     async (orderId, { rejectWithValue }) => {
@@ -59,6 +97,20 @@ export const confirmPickupThunk = createAsyncThunk(
             return response.data.data;
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to confirm pickup');
+            return rejectWithValue(error.response?.data?.message);
+        }
+    }
+);
+
+export const startDeliveryThunk = createAsyncThunk(
+    'rider/startDelivery',
+    async (orderId, { rejectWithValue }) => {
+        try {
+            const response = await api.put(`/rider/start/${orderId}`);
+            toast.success('Delivery started!');
+            return response.data.data;
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to start delivery');
             return rejectWithValue(error.response?.data?.message);
         }
     }
@@ -105,7 +157,9 @@ export const fetchPerformanceThunk = createAsyncThunk(
 const initialState = {
     profile: null,
     dashboard: null,
+    availableDeliveries: [],
     activeOrder: null,
+    deliveryHistory: [],
     earnings: null,
     performance: null,
     loading: false,
@@ -138,7 +192,25 @@ const riderSlice = createSlice({
                 if (state.profile) state.profile.status = action.payload.status; 
             })
 
+            .addCase(fetchAvailableDeliveriesThunk.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(fetchAvailableDeliveriesThunk.fulfilled, (state, action) => { state.loading = false; state.availableDeliveries = action.payload; })
+            .addCase(fetchAvailableDeliveriesThunk.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
+
+            .addCase(fetchDeliveryHistoryThunk.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(fetchDeliveryHistoryThunk.fulfilled, (state, action) => { state.loading = false; state.deliveryHistory = action.payload; })
+            .addCase(fetchDeliveryHistoryThunk.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
+
+            .addCase(acceptDeliveryThunk.fulfilled, (state, action) => {
+                state.activeOrder = action.payload;
+                state.availableDeliveries = state.availableDeliveries.filter(d => d._id !== action.payload._id);
+                if (state.profile) state.profile.status = 'Busy';
+            })
+
             .addCase(confirmPickupThunk.fulfilled, (state, action) => {
+                if (state.activeOrder) state.activeOrder = action.payload;
+            })
+
+            .addCase(startDeliveryThunk.fulfilled, (state, action) => {
                 if (state.activeOrder) state.activeOrder = action.payload;
             })
 

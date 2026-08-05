@@ -1,27 +1,24 @@
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { APP_ROUTES, USER_ROLES } from './constants';
 
-// ── Route Guards ──────────────────────────────────────────────────────────────
 import { ProtectedRoute, GuestRoute } from './ProtectedRoute';
 
-// ── Layouts ───────────────────────────────────────────────────────────────────
 import AdminLayout from './components/adminDashboardComponents/AdminLayout';
 import RiderLayout from './components/riderDashboardComponents/RiderLayout';
 
-// ── Loading Fallback ──────────────────────────────────────────────────────────
 import LoadingSkeleton from './components/common/LoadingSkeleton';
 
-// ── Lazy-loaded Pages ─────────────────────────────────────────────────────────
-// Customer-facing (each page already renders its own Navbar internally)
 const HomeScreen = React.lazy(() => import('./screens/userScreens/HomeScreen'));
 const AuthScreen = React.lazy(() => import('./screens/userScreens/AuthPage')); // To be split
 const RestaurantDetailScreen = React.lazy(() => import('./screens/userScreens/RestaurantDetailScreen'));
 const OffersScreen = React.lazy(() => import('./screens/userScreens/OffersScreen'));
 const TrackOrderScreen = React.lazy(() => import('./screens/userScreens/TrackOrderScreen'));
 const CheckoutScreen = React.lazy(() => import('./screens/userScreens/CheckoutScreen'));
+const PaymentFailedScreen = React.lazy(() => import('./screens/userScreens/PaymentFailedScreen'));
 const ProfileScreen = React.lazy(() => import('./screens/userScreens/ProfileScreen'));
+const OrderHistoryScreen = React.lazy(() => import('./screens/userScreens/OrderHistoryScreen'));
 
-// Admin-facing
 const AdminDashboardPage = React.lazy(() => import('./screens/dashboard/admin/dashboard/AdminDashboardPage'));
 const AdminOrdersPage = React.lazy(() => import('./screens/dashboard/admin/orders/AdminOrdersPage'));
 const AdminMyRestaurantPage = React.lazy(() => import('./screens/dashboard/admin/restaurant/AdminMyRestaurantPage'));
@@ -32,69 +29,60 @@ const AdminAnalyticsPage = React.lazy(() => import('./screens/dashboard/admin/an
 const RestaurantOnboardingPage = React.lazy(() => import('./screens/dashboard/admin/restaurant/RestaurantOnboardingPage'));
 const StripeReturnPage = React.lazy(() => import('./screens/dashboard/admin/dashboard/StripeReturnPage'));
 
-// Rider-facing
 const RiderDashboardPage = React.lazy(() => import('./screens/dashboard/rider/dashboard/RiderDashboard'));
 const ActiveDeliveriesPage = React.lazy(() => import('./screens/dashboard/rider/deliveries/ActiveDeliveries'));
 const EarningsPage = React.lazy(() => import('./screens/dashboard/rider/earnings/Earnings'));
 const RatingsPage = React.lazy(() => import('./screens/dashboard/rider/ratings/Ratings'));
 
-// Utility
 const NotFoundPage = React.lazy(() => import('./screens/errorPages/NotFoundPage'));
 const UnauthorizedPage = React.lazy(() => import('./screens/errorPages/UnauthorizedPage'));
 
-// ── Route Tree ────────────────────────────────────────────────────────────────
 const ConditionalRoutes = () => {
   return (
     <Suspense fallback={<LoadingSkeleton />}>
       <Routes>
+        <Route path={APP_ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
+        <Route path={APP_ROUTES.HOME} element={<HomeScreen />} />
 
-        {/* ── Public Routes ─────────────────────────────────────────────── */}
-        <Route path="/unauthorized" element={<UnauthorizedPage />} />
-        {/* TEMPORARY: Landing page moved out of GuestRoute so developers can view it while logged in */}
-        <Route path="/" element={<HomeScreen />} />
-
-        {/* ── Guest-only Routes (redirect authenticated users away) ──────── */}
         <Route element={<GuestRoute />}>
-          <Route path="/auth" element={<AuthScreen />} />
+          <Route path={APP_ROUTES.AUTH} element={<AuthScreen />} />
         </Route>
 
-        {/* ── Authenticated Customer Routes ─────────────────────────────── */}
         <Route element={<ProtectedRoute />}>
           <Route path="/customer/dashboard" element={<HomeScreen />} />
           <Route path="/restaurant/:id" element={<RestaurantDetailScreen />} />
-          <Route path="/offers" element={<OffersScreen />} />
-          <Route path="/track-order" element={<TrackOrderScreen />} />
-          <Route path="/checkout" element={<CheckoutScreen />} />
-          <Route path="/profile" element={<ProfileScreen />} />
+          <Route path={APP_ROUTES.OFFERS} element={<OffersScreen />} />
+          <Route path={APP_ROUTES.TRACK_ORDER} element={<TrackOrderScreen />} />
+          <Route path={APP_ROUTES.ORDERS} element={<OrderHistoryScreen />} />
+          <Route path={APP_ROUTES.CHECKOUT} element={<CheckoutScreen />} />
+          <Route path="/payment-failed" element={<PaymentFailedScreen />} />
+          <Route path={APP_ROUTES.PROFILE} element={<ProfileScreen />} />
         </Route>
 
-        {/* ── Admin Routes (requires isAuthenticated + role === 'admin') ─── */}
-        <Route element={<ProtectedRoute allowedRoles={['restaurant_admin']} />}>
+        <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.RESTAURANT_ADMIN]} />}>
           <Route element={<AdminLayout />}>
-            <Route path="/admin" element={<AdminDashboardPage />} />
-            <Route path="/admin/onboarding" element={<RestaurantOnboardingPage />} />
-            <Route path="/admin/orders" element={<AdminOrdersPage />} />
-            <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
-            <Route path="/admin/my-restaurant" element={<AdminMyRestaurantPage />} />
-            <Route path="/admin/categories" element={<AdminCategoriesPage />} />
-            <Route path="/admin/offers" element={<AdminOffersPage />} />
-            <Route path="/admin/products" element={<AdminProductsPage />} />
-            <Route path="/admin/stripe/return" element={<StripeReturnPage />} />
-            <Route path="/admin/stripe/refresh" element={<StripeReturnPage />} />
+            <Route path={APP_ROUTES.ADMIN_DASHBOARD} element={<AdminDashboardPage />} />
+            <Route path={APP_ROUTES.ADMIN_ONBOARDING} element={<RestaurantOnboardingPage />} />
+            <Route path={APP_ROUTES.ADMIN_ORDERS} element={<AdminOrdersPage />} />
+            <Route path={APP_ROUTES.ADMIN_ANALYTICS} element={<AdminAnalyticsPage />} />
+            <Route path={APP_ROUTES.ADMIN_RESTAURANT} element={<AdminMyRestaurantPage />} />
+            <Route path={APP_ROUTES.ADMIN_CATEGORIES} element={<AdminCategoriesPage />} />
+            <Route path={APP_ROUTES.ADMIN_OFFERS} element={<AdminOffersPage />} />
+            <Route path={APP_ROUTES.ADMIN_PRODUCTS} element={<AdminProductsPage />} />
+            <Route path={APP_ROUTES.ADMIN_STRIPE_RETURN} element={<StripeReturnPage />} />
+            <Route path={APP_ROUTES.ADMIN_STRIPE_REFRESH} element={<StripeReturnPage />} />
           </Route>
         </Route>
 
-        {/* ── Rider Routes (requires isAuthenticated + role === 'rider') ─── */}
-        <Route element={<ProtectedRoute allowedRoles={['rider']} />}>
+        <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.RIDER]} />}>
           <Route element={<RiderLayout />}>
-            <Route path="/rider/dashboard" element={<RiderDashboardPage />} />
-            <Route path="/rider/active-deliveries" element={<ActiveDeliveriesPage />} />
-            <Route path="/rider/earnings" element={<EarningsPage />} />
-            <Route path="/rider/ratings" element={<RatingsPage />} />
+            <Route path={APP_ROUTES.RIDER_DASHBOARD} element={<RiderDashboardPage />} />
+            <Route path={APP_ROUTES.RIDER_DELIVERIES} element={<ActiveDeliveriesPage />} />
+            <Route path={APP_ROUTES.RIDER_EARNINGS} element={<EarningsPage />} />
+            <Route path={APP_ROUTES.RIDER_RATINGS} element={<RatingsPage />} />
           </Route>
         </Route>
 
-        {/* ── 404 Catch-all ─────────────────────────────────────────────── */}
         <Route path="*" element={<NotFoundPage />} />
 
       </Routes>

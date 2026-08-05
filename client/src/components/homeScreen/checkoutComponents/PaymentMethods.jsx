@@ -6,23 +6,22 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
       <h4 className="font-bold text-body mb-4 text-on-surface">Payment Method</h4>
       <div className="space-y-3">
         <label
-          onClick={() => setPaymentMethod('visa')}
-          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${
-            paymentMethod === 'visa'
+          onClick={() => setPaymentMethod('stripe')}
+          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'stripe'
               ? 'border-primary bg-surface-container-low'
               : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-secondary">credit_card</span>
             <div>
-              <p className="font-bold text-small text-on-surface">Visa ending in 4421</p>
-              <p className="text-secondary text-[10px]">Exp 09/26</p>
+              <p className="font-bold text-small text-on-surface">Credit / Debit Card</p>
+              <p className="text-secondary text-[10px]">Powered by Stripe</p>
             </div>
           </div>
           <input
-            checked={paymentMethod === 'visa'}
-            onChange={() => setPaymentMethod('visa')}
+            checked={paymentMethod === 'stripe'}
+            onChange={() => setPaymentMethod('stripe')}
             className="w-5 h-5 text-primary border-outline focus:ring-primary accent-primary"
             name="payment"
             type="radio"
@@ -30,24 +29,39 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
         </label>
 
         <label
-          onClick={() => setPaymentMethod('apple')}
-          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${
-            paymentMethod === 'apple'
+          onClick={() => setPaymentMethod('easypaisa')}
+          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'easypaisa'
               ? 'border-primary bg-surface-container-low'
               : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
-            <img
-              alt="Apple Pay"
-              className="h-4 w-auto"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLcq3l5FEeVSxHCZwmeMz0s37FxVe9xHLFxaIzyWsSFHgGrPR2xef9W-QEarzqGyduN06KkYhmXsEJJZhUycq_cLf4cfFgeLX7fLSQy4KS_CqaLtut6sSyAX4RglBHUX4PgGRj4XjISuEnULd4lgC9t5JrAEz61_ZlQZqD4o3cwf6BKOwgGjYyT3VgGePd37amYWvhoWmhgjMhwbHo-YKxA6ACvS7M4W5d9LPSTKaaQ2kqDjOVDvFQLQ"
-            />
-            <span className="font-bold text-small text-on-surface">Apple Pay</span>
+            <span className="material-symbols-outlined text-secondary">phone_iphone</span>
+            <span className="font-bold text-small text-on-surface">Easypaisa</span>
           </div>
           <input
-            checked={paymentMethod === 'apple'}
-            onChange={() => setPaymentMethod('apple')}
+            checked={paymentMethod === 'easypaisa'}
+            onChange={() => setPaymentMethod('easypaisa')}
+            className="w-5 h-5 text-primary border-outline focus:ring-primary accent-primary"
+            name="payment"
+            type="radio"
+          />
+        </label>
+
+        <label
+          onClick={() => setPaymentMethod('jazzcash')}
+          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'jazzcash'
+              ? 'border-primary bg-surface-container-low'
+              : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
+            }`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-secondary">phone_iphone</span>
+            <span className="font-bold text-small text-on-surface">JazzCash</span>
+          </div>
+          <input
+            checked={paymentMethod === 'jazzcash'}
+            onChange={() => setPaymentMethod('jazzcash')}
             className="w-5 h-5 text-primary border-outline focus:ring-primary accent-primary"
             name="payment"
             type="radio"
@@ -56,11 +70,10 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
 
         <label
           onClick={() => setPaymentMethod('cod')}
-          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${
-            paymentMethod === 'cod'
+          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'cod'
               ? 'border-primary bg-surface-container-low'
               : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-secondary">payments</span>

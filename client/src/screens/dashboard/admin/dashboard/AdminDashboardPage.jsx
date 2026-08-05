@@ -37,7 +37,6 @@ const AdminDashboardPage = () => {
     }
     
     // Convert timeSeriesData for the selected range
-    // Since backend returns last 30 days daily, we can use that directly for '30'
     let data = [];
     if (chartRange === '30') {
       data = analytics.timeSeriesData.map(ts => ({ value: ts.revenue, label: ts.label }));
@@ -79,7 +78,7 @@ const AdminDashboardPage = () => {
   };
 
   // Find the most recent active order to simulate
-  const activeOrderRaw = orders.find(o => !['Delivered', 'Completed', 'Cancelled'].includes(o.status)) || orders[0];
+  const activeOrderRaw = orders.find(o => !['DELIVERED', 'CANCELLED', 'REJECTED', 'REFUNDED'].includes(o.status)) || orders[0];
   
   const activeOrder = activeOrderRaw ? {
     id: `#${activeOrderRaw._id.substring(activeOrderRaw._id.length - 6).toUpperCase()}`,
@@ -141,7 +140,6 @@ const AdminDashboardPage = () => {
 
   return (
     <div className="bg-background font-body text-on-surface antialiased overflow-x-hidden min-h-screen">
-      {/* Dynamic Style injection to guarantee pixel perfection with original mockup classes */}
       <style>{`
         .material-symbols-outlined {
           font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -184,8 +182,8 @@ const AdminDashboardPage = () => {
             icon="shopping_bag"
             colorClass="bg-primary/5"
             iconColorClass="text-primary"
-            trendText={analytics ? "+12.5%" : "Loading..."}
-            trendUp={true}
+            trendText={analytics?.trends ? analytics.trends.orders : "Loading..."}
+            trendUp={analytics?.trends ? analytics.trends.orders.includes('+') : true}
             title="Total Orders"
             value={analytics ? analytics.orders.total.toLocaleString() : "..."}
           />
@@ -193,8 +191,8 @@ const AdminDashboardPage = () => {
             icon="payments"
             colorClass="bg-tertiary/5"
             iconColorClass="text-tertiary"
-            trendText={analytics ? "+8.2%" : "Loading..."}
-            trendUp={true}
+            trendText={analytics?.trends ? analytics.trends.revenue : "Loading..."}
+            trendUp={analytics?.trends ? analytics.trends.revenue.includes('+') : true}
             title="Total Revenue"
             value={analytics ? `$${analytics.orders.revenue.toLocaleString()}` : "..."}
           />
@@ -202,8 +200,8 @@ const AdminDashboardPage = () => {
             icon="group"
             colorClass="bg-on-secondary-fixed-variant/5"
             iconColorClass="text-secondary"
-            trendText={analytics ? "+2.1%" : "Loading..."}
-            trendUp={true}
+            trendText={analytics?.trends ? analytics.trends.customers : "Loading..."}
+            trendUp={analytics?.trends ? analytics.trends.customers.includes('+') : true}
             title="Active Customers"
             value={analytics ? analytics.users.totalCustomers.toLocaleString() : "..."}
           />
@@ -211,7 +209,7 @@ const AdminDashboardPage = () => {
             icon="restaurant"
             colorClass="bg-outline/5"
             iconColorClass="text-on-surface-variant"
-            trendText={analytics ? "+12 new" : "Loading..."}
+            trendText={analytics?.trends ? analytics.trends.restaurants : "Loading..."}
             trendUp={undefined}
             title="Active Restaurants"
             value={analytics ? analytics.restaurants.active.toLocaleString() : "..."}

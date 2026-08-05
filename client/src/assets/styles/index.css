@@ -85,6 +85,21 @@
     scroll-behavior: smooth;
   }
 
+  button, 
+  [role="button"], 
+  a {
+    @apply cursor-pointer transition-all duration-200;
+  }
+
+  button:active, 
+  [role="button"]:active {
+    @apply scale-[0.97];
+  }
+
+  button:hover {
+    @apply opacity-90;
+  }
+
   :root.dark {
     --color-background: #131313;
     --color-on-background: #e5e2e1;

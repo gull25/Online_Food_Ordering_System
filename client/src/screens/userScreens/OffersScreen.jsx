@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useDebounce } from '../../helper/useDebounce';
 import TopNavBar from '../../components/layout/Navbar';
 import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
 import NewsletterSignup from '../../components/homeScreen/offersComponents/NewsletterSignup';
@@ -28,6 +29,7 @@ const OffersPage = () => {
   const [loading, setLoading]         = useState(true);
   const [restaurant, setRestaurant]   = useState(null);   // only set in restaurant mode
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [copiedCode, setCopiedCode]   = useState('');
   const [newsletterEmail, setNewsletterEmail]           = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
@@ -101,14 +103,15 @@ const OffersPage = () => {
   }, [timeLeft]);
 
   const filteredOffers = useMemo(() => {
-    if (!searchQuery.trim()) return offersData;
-    return offersData.filter(
-      (offer) =>
-        offer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (offer.restaurantId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (offer.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+    if (!offersData || !Array.isArray(offersData)) return [];
+    if (!debouncedSearchQuery.trim()) return offersData;
+    
+    return offersData.filter(offer => 
+        offer.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        (offer.restaurantId?.name || '').toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        (offer.description || '').toLowerCase().includes(debouncedSearchQuery.toLowerCase())
     );
-  }, [searchQuery, offersData]);
+  }, [debouncedSearchQuery, offersData]);
 
   const newOffers = useMemo(() => {
     const filtered = offersData.filter(o => o._id !== flashOffer?._id);

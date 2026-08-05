@@ -10,6 +10,7 @@ import MenuSection from '../../components/homeScreen/restaurantDetailComponents/
 import FloatingCartSummary from '../../components/homeScreen/restaurantDetailComponents/FloatingCartSummary';
 import ReviewsSection from '../../components/homeScreen/restaurantDetailComponents/ReviewsSection';
 import { useSelector, useDispatch } from 'react-redux';
+import { useDebounce } from '../../helper/useDebounce';
 import { addToCart, removeFromCart } from '../../redux/cartSlice';
 import { toggleFavoriteThunk } from '../../redux/wishlistSlice';
 import { toast } from 'react-hot-toast';
@@ -22,6 +23,7 @@ const RestaurantDetailPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const dispatch = useDispatch();
   
   const { currentRestaurant, loading: restaurantLoading } = useSelector((state) => state.restaurants);
@@ -82,13 +84,13 @@ const RestaurantDetailPage = () => {
   // Filter items based on search query
   const filteredItems = useMemo(() => {
     if (!menuItems || !Array.isArray(menuItems)) return [];
-    if (!searchQuery.trim()) return menuItems;
+    if (!debouncedSearchQuery.trim()) return menuItems;
     return menuItems.filter(
       (item) =>
-        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        item.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
     );
-  }, [searchQuery, menuItems]);
+  }, [debouncedSearchQuery, menuItems]);
 
   // Group items by category for rendering
   const itemsByCategory = useMemo(() => {

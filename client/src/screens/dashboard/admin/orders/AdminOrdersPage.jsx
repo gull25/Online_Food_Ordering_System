@@ -2,10 +2,12 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAdminOrders, updateAdminOrderStatus } from '../../../../redux/adminSlice';
-import toast from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
+import { useDebounce } from '../../../../helper/useDebounce';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
 import StatCard from '../../../../components/adminDashboardComponents/StatCard';
 import AdminDeliveryReplay from '../../../../components/adminDashboardComponents/AdminDeliveryReplay';
+import LiveTracker from '../../../../components/homeScreen/orderComponents/LiveTracker';
 import { socket, connectSocket, joinOrderRoom, leaveOrderRoom, emitRiderLocation } from '../../../../helper/socket';
 import api from '../../../../api/axios';
 
@@ -28,7 +30,6 @@ const AdminOrdersPage = () => {
     dispatch(fetchAdminOrders());
   }, [dispatch]);
 
-  // ── Real-time: listen for new incoming orders ──────────────────────────────
   useEffect(() => {
     if (!user?._id) return;
     connectSocket(user._id);
@@ -43,7 +44,6 @@ const AdminOrdersPage = () => {
     };
   }, [user, dispatch]);
 
-  // ── Rider management state ─────────────────────────────────────────────────
   const [riders, setRiders] = useState([]);
   const [assigningOrderId, setAssigningOrderId] = useState(null);
   const [selectedRiderId, setSelectedRiderId] = useState('');
@@ -68,7 +68,6 @@ const AdminOrdersPage = () => {
     }
   };
 
-  // ── GPS Simulator state ────────────────────────────────────────────────────
   const [simOrderId, setSimOrderId] = useState('');
   const [simRiderId, setSimRiderId] = useState('');
   const [simRunning, setSimRunning] = useState(false);
@@ -109,6 +108,7 @@ const AdminOrdersPage = () => {
   // Selected filter states
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Modal State for adding new restaurant
@@ -140,13 +140,13 @@ const AdminOrdersPage = () => {
       const itemsStr = order.items?.map(i => i.menuItem?.name).join(', ') || '';
 
       const matchesSearch =
-        orderIdStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        itemsStr.toLowerCase().includes(searchQuery.toLowerCase());
+        orderIdStr.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        customerName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        itemsStr.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
       return matchesFilter && matchesSearch;
     });
-  }, [orders, activeFilter, searchQuery]);
+  }, [orders, activeFilter, debouncedSearchQuery]);
 
   // Paginated subset
   const paginatedOrders = useMemo(() => {
@@ -158,7 +158,6 @@ const AdminOrdersPage = () => {
     return Math.ceil(filteredOrders.length / ITEMS_PER_PAGE) || 1;
   }, [filteredOrders]);
 
-  // Dynamic calculations for Bento Grid metrics based on CURRENT filtered subset
   const metrics = useMemo(() => {
     const totalToday = filteredOrders.length;
     const pendingCount = filteredOrders.filter((o) => ['Pending', 'Preparing', 'Ready', 'Out For Delivery'].includes(o.status)).length;
@@ -192,7 +191,6 @@ const AdminOrdersPage = () => {
         }
       `}</style>
 
-      {/* Restaurant Addition Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-container-lowest max-w-md w-full rounded-2xl p-gutter border border-outline-variant/30 shadow-2xl animate-in zoom-in-95">
@@ -250,7 +248,6 @@ const AdminOrdersPage = () => {
         </div>
       )}
 
-      {/* Order Details Drawer Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-container-lowest max-w-md max-h-[90vh] overflow-y-auto w-full rounded-2xl p-gutter border border-outline-variant/30 shadow-2xl animate-in zoom-in-95">
@@ -294,15 +291,15 @@ const AdminOrdersPage = () => {
                 <div>
                   <p className="font-label text-label text-secondary uppercase text-right mb-1">Status</p>
                   <span
-                    className={`status-badge block text-center ${selectedOrder.status === 'Delivered'
+                    className={`status-badge block text-center ${selectedOrder.status === 'DELIVERED'
                         ? 'bg-green-100 text-green-700'
-                        : selectedOrder.status === 'Cancelled'
+                        : selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REJECTED'
                           ? 'bg-red-100 text-red-700'
-                          : selectedOrder.status === 'Pending'
+                          : selectedOrder.status === 'PLACED' || selectedOrder.status === 'ACCEPTED'
                             ? 'bg-gray-100 text-gray-700'
-                            : ['Preparing', 'Ready'].includes(selectedOrder.status)
+                            : ['PREPARING', 'READY_FOR_PICKUP'].includes(selectedOrder.status)
                               ? 'bg-orange-100 text-orange-700'
-                              : ['Out For Delivery'].includes(selectedOrder.status)
+                              : ['RIDER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(selectedOrder.status)
                                 ? 'bg-blue-100 text-blue-700'
                                 : 'bg-surface-variant text-on-surface-variant'
                       }`}
@@ -313,7 +310,6 @@ const AdminOrdersPage = () => {
               </div>
             </div>
 
-            {/* ── Rider Assignment Panel ──────────────────────────── */}
             <div className="mt-6 p-4 bg-surface-variant/20 rounded-xl border border-outline-variant/40">
               <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px]">two_wheeler</span>
@@ -347,31 +343,21 @@ const AdminOrdersPage = () => {
                 </div>
               )}
 
-              {/* ── GPS Simulator (FYP demo) ──────────────────────── */}
-              {selectedOrder.status === 'Out For Delivery' && selectedOrder.rider && (
+              {selectedOrder.status === 'OUT_FOR_DELIVERY' && selectedOrder.rider && (
                 <div className="mt-4 pt-4 border-t border-outline-variant/30">
                   <h4 className="font-label text-label font-bold text-on-surface-variant uppercase mb-3 flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px] text-primary animate-pulse">location_on</span>
-                    Live GPS Simulator
+                    Live GPS Tracking
                   </h4>
-                  <p className="text-xs text-secondary mb-3">Simulates the rider moving toward the customer every 3 seconds. The customer's TrackOrderPage map updates in real time.</p>
-                  {simRunning && simOrderId === selectedOrder._id ? (
-                    <button
-                      onClick={stopSimulation}
-                      className="px-4 py-2 bg-error text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">stop</span>
-                      Stop Simulation
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => startSimulation(selectedOrder._id, selectedOrder.rider?._id || selectedOrder.rider)}
-                      className="px-4 py-2 bg-primary text-white text-sm font-button rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                      Start GPS Simulation
-                    </button>
-                  )}
+                  <p className="text-xs text-secondary mb-3">Live real-time location from the Rider's device.</p>
+                  <div className="h-[300px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
+                     <LiveTracker
+                        orderId={selectedOrder._id}
+                        restaurantLocation={selectedOrder.restaurant?.location}
+                        customerLocation={selectedOrder.deliveryAddress}
+                        isRiderView={false}
+                     />
+                  </div>
                 </div>
               )}
 
@@ -406,13 +392,12 @@ const AdminOrdersPage = () => {
                 }}
                 className="flex-1 h-12 px-4 rounded-xl border border-outline-variant bg-white font-button text-small outline-none focus:border-primary cursor-pointer"
               >
-                <option value="Pending">Pending</option>
-                <option value="Preparing">Preparing</option>
-                <option value="Ready">Ready</option>
-                <option value="Out For Delivery">Out For Delivery</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="PLACED">Placed</option>
+                <option value="ACCEPTED">Accepted</option>
+                <option value="PREPARING">Preparing</option>
+                <option value="READY_FOR_PICKUP">Ready for Pickup</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="REJECTED">Rejected</option>
               </select>
 
               <button
@@ -498,12 +483,16 @@ const AdminOrdersPage = () => {
           <div className="flex gap-2 overflow-x-auto">
             {[
               { id: 'ALL', label: 'All Orders' },
-              { id: 'Pending', label: 'Pending' },
-              { id: 'Preparing', label: 'Preparing' },
-              { id: 'Ready', label: 'Ready' },
-              { id: 'Out For Delivery', label: 'Out For Delivery' },
-              { id: 'Delivered', label: 'Delivered' },
-              { id: 'Cancelled', label: 'Cancelled' },
+              { id: 'PLACED', label: 'Placed' },
+              { id: 'ACCEPTED', label: 'Accepted' },
+              { id: 'PREPARING', label: 'Preparing' },
+              { id: 'READY_FOR_PICKUP', label: 'Ready' },
+              { id: 'RIDER_ASSIGNED', label: 'Rider Assigned' },
+              { id: 'PICKED_UP', label: 'Picked Up' },
+              { id: 'OUT_FOR_DELIVERY', label: 'Out For Delivery' },
+              { id: 'DELIVERED', label: 'Delivered' },
+              { id: 'CANCELLED', label: 'Cancelled' },
+              { id: 'REJECTED', label: 'Rejected' },
             ].map((btn) => (
               <button
                 key={btn.id}
@@ -590,15 +579,15 @@ const AdminOrdersPage = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`font-label text-label font-bold inline-block whitespace-nowrap ${order.status === 'Delivered'
+                        className={`font-label text-label font-bold inline-block whitespace-nowrap ${order.status === 'DELIVERED'
                             ? 'text-green-500'
-                            : order.status === 'Cancelled'
+                            : order.status === 'CANCELLED' || order.status === 'REJECTED'
                               ? 'text-red-500'
-                              : order.status === 'Pending'
+                              : order.status === 'PLACED' || order.status === 'ACCEPTED'
                                 ? 'text-gray-400'
-                                : ['Preparing', 'Ready'].includes(order.status)
+                                : ['PREPARING', 'READY_FOR_PICKUP'].includes(order.status)
                                   ? 'text-orange-500'
-                                  : ['Out For Delivery'].includes(order.status)
+                                  : ['RIDER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(order.status)
                                     ? 'text-blue-500'
                                     : 'text-on-surface-variant'
                           }`}

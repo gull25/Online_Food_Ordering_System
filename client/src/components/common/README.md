@@ -1,1 +1,0 @@
-Generic reusable components (Button, Input, Modal, Loader, Pagination, etc.)

@@ -1,19 +1,22 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchActiveOrderThunk, confirmPickupThunk, confirmDeliveryThunk } from '../../../../redux/riderSlice';
+import { fetchActiveOrderThunk, confirmPickupThunk, confirmDeliveryThunk, acceptDeliveryThunk, startDeliveryThunk } from '../../../../redux/riderSlice';
 import { socket } from '../../../../helper/socket';
-import OrderMap from '../../../../components/homeScreen/orderComponents/OrderMap';
+import LiveTracker from '../../../../components/homeScreen/orderComponents/LiveTracker';
 
 const ActiveDeliveries = () => {
     const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.auth);
     const { activeOrder, loading, error } = useSelector((state) => state.rider);
+    const [gpsActive, setGpsActive] = useState(false);
+    const [currentPos, setCurrentPos] = useState(null);
 
     useEffect(() => {
         dispatch(fetchActiveOrderThunk());
 
         if (socket) {
-            socket.on('rider:new_order', () => {
+            socket.on('rider:new_delivery', () => {
                 dispatch(fetchActiveOrderThunk());
             });
             socket.on('orderStatusUpdate', () => {
@@ -22,11 +25,45 @@ const ActiveDeliveries = () => {
         }
         return () => {
             if (socket) {
-                socket.off('rider:new_order');
+                socket.off('rider:new_delivery');
                 socket.off('orderStatusUpdate');
             }
         };
     }, [dispatch]);
+
+    // Live GPS Sharing when OUT_FOR_DELIVERY
+    useEffect(() => {
+        let watchId;
+        if (activeOrder && activeOrder.status === 'OUT_FOR_DELIVERY') {
+            if (navigator.geolocation) {
+                setGpsActive(true);
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        setCurrentPos({ lat: latitude, lng: longitude });
+                        
+                        if (socket) {
+                            socket.emit('rider:location_update', {
+                                orderId: activeOrder._id,
+                                riderId: user?._id,
+                                lat: latitude,
+                                lng: longitude
+                            });
+                        }
+                    },
+                    (error) => {
+                        console.error('GPS tracking error:', error);
+                        setGpsActive(false);
+                    },
+                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+                );
+            }
+        }
+        return () => {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            setGpsActive(false);
+        };
+    }, [activeOrder, user]);
 
     const handleConfirmPickup = () => {
         if (activeOrder) dispatch(confirmPickupThunk(activeOrder._id));
@@ -69,11 +106,12 @@ const ActiveDeliveries = () => {
                     <div className="w-full h-full bg-surface-dim relative">
                         {/* Interactive Map */}
                         {activeOrder ? (
-                            <OrderMap
+                            <LiveTracker
+                                orderId={activeOrder._id}
                                 restaurantLocation={activeOrder.restaurant?.location}
                                 customerLocation={activeOrder.deliveryAddress}
-                                riderLocation={null} // Can be added later if rider GPS is tracked
-                                restaurantName={activeOrder.restaurant?.name}
+                                initialRiderLocation={currentPos}
+                                isRiderView={true}
                             />
                         ) : (
                             <div className="w-full h-full grayscale opacity-40 mix-blend-screen" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAk_NcAG8nNeDphk4IyLivG799dFcwW08rfVNuQwdFJsVj9Lbg43fqkhkxv-WOmcjTwkZC3XkFhtLpbxcDNo6xpiEwiMqjdjeKNjDs79RmD7o3jntMuTSPCbFhrryNIpLydoN9_cDuSek_3ohI_hFBWl_d1OX_9dORC4U9C65zY3GdQ9LHRB0U_-Ytk2VzestbmLKZhN8HRWxOl1W0S1UdmbXIelsZpeukoTCSdPTIqLOSbeEAn9OjmSg')" }}></div>
@@ -103,7 +141,13 @@ const ActiveDeliveries = () => {
                                     <span className="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-inter text-xs font-bold leading-4 uppercase">
                                         {activeOrder.status}
                                     </span>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 items-center">
+                                        {gpsActive && (
+                                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-green-600 bg-green-100 px-2 py-1 rounded-full animate-pulse">
+                                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                                Live GPS
+                                            </span>
+                                        )}
                                         <span className="text-secondary font-inter text-xs font-bold leading-4">Est. €{(activeOrder.totalAmount * 0.10).toFixed(2)} Earned</span>
                                     </div>
                                 </div>
@@ -167,12 +211,23 @@ const ActiveDeliveries = () => {
                                             START NAVIGATION
                                         </button>
                                         
-                                        {activeOrder.status === 'Out For Delivery' ? (
-                                            <button onClick={handleConfirmPickup} className="w-full bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
-                                                CONFIRM PICKUP
+                                        {activeOrder.status === 'RIDER_ASSIGNED' && (
+                                            <div className="flex gap-2">
+                                                <button onClick={() => dispatch(acceptDeliveryThunk(activeOrder._id))} className="flex-1 bg-primary text-white font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
+                                                    ACCEPT
+                                                </button>
+                                                <button onClick={() => dispatch(confirmPickupThunk(activeOrder._id))} className="flex-1 bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
+                                                    CONFIRM PICKUP
+                                                </button>
+                                            </div>
+                                        )}
+                                        {activeOrder.status === 'PICKED_UP' && (
+                                            <button onClick={() => dispatch(startDeliveryThunk(activeOrder._id))} className="w-full bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
+                                                START DELIVERY
                                             </button>
-                                        ) : (
-                                            <button onClick={handleConfirmDelivery} className="w-full bg-secondary-container text-on-secondary-container font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
+                                        )}
+                                        {activeOrder.status === 'OUT_FOR_DELIVERY' && (
+                                            <button onClick={() => dispatch(confirmDeliveryThunk(activeOrder._id))} className="w-full bg-secondary-container text-on-secondary-container font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
                                                 CONFIRM DELIVERY
                                             </button>
                                         )}

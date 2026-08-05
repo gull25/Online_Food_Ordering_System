@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuthForm } from '../../components/hooks/useAuthForm';
+import { USER_ROLES } from '../../constants';
 
 const AuthForm = () => {
   const {
@@ -81,9 +82,9 @@ const AuthForm = () => {
             <div className="flex flex-col gap-2">
               <label className="font-label text-label text-on-surface-variant uppercase tracking-wider">Account Type</label>
               <select {...register('role')} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${errors.role ? 'border-error focus:border-error focus:ring-error/20' : inputErrorClass}`}>
-                <option value="customer">Customer</option>
-                <option value="rider">Rider</option>
-                <option value="restaurant_admin">Restaurant Owner</option>
+                <option value={USER_ROLES.CUSTOMER}>Customer</option>
+                <option value={USER_ROLES.RIDER}>Rider</option>
+                <option value={USER_ROLES.RESTAURANT_ADMIN}>Restaurant Owner</option>
               </select>
             </div>
           </div>

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchOrderByIdThunk } from '../../redux/orderSlice';
+import { fetchOrderByIdThunk, cancelOrderThunk, orderStatusUpdated } from '../../redux/orderSlice';
 import TopNavBar from '../../components/layout/Navbar';
 import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
 import OrderStatusSteps from '../../components/homeScreen/orderComponents/OrderStatusSteps';
 import OrderMap from '../../components/homeScreen/orderComponents/OrderMap';
+import LiveTracker from '../../components/homeScreen/orderComponents/LiveTracker';
 import DeliveryDetails from '../../components/homeScreen/orderComponents/DeliveryDetails';
 import ReviewModal from '../../components/homeScreen/orderComponents/ReviewModal';
 import { socket, connectSocket, joinOrderRoom, leaveOrderRoom } from '../../helper/socket';
@@ -14,31 +15,49 @@ import { toast } from 'react-hot-toast';
 
 const BASE_TIMELINE_STEPS = [
   {
-    status: 'Pending',
+    status: 'PLACED',
     title: 'Order Placed',
     description: "We've received your order.",
     icon: 'check',
   },
   {
-    status: 'Preparing',
+    status: 'ACCEPTED',
+    title: 'Order Accepted',
+    description: 'The restaurant has accepted your order.',
+    icon: 'thumb_up',
+  },
+  {
+    status: 'PREPARING',
     title: 'Preparing Food',
     description: 'The kitchen is preparing your meal.',
     icon: 'restaurant_menu',
   },
   {
-    status: 'Ready',
-    title: 'Ready',
+    status: 'READY_FOR_PICKUP',
+    title: 'Ready for Pickup',
     description: 'Your order is ready to be picked up.',
     icon: 'done_all',
   },
   {
-    status: 'Out For Delivery',
+    status: 'RIDER_ASSIGNED',
+    title: 'Rider Assigned',
+    description: 'A rider has been assigned.',
+    icon: 'person',
+  },
+  {
+    status: 'PICKED_UP',
+    title: 'Picked Up',
+    description: 'The rider has picked up your order.',
+    icon: 'shopping_bag',
+  },
+  {
+    status: 'OUT_FOR_DELIVERY',
     title: 'Out For Delivery',
     description: 'Your driver is on the way.',
     icon: 'two_wheeler',
   },
   {
-    status: 'Delivered',
+    status: 'DELIVERED',
     title: 'Delivered',
     description: 'Enjoy your meal!',
     icon: 'home',
@@ -78,9 +97,18 @@ const TrackOrderPage = () => {
     // 3. Listen for status updates (restaurant admin changed status)
     socket.on('orderStatusUpdate', (updatedOrder) => {
       if (updatedOrder._id === orderId || updatedOrder._id?.toString() === orderId) {
-        dispatch(setCurrentOrder(updatedOrder));
+        dispatch(orderStatusUpdated(updatedOrder));
       }
     });
+
+    socket.on('order:accepted', () => toast.success('Restaurant accepted your order!'));
+    socket.on('order:rejected', (data) => toast.error(`Order rejected: ${data.reason}`));
+    socket.on('order:preparing', () => toast.success('Your food is being prepared!'));
+    socket.on('order:ready', () => toast.success('Your order is ready for pickup!'));
+    socket.on('order:picked_up', () => toast.success('Rider picked up your order!'));
+    socket.on('order:out_for_delivery', () => toast.success('Rider is on the way!'));
+    socket.on('order:delivered', () => toast.success('Your order has been delivered!'));
+    socket.on('order:cancelled', () => toast.error('Your order was cancelled.'));
 
     // 4. Listen for rider assignment notification
     socket.on('order:rider_assigned', (data) => {
@@ -99,6 +127,14 @@ const TrackOrderPage = () => {
 
     return () => {
       socket.off('orderStatusUpdate');
+      socket.off('order:accepted');
+      socket.off('order:rejected');
+      socket.off('order:preparing');
+      socket.off('order:ready');
+      socket.off('order:picked_up');
+      socket.off('order:out_for_delivery');
+      socket.off('order:delivered');
+      socket.off('order:cancelled');
       socket.off('order:rider_assigned');
       socket.off('rider:location');
       leaveOrderRoom(orderId);
@@ -108,13 +144,17 @@ const TrackOrderPage = () => {
   // Derived state for timeline step based on actual order status
   const getStepFromStatus = (status) => {
     switch (status) {
-      case 'Pending': return 0;
-      case 'Preparing': return 1;
-      case 'Ready': return 2;
-      case 'Out For Delivery': return 3;
-      case 'Delivered': return 4;
-      case 'Completed': return 4;
-      case 'Cancelled': return 0; // Or handle differently
+      case 'PLACED': return 0;
+      case 'ACCEPTED': return 1;
+      case 'PREPARING': return 2;
+      case 'READY_FOR_PICKUP': return 3;
+      case 'RIDER_ASSIGNED': return 4;
+      case 'PICKED_UP': return 5;
+      case 'OUT_FOR_DELIVERY': return 6;
+      case 'DELIVERED': return 7;
+      case 'CANCELLED': return 0; // Or handle differently
+      case 'REJECTED': return 0;
+      case 'REFUNDED': return 7;
       default: return 0;
     }
   };
@@ -225,10 +265,39 @@ const TrackOrderPage = () => {
                   Placed At: <strong>{new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</strong>
                 </p>
               </div>
-              <div className="bg-primary-container text-on-primary font-label text-label px-3 py-1.5 rounded-full inline-block font-semibold shadow-sm">
-                {order.status}
+              <div className="flex gap-2 items-center">
+                {(order.status === 'PLACED' || order.status === 'ACCEPTED') && (
+                  <button 
+                    onClick={() => dispatch(cancelOrderThunk(order._id))}
+                    className="text-error border border-error px-3 py-1.5 rounded-full font-label text-label hover:bg-error/10 transition-colors"
+                  >
+                    Cancel Order
+                  </button>
+                )}
+                <div className="bg-primary-container text-on-primary font-label text-label px-3 py-1.5 rounded-full inline-block font-semibold shadow-sm">
+                  {order.status}
+                </div>
               </div>
             </div>
+
+            {order.status === 'REJECTED' && (
+              <div className="bg-error/10 text-error p-3 rounded-lg mb-stack_md border border-error/20 flex gap-2 items-center">
+                <span className="material-symbols-outlined">error</span>
+                <span><strong>Order Rejected:</strong> {order.rejectionReason || 'No reason provided.'}</span>
+              </div>
+            )}
+            {order.status === 'CANCELLED' && (
+              <div className="bg-error/10 text-error p-3 rounded-lg mb-stack_md border border-error/20 flex gap-2 items-center">
+                <span className="material-symbols-outlined">cancel</span>
+                <span><strong>Order Cancelled:</strong> Cancelled by {order.cancelledBy || 'user'}.</span>
+              </div>
+            )}
+            {order.estimatedDeliveryTime && (
+              <div className="bg-primary/10 text-primary p-3 rounded-lg mb-stack_md border border-primary/20 flex gap-2 items-center">
+                <span className="material-symbols-outlined">schedule</span>
+                <span><strong>Estimated Delivery:</strong> {new Date(order.estimatedDeliveryTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+              </div>
+            )}
 
             <div className="h-px w-full bg-surface-variant my-stack_md"></div>
 
@@ -295,12 +364,22 @@ const TrackOrderPage = () => {
           {/* Map Container */}
           <div className="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col h-[500px] lg:h-full relative">
             {/* Map Area */}
-            <OrderMap 
-              restaurantLocation={order?.restaurant?.location}
-              customerLocation={order?.deliveryAddress}
-              riderLocation={riderGpsPosition}
-              restaurantName={order?.restaurant?.name}
-            />
+            {order?.status === 'OUT_FOR_DELIVERY' ? (
+              <LiveTracker
+                orderId={order._id}
+                restaurantLocation={order?.restaurant?.location}
+                customerLocation={order?.deliveryAddress}
+                initialRiderLocation={riderGpsPosition}
+                isRiderView={false}
+              />
+            ) : (
+              <OrderMap 
+                restaurantLocation={order?.restaurant?.location}
+                customerLocation={order?.deliveryAddress}
+                riderLocation={riderGpsPosition}
+                restaurantName={order?.restaurant?.name}
+              />
+            )}
 
             {/* Driver Details Floating Card */}
             <DeliveryDetails

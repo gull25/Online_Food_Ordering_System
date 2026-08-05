@@ -5,11 +5,7 @@ const Rider = require('../models/rider.model');
 const ApiError = require('../utils/ApiError');
 
 
-// @desc    Get all orders for the admin's restaurant
-// @route   GET /api/admin/orders
-// @access  Private (Admin / Restaurant Admin)
 exports.getAdminOrders = asyncHandler(async (req, res, next) => {
-    // If super admin, fetch all, otherwise fetch by restaurantId
     const query = req.user.role === 'admin'
         ? {}
         : { restaurant: req.user.restaurantId };
@@ -26,27 +22,58 @@ exports.getAdminOrders = asyncHandler(async (req, res, next) => {
     });
 });
 
-// @desc    Get analytics for the admin's restaurant
-// @route   GET /api/admin/analytics
-// @access  Private (Admin / Restaurant Admin)
 exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
     const isAdmin = req.user.role === 'admin';
     const query = isAdmin ? {} : { restaurant: req.user.restaurantId };
 
     const orders = await Order.find(query).populate('restaurant', 'name rating images cuisine');
 
-    // 1. Orders and Revenue
     const totalOrders = orders.length;
     const validOrders = orders.filter(o => o.status !== 'Cancelled');
     const revenueSum = validOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-    // 2. Unique Customers
     const uniqueUsers = new Set(orders.map(o => o.user?.toString()).filter(Boolean));
 
-    // 3. Restaurants count
     const restaurantsCount = isAdmin ? await Restaurant.countDocuments() : 1;
 
-    // 4. Time Series Data (Group by day of week)
+    // Calculate Trends (Current Month vs Previous Month)
+    const now = new Date();
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    
+    let currentMonthOrders = 0;
+    let previousMonthOrders = 0;
+    let currentMonthRevenue = 0;
+    let previousMonthRevenue = 0;
+    const currentMonthUsers = new Set();
+    const previousMonthUsers = new Set();
+
+    validOrders.forEach(o => {
+        const orderDate = new Date(o.createdAt);
+        if (orderDate >= startOfCurrentMonth) {
+            currentMonthOrders++;
+            currentMonthRevenue += (o.totalAmount || 0);
+            if(o.user) currentMonthUsers.add(o.user.toString());
+        } else if (orderDate >= startOfPreviousMonth && orderDate < startOfCurrentMonth) {
+            previousMonthOrders++;
+            previousMonthRevenue += (o.totalAmount || 0);
+            if(o.user) previousMonthUsers.add(o.user.toString());
+        }
+    });
+
+    const calculateGrowth = (current, previous) => {
+        if (previous === 0) return current > 0 ? "+100.0%" : "0.0%";
+        const growth = ((current - previous) / previous) * 100;
+        return `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
+    };
+
+    const trends = {
+        orders: calculateGrowth(currentMonthOrders, previousMonthOrders),
+        revenue: calculateGrowth(currentMonthRevenue, previousMonthRevenue),
+        customers: calculateGrowth(currentMonthUsers.size, previousMonthUsers.size),
+        restaurants: isAdmin ? "+0 new" : "N/A"
+    };
+
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const timeSeriesMap = {};
     days.forEach(d => timeSeriesMap[d] = 0);
@@ -63,7 +90,6 @@ exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
         revenue: timeSeriesMap[day]
     }));
 
-    // 5. Top Items
     const itemStats = {};
     validOrders.forEach(o => {
         if (o.items && Array.isArray(o.items)) {
@@ -80,7 +106,6 @@ exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
         .sort((a, b) => b.quantity - a.quantity)
         .slice(0, 5);
 
-    // 6. Top Restaurants
     const restStats = {};
     validOrders.forEach(o => {
         if (o.restaurant) {
@@ -100,7 +125,6 @@ exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 5);
 
-    // 7. Cuisine Distribution
     const cuisineStats = {};
     if (isAdmin) {
         const allRests = await Restaurant.find({}, 'cuisine');
@@ -131,16 +155,13 @@ exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
             timeSeriesData,
             topRestaurants,
             topItems,
-            cuisineDistribution
+            cuisineDistribution,
+            trends
         }
     });
 });
 
-// @desc    Get riders for the admin's restaurant
-// @route   GET /api/admin/riders
-// @access  Private (restaurant_admin)
 exports.getRiders = asyncHandler(async (req, res, next) => {
-    // Temporarily fetch all riders for easier testing instead of filtering by restaurant
     const query = {};
 
     const riders = await Rider.find(query).sort({ name: 1 });
@@ -152,9 +173,6 @@ exports.getRiders = asyncHandler(async (req, res, next) => {
     });
 });
 
-// @desc    Download sales report (CSV)
-// @route   GET /api/admin/reports/sales
-// @access  Private (Admin / Restaurant Admin)
 exports.downloadSalesReport = asyncHandler(async (req, res, next) => {
     const query = req.user.role === 'admin'
         ? {}

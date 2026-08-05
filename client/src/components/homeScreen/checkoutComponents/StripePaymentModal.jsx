@@ -37,7 +37,7 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
       <div className="bg-surface-container-lowest w-full max-w-md rounded-2xl p-8 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-        
+
         <div className="flex justify-between items-start mb-6">
           <div>
             <h2 className="font-h3 text-h3 font-bold text-on-surface">Payment Details</h2>
@@ -45,7 +45,7 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
               Complete your purchase securely via Stripe.
             </p>
           </div>
-          <button 
+          <button
             onClick={onCancel}
             disabled={isProcessing}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant disabled:opacity-50"

@@ -19,13 +19,31 @@ export const fetchAdminOrders = createAsyncThunk(
 // Update order status
 export const updateAdminOrderStatus = createAsyncThunk(
   'admin/updateOrderStatus',
-  async ({ orderId, status }, { rejectWithValue }) => {
+  async ({ orderId, status, estimatedDeliveryTime, rejectionReason }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.put(`/orders/${orderId}/status`, { status });
+      const response = await axiosInstance.put(`/orders/${orderId}/status`, { 
+        status, 
+        estimatedDeliveryTime, 
+        rejectionReason 
+      });
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Failed to update order status'
+      );
+    }
+  }
+);
+
+export const assignAdminRiderThunk = createAsyncThunk(
+  'admin/assignRider',
+  async ({ orderId, riderId }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put(`/orders/${orderId}/rider`, { riderId });
+      return response.data.data.order;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to assign rider'
       );
     }
   }
@@ -98,6 +116,25 @@ const adminSlice = createSlice({
         }
       })
       .addCase(updateAdminOrderStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      
+      // assignAdminRiderThunk
+      .addCase(assignAdminRiderThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(assignAdminRiderThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.successMessage = 'Rider assigned successfully';
+        const updatedOrder = action.payload;
+        const index = state.orders.findIndex(o => o._id === updatedOrder._id);
+        if (index !== -1) {
+          state.orders[index] = updatedOrder;
+        }
+      })
+      .addCase(assignAdminRiderThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

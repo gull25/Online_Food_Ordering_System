@@ -15,9 +15,13 @@ router.use(authorizeRider);
 
 router.get('/me', riderController.getProfile);
 router.get('/dashboard', riderController.getDashboardSummary);
+router.get('/available', riderController.getAvailableDeliveries);
 router.get('/active', riderController.getActiveDelivery);
+router.get('/history', riderController.getDeliveryHistory);
 router.put('/status', riderController.updateStatus);
+router.put('/accept/:id', riderController.acceptDelivery);
 router.put('/pickup/:id', riderController.confirmPickup);
+router.put('/start/:id', riderController.startDelivery);
 router.put('/deliver/:id', riderController.confirmDelivery);
 router.get('/earnings', riderController.getEarnings);
 router.get('/performance', riderController.getPerformance);

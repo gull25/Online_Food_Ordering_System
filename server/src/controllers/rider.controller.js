@@ -25,6 +25,19 @@ exports.getActiveDelivery = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, data });
 });
 
+exports.getAvailableDeliveries = asyncHandler(async (req, res) => {
+    const orderRepository = require('../repositories/order.repository');
+    const data = await orderRepository.findAvailableForRider();
+    res.status(200).json({ success: true, data });
+});
+
+exports.getDeliveryHistory = asyncHandler(async (req, res) => {
+    const orderRepository = require('../repositories/order.repository');
+    const rider = await riderService.getProfile(req.user.id);
+    const data = await orderRepository.findRiderHistory(rider._id);
+    res.status(200).json({ success: true, data });
+});
+
 // @desc    Update status
 // @route   PUT /api/rider/status
 // @access  Private (Rider)
@@ -34,11 +47,24 @@ exports.updateStatus = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, data });
 });
 
+exports.acceptDelivery = asyncHandler(async (req, res) => {
+    const data = await riderService.acceptDelivery(req.user.id, req.params.id);
+    res.status(200).json({ success: true, data });
+});
+
 // @desc    Confirm pickup
 // @route   PUT /api/rider/pickup/:id
 // @access  Private (Rider)
 exports.confirmPickup = asyncHandler(async (req, res) => {
     const data = await riderService.confirmPickup(req.user.id, req.params.id);
+    res.status(200).json({ success: true, data });
+});
+
+// @desc    Start delivery
+// @route   PUT /api/rider/start/:id
+// @access  Private (Rider)
+exports.startDelivery = asyncHandler(async (req, res) => {
+    const data = await riderService.startDelivery(req.user.id, req.params.id);
     res.status(200).json({ success: true, data });
 });
 

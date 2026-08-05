@@ -63,6 +63,25 @@ class RiderService {
         return await riderRepository.getAssignedOrder(rider._id);
     }
 
+    async acceptDelivery(userId, orderId) {
+        const rider = await this.getProfile(userId);
+        const order = await orderRepository.findById(orderId);
+        
+        if (!order) throw new ApiError(404, 'Order not found');
+        if (order.rider?._id.toString() !== rider._id.toString()) {
+            throw new ApiError(403, 'You are not assigned to this order');
+        }
+
+        // Mark rider as Busy and link order
+        const Rider = require('../models/rider.model');
+        await Rider.findByIdAndUpdate(rider._id, {
+            status: 'Busy',
+            currentOrderId: orderId
+        });
+
+        return order;
+    }
+
     async confirmPickup(userId, orderId) {
         const rider = await this.getProfile(userId);
         let order = await orderRepository.findById(orderId);
@@ -71,18 +90,22 @@ class RiderService {
         if (order.rider?._id.toString() !== rider._id.toString()) {
             throw new ApiError(403, 'You are not assigned to this order');
         }
-        if (order.status !== 'Out For Delivery') {
-             // For simplicity, we just keep it Out For Delivery or change to something like Picked Up
-             // We'll keep it Out For Delivery but log the pickup event if needed.
-             // Or maybe we add 'Picked Up' to valid enum in Order model if it isn't there. 
-             // We'll just emit an event.
+
+        const orderService = require('./order.service');
+        return await orderService.updateOrderStatus(orderId, 'PICKED_UP', 'rider');
+    }
+
+    async startDelivery(userId, orderId) {
+        const rider = await this.getProfile(userId);
+        let order = await orderRepository.findById(orderId);
+
+        if (!order) throw new ApiError(404, 'Order not found');
+        if (order.rider?._id.toString() !== rider._id.toString()) {
+            throw new ApiError(403, 'You are not assigned to this order');
         }
 
-        try {
-            socketManager.emitToOrderRoom(orderId, 'order:picked_up', { orderId, timestamp: new Date() });
-        } catch (err) {}
-
-        return order;
+        const orderService = require('./order.service');
+        return await orderService.updateOrderStatus(orderId, 'OUT_FOR_DELIVERY', 'rider');
     }
 
     async confirmDelivery(userId, orderId) {
@@ -94,21 +117,15 @@ class RiderService {
             throw new ApiError(403, 'You are not assigned to this order');
         }
 
-        // Update Order to Completed
-        order = await orderRepository.updateStatus(orderId, 'Completed');
+        const orderService = require('./order.service');
+        order = await orderService.updateOrderStatus(orderId, 'DELIVERED', 'rider');
 
         // Free Rider
         await riderRepository.updateStatus(rider._id, 'Available');
         
-        // Update Rider Earnings (Base Pay + Tips = totalAmount as simple proxy, or a % of it)
         // Let's assume rider earns flat 10% of order total amount for this demo
         const riderEarning = order.totalAmount * 0.10;
         await riderRepository.updateEarnings(rider._id, riderEarning);
-
-        try {
-            socketManager.emitToOrderRoom(orderId, 'orderStatusUpdate', order);
-            socketManager.emitToOrderRoom(orderId, 'order:delivered', { orderId, timestamp: new Date() });
-        } catch (err) {}
 
         return order;
     }

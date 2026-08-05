@@ -38,11 +38,11 @@ const CheckoutPage = () => {
   const [promoInput, setPromoInput] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
   const [promoMessage, setPromoMessage] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('visa');
+  const [paymentMethod, setPaymentMethod] = useState('stripe');
   const [deliveryPreference, setDeliveryPreference] = useState('meet');
   const [formError, setFormError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
-  
+
   // Payment Modal State
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
@@ -96,7 +96,7 @@ const CheckoutPage = () => {
   const updateQuantity = (cartItemId, delta) => {
     const cartItem = cartItems.find(i => i.cartItemId === cartItemId);
     if (!cartItem) return;
-    
+
     if (delta > 0) {
       dispatch(addToCart(cartItem));
     } else {
@@ -107,9 +107,9 @@ const CheckoutPage = () => {
   const deleteItem = (cartItemId) => {
     const cartItem = cartItems.find(i => i.cartItemId === cartItemId);
     if (cartItem) {
-        for(let i=0; i<cartItem.quantity; i++) {
-           dispatch(removeFromCart(cartItemId));
-        }
+      for (let i = 0; i < cartItem.quantity; i++) {
+        dispatch(removeFromCart(cartItemId));
+      }
     }
   };
 
@@ -125,7 +125,7 @@ const CheckoutPage = () => {
       setPromoMessage('Validating...');
       const { default: api } = await import('../../api/axios');
       const response = await api.get(`/public/offers/validate/${code}?restaurantId=${cartRestaurantId}`);
-      
+
       setDiscountPercent(response.data.data.discountPercentage);
       setPromoMessage(`Promo code ${code} applied! ${response.data.data.discountPercentage}% discount on subtotal.`);
     } catch (error) {
@@ -150,43 +150,47 @@ const CheckoutPage = () => {
       setFormError('Your cart is empty. Please add items to checkout.');
       return;
     }
-    
+
     // We assume all cart items are from the same restaurant in this UI flow.
-    const restaurantId = cartItems[0]?.restaurant?._id || cartItems[0]?.restaurant; 
+    const restaurantId = cartItems[0]?.restaurant?._id || cartItems[0]?.restaurant;
 
     const orderPayload = {
-        restaurant: restaurantId,
-        items: cartItems.map(i => ({
-            menuItem: i._id || i.id,
-            name: i.name,
-            quantity: i.quantity,
-            price: i.price,
-            selectedSize: i.selectedSize,
-            selectedAddOns: i.selectedAddOns
-        })),
-        totalAmount: total, // Still sent but ignored by backend for security
-        deliveryAddress: formData,
-        paymentMethod,
-        promoCode: promoInput.trim().toUpperCase()
+      restaurant: restaurantId,
+      items: cartItems.map(i => ({
+        menuItem: i._id || i.id,
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+        selectedSize: i.selectedSize,
+        selectedAddOns: i.selectedAddOns
+      })),
+      totalAmount: total, // Still sent but ignored by backend for security
+      deliveryAddress: formData,
+      paymentMethod,
+      promoCode: promoInput.trim().toUpperCase()
     };
 
     try {
-        const resultAction = await dispatch(createOrderThunk(orderPayload)).unwrap();
-        
-        setCurrentStep(3);
+      const resultAction = await dispatch(createOrderThunk(orderPayload)).unwrap();
 
-        if (resultAction.clientSecret) {
-            // Open the Stripe modal
-            setClientSecret(resultAction.clientSecret);
-            setPendingOrderId(resultAction.order._id);
-            setPaymentModalOpen(true);
-        } else {
-            // Cash on delivery or fully discounted
-            dispatch(clearCart());
-            navigate(`/track-order?orderId=${resultAction.order._id}`);
-        }
+      setCurrentStep(3);
+
+      if (resultAction.paymentUrl) {
+        // Redirect to Easypaisa or JazzCash
+        dispatch(clearCart());
+        window.location.href = resultAction.paymentUrl;
+      } else if (resultAction.clientSecret) {
+        // Open the Stripe modal
+        setClientSecret(resultAction.clientSecret);
+        setPendingOrderId(resultAction.order._id);
+        setPaymentModalOpen(true);
+      } else {
+        // Cash on delivery or fully discounted
+        dispatch(clearCart());
+        navigate(`/track-order?orderId=${resultAction.order._id}`);
+      }
     } catch (err) {
-        setFormError(err || 'Failed to place order.');
+      setFormError(err || 'Failed to place order.');
     }
   };
 
@@ -219,7 +223,7 @@ const CheckoutPage = () => {
   }, [subtotal, discountAmount]);
 
   const serviceFee = subtotal > 0 ? 2.50 : 0;
-  
+
   // Dynamic Delivery Fee
   const deliveryFee = restaurantData?.deliveryFee || 0;
 
@@ -244,14 +248,14 @@ const CheckoutPage = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-          
+
           {/* Left Column: Cart items and forms */}
           <div className="lg:col-span-8 flex flex-col gap-stack_lg">
-            
+
             {/* Cart Items Section */}
             <section className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant">
               <h2 className="font-h3 text-h3 mb-6 font-bold text-on-surface">Review Your Order</h2>
-              
+
               {cartItems.length === 0 ? (
                 <div className="py-16 flex flex-col items-center justify-center text-center bg-surface-container-lowest rounded-xl">
                   <div className="w-24 h-24 bg-surface-variant rounded-full flex items-center justify-center mb-6">
@@ -294,7 +298,7 @@ const CheckoutPage = () => {
           <div className="lg:col-span-4 flex flex-col gap-stack_lg">
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant sticky top-24">
               <h2 className="font-h3 text-h3 mb-6 font-bold text-on-surface">Order Summary</h2>
-              
+
               <OrderSummary
                 subtotal={subtotal}
                 discountAmount={discountAmount}
@@ -342,7 +346,7 @@ const CheckoutPage = () => {
 
       {paymentModalOpen && clientSecret && (
         <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-          <StripePaymentModal 
+          <StripePaymentModal
             amount={total}
             onSuccess={handlePaymentSuccess}
             onCancel={handlePaymentCancel}

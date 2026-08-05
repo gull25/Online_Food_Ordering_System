@@ -4,6 +4,8 @@ let io;
 
 // Map to keep track of userId -> socketId (for direct user targeting)
 const userSocketMap = new Map();
+// Throttle DB updates map
+const lastDbUpdate = new Map();
 
 module.exports = {
     init: (httpServer) => {
@@ -55,37 +57,42 @@ module.exports = {
             });
 
             // ── Rider: live GPS location update ────────────────────────────────
-            // Rider app/simulator emits this every few seconds.
-            // Payload: { orderId: string, lat: number, lng: number, riderId: string }
             socket.on("rider:location_update", async ({ orderId, lat, lng, riderId }) => {
                 if (!orderId || lat == null || lng == null) return;
 
-                // Broadcast real-time location to everyone in the order room
+                // Broadcast real-time location to everyone in the order room immediately
                 io.to(`order_${orderId}`).emit("rider:location", { lat, lng, orderId });
 
-                // Persist latest location to MongoDB (best-effort, non-blocking)
-                if (orderId) {
-                    try {
-                        const Order = require("./models/Order");
-                        await Order.findByIdAndUpdate(orderId, {
-                            $push: { routeHistory: { lat, lng, timestamp: new Date() } }
-                        });
-                    } catch (err) {
-                        console.error("[Socket.io] Failed to update order routeHistory in DB:", err.message);
+                // Persist to MongoDB occasionally to prevent DB overload (every 30s)
+                const now = Date.now();
+                const lastSave = lastDbUpdate.get(orderId) || 0;
+                
+                if (now - lastSave > 30000) {
+                    lastDbUpdate.set(orderId, now);
+                    
+                    if (orderId) {
+                        try {
+                            const Order = require("./models/order.model");
+                            await Order.findByIdAndUpdate(orderId, {
+                                $push: { routeHistory: { lat, lng, timestamp: new Date() } }
+                            });
+                        } catch (err) {
+                            console.error("[Socket.io] Failed to update order routeHistory:", err.message);
+                        }
                     }
-                }
 
-                if (riderId) {
-                    try {
-                        const Rider = require("./models/Rider");
-                        await Rider.findByIdAndUpdate(riderId, {
-                            currentLocation: {
-                                type: "Point",
-                                coordinates: [lng, lat],
-                            },
-                        });
-                    } catch (err) {
-                        console.error("[Socket.io] Failed to update rider location in DB:", err.message);
+                    if (riderId) {
+                        try {
+                            const Rider = require("./models/rider.model");
+                            await Rider.findByIdAndUpdate(riderId, {
+                                currentLocation: {
+                                    type: "Point",
+                                    coordinates: [lng, lat],
+                                },
+                            });
+                        } catch (err) {
+                            console.error("[Socket.io] Failed to update rider location:", err.message);
+                        }
                     }
                 }
             });
