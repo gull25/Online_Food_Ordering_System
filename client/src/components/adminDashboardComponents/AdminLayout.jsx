@@ -1,17 +1,30 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import AdminSidebar from './AdminSidebar';
 
 /**
  * AdminLayout — wrapper for all /admin/* pages.
- *
- * Admin pages (AdminDashboardPage, AdminOrdersPage, etc.) each embed their own
- * AdminSidebar + AdminHeader internally, so this layout intentionally stays
- * minimal. Its main purpose is to act as a semantic boundary and a place to
- * inject future admin-wide concerns (global toasts, admin-only providers, etc.)
- * without touching individual page files.
  */
 const AdminLayout = () => {
-  return <Outlet />;
+  const location = useLocation();
+  const path = location.pathname;
+  
+  let activeTab = 'dashboard';
+  if (path.includes('orders')) activeTab = 'orders';
+  else if (path.includes('my-restaurant')) activeTab = 'my-restaurant';
+  else if (path.includes('categories')) activeTab = 'categories';
+  else if (path.includes('offers')) activeTab = 'offers';
+  else if (path.includes('products')) activeTab = 'products';
+  else if (path.includes('analytics')) activeTab = 'analytics';
+
+  return (
+    <div className="flex h-screen bg-background overflow-hidden">
+      <AdminSidebar activeTab={activeTab} />
+      <div className="flex-1 overflow-y-auto min-w-0">
+        <Outlet />
+      </div>
+    </div>
+  );
 };
 
 export default AdminLayout;

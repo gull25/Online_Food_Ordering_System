@@ -1,5 +1,5 @@
 const asyncHandler = require('../utils/asyncHandler');
-const Restaurant = require('../models/Restaurant');
+const Restaurant = require('../models/restaurant.model');
 const ApiError = require('../utils/ApiError');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
@@ -86,3 +86,4 @@ exports.verifyStripeStatus = asyncHandler(async (req, res, next) => {
         account
     });
 });
+

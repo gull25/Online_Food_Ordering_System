@@ -28,7 +28,7 @@ const NewUserDiscounts = ({ copyPromoCode, copiedCode, offers }) => {
             <h3 className="text-[40px] font-extrabold leading-tight mb-2 text-primary">{welcomeTitle}</h3>
             <p className="text-on-surface-variant font-body text-body max-w-xs">
               {welcomeDesc}{' '}
-              <span className="font-bold text-on-surface select-all bg-white/60 px-2 py-1 rounded">
+              <span className="font-bold text-on-primary-container select-all bg-surface/60 px-2 py-1 rounded">
                 {welcomeCode}
               </span>
             </p>
@@ -62,7 +62,7 @@ const NewUserDiscounts = ({ copyPromoCode, copiedCode, offers }) => {
           </p>
           <button
             onClick={() => copyPromoCode(deliveryCode)}
-            className="bg-white text-primary px-6 py-3 rounded-xl font-button text-button hover:bg-surface-bright active:scale-95 transition-all shadow-md"
+            className="bg-surface-container-lowest text-primary px-6 py-3 rounded-xl font-button text-button hover:bg-surface-bright active:scale-95 transition-all shadow-md"
           >
             {copiedCode === deliveryCode ? 'Copied Coupon!' : 'Start Free Trial'}
           </button>

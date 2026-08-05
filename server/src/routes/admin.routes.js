@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAdminOrders, getAdminAnalytics, getRiders } = require('../controllers/admin.controller');
+const { getAdminOrders, getAdminAnalytics, getRiders, downloadSalesReport } = require('../controllers/admin.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/authorize.middleware');
 
@@ -12,5 +12,6 @@ router.use(authorize('restaurant_admin', 'admin'));
 router.get('/orders', getAdminOrders);
 router.get('/analytics', getAdminAnalytics);
 router.get('/riders', getRiders);
+router.get('/reports/sales', downloadSalesReport);
 
 module.exports = router;

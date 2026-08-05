@@ -1,16 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../api/axios';
 
 // Async thunks
 export const fetchFeaturedRestaurants = createAsyncThunk(
     'restaurants/fetchFeatured',
     async (params, { rejectWithValue }) => {
         try {
-            let url = '/api/restaurants?featured=true';
+            let url = '/restaurants?featured=true';
             if (params && params.lat && params.lng) {
                 url += `&lat=${params.lat}&lng=${params.lng}`;
             }
-            const response = await axios.get(url);
+            const response = await api.get(url);
             return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch featured restaurants');
@@ -22,7 +22,7 @@ export const fetchRestaurantDetails = createAsyncThunk(
     'restaurants/fetchDetails',
     async (id, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`/api/restaurants/${id}`);
+            const response = await api.get(`/restaurants/${id}`);
             return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch restaurant details');

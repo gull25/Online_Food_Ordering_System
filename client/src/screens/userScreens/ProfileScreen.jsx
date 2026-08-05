@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { updateProfileThunk } from '../../redux/userSlice';
 import toast from 'react-hot-toast';
 import TopNavBar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
+import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
@@ -130,7 +130,7 @@ const ProfilePage = () => {
         </div>
       </main>
 
-      <Footer />
+      <HomeFooter />
     </div>
   );
 };

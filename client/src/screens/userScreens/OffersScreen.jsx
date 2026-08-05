@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import TopNavBar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
+import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
 import NewsletterSignup from '../../components/homeScreen/offersComponents/NewsletterSignup';
 import FlashSaleBanner from '../../components/homeScreen/offersComponents/FlashSaleBanner';
 import OffersFilter from '../../components/homeScreen/offersComponents/OffersFilter';
@@ -205,14 +205,14 @@ const OffersPage = () => {
                     src={offer.image !== 'no-photo.jpg' ? offer.image : (offer.restaurantId?.image || 'https://via.placeholder.com/400x300')}
                   />
                   <div
-                    className={`absolute top-3 left-3 font-bold px-3 py-1 rounded-lg text-small text-white shadow-sm ${
-                      offer.type === 'EXCLUSIVE' ? 'bg-primary-container' : 'bg-primary'
+                    className={`absolute top-3 left-3 font-bold px-3 py-1 rounded-lg text-small shadow-sm ${
+                      offer.type === 'EXCLUSIVE' ? 'bg-primary-container text-on-primary-container' : 'bg-primary text-on-primary'
                     }`}
                   >
                     {offer.type}
                   </div>
                   {offer.discountPercentage > 0 && (
-                    <div className="absolute top-3 right-3 bg-error text-white font-bold text-sm px-2 py-1 rounded-lg shadow-sm">
+                    <div className="absolute top-3 right-3 bg-error text-on-error font-bold text-sm px-2 py-1 rounded-lg shadow-sm">
                       -{offer.discountPercentage}%
                     </div>
                   )}
@@ -250,15 +250,15 @@ const OffersPage = () => {
                       onClick={() => copyPromoCode(offer.code)}
                       className={`flex-1 py-3.5 rounded-xl border text-small font-button text-button transition-all text-center ${
                         copiedCode === offer.code
-                          ? 'bg-tertiary-container text-white border-tertiary-container'
-                          : 'border-primary text-primary hover:bg-primary hover:text-white'
+                          ? 'bg-tertiary-container text-on-tertiary-container border-tertiary-container'
+                          : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
                       }`}
                     >
                       {copiedCode === offer.code ? 'Copied!' : 'Copy Code'}
                     </button>
                     <Link
                       to={`/restaurant/${offer.restaurantId?._id || activeRestaurantId}`}
-                      className="px-4 py-3.5 rounded-xl bg-surface-container text-on-surface-variant hover:bg-primary-container hover:text-white hover:shadow-sm font-button text-button text-center transition-all flex items-center justify-center"
+                      className="px-4 py-3.5 rounded-xl bg-surface-container text-on-surface-variant hover:bg-primary hover:text-on-primary hover:shadow-sm font-button text-button text-center transition-all flex items-center justify-center"
                     >
                       <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>
                     </Link>
@@ -275,7 +275,7 @@ const OffersPage = () => {
                 search_off
               </span>
               <h3 className="font-h3 text-h3 text-on-surface mb-2">No promotions found</h3>
-              <p className="text-secondary max-w-md mx-auto">
+              <p className="text-on-surface/80 max-w-md mx-auto">
                 {searchQuery
                   ? `We couldn't find any deals matching "${searchQuery}". Try checking the spelling or using different keywords.`
                   : activeRestaurantId
@@ -293,24 +293,24 @@ const OffersPage = () => {
               <h2 className="font-h2 text-h2-mobile md:text-h2 text-on-surface mb-6">How to save more</h2>
               <div className="space-y-6">
                 <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0 shadow-md">1</div>
+                  <div className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold shrink-0 shadow-md">1</div>
                   <div>
                     <h4 className="font-h3 text-[18px] mb-1 font-semibold text-on-surface">Choose your favorite deal</h4>
-                    <p className="text-on-secondary-container text-body">Browse through hundreds of offers from top-rated restaurants in your city.</p>
+                    <p className="text-on-surface/80 text-body">Browse through hundreds of offers from top-rated restaurants in your city.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0 shadow-md">2</div>
+                  <div className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold shrink-0 shadow-md">2</div>
                   <div>
                     <h4 className="font-h3 text-[18px] mb-1 font-semibold text-on-surface">Add to Cart</h4>
-                    <p className="text-on-secondary-container text-body">Eligible deals are automatically applied. For promo codes, enter them at the final checkout stage.</p>
+                    <p className="text-on-surface/80 text-body">Eligible deals are automatically applied. For promo codes, enter them at the final checkout stage.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0 shadow-md">3</div>
+                  <div className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold shrink-0 shadow-md">3</div>
                   <div>
                     <h4 className="font-h3 text-[18px] mb-1 font-semibold text-on-surface">Enjoy your meal!</h4>
-                    <p className="text-on-secondary-container text-body">Sit back and relax. Your food is on the way, at a price you'll love.</p>
+                    <p className="text-on-surface/80 text-body">Sit back and relax. Your food is on the way, at a price you'll love.</p>
                   </div>
                 </div>
               </div>
@@ -321,7 +321,7 @@ const OffersPage = () => {
                 alt="Smartphone showing discount applied screen"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0L7M4U-X5RDhfOZLk1cMV3SwuSUvpG_Z1PmStcizeL2CMV43-TUUrKSz6utpUSNK63m210YYXtP2rGoETQzItHpkQ69PhXnfXqw80VEXyHEoD6d3wrFmKpx2HUYo_gtkPDISe8g6C72Ex9zaV5G8jp7TGEe934wo8Hih6lhmARpZ-rMIokqAF2FojAaLiQ5ymC-j7Qeg2Uzjk1Y9sPmDxgsNbZvfktyZk50DQF_wJ0THMK3V6VbFalA"
               />
-              <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-2xl shadow-xl flex items-center gap-3 animate-bounce border border-surface-variant">
+              <div className="absolute -bottom-4 -right-4 bg-surface-container-lowest p-4 rounded-2xl shadow-xl flex items-center gap-3 animate-bounce border border-surface-variant">
                 <span className="material-symbols-outlined text-tertiary text-[32px]">check_circle</span>
                 <div>
                   <p className="font-bold text-on-surface">Savings Applied!</p>
@@ -341,7 +341,7 @@ const OffersPage = () => {
         />
       </main>
 
-      <Footer />
+      <HomeFooter />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 const asyncHandler = require('../utils/asyncHandler');
-const Review = require('../models/Review');
-const Order = require('../models/Order');
+const Review = require('../models/review.model');
+const Order = require('../models/order.model');
 
 // @desc    Create a review for a restaurant
 // @route   POST /api/reviews
@@ -62,3 +62,4 @@ exports.getRestaurantReviews = asyncHandler(async (req, res, next) => {
         data: reviews
     });
 });
+

@@ -63,7 +63,7 @@ const Navbar = () => {
     const isActive = location.pathname === path;
     return isActive
       ? 'text-primary dark:text-primary-fixed border-b-2 border-primary font-bold pb-1 font-body text-body flex items-center h-full mt-[2px] transition-all cursor-pointer'
-      : 'text-on-secondary-container dark:text-secondary-fixed-dim hover:text-primary transition-colors font-body text-body flex items-center h-full mt-[2px] hover:opacity-90 hover:scale-[1.02] cursor-pointer';
+      : 'text-on-surface hover:text-primary transition-colors font-body text-body flex items-center h-full mt-[2px] hover:opacity-90 hover:scale-[1.02] cursor-pointer';
   };
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ const Navbar = () => {
             >
               <div
                 onClick={() => setIsResDropdownOpen(!isResDropdownOpen)}
-                className={`text-on-secondary-container dark:text-secondary-fixed-dim hover:text-primary transition-colors font-body text-body flex items-center h-full hover:opacity-90 hover:scale-[1.02] cursor-pointer ${location.pathname.includes('/restaurant') ? 'text-primary border-b-2 border-primary font-bold pb-1 mt-[2px]' : 'mt-[2px]'}`}
+                className={`text-on-surface hover:text-primary transition-colors font-body text-body flex items-center h-full hover:opacity-90 hover:scale-[1.02] cursor-pointer ${location.pathname.includes('/restaurant') ? 'text-primary border-b-2 border-primary font-bold pb-1 mt-[2px]' : 'mt-[2px]'}`}
               >
                 Restaurants
                 <span className="material-symbols-outlined text-[18px] ml-1">expand_more</span>
@@ -144,7 +144,7 @@ const Navbar = () => {
             <Link
               to="/checkout"
               aria-label="Cart"
-              className="relative p-2 hover:opacity-90 hover:scale-[1.02] transition-all cursor-pointer active:scale-95 duration-200 text-on-secondary-container dark:text-secondary-fixed-dim hover:bg-surface-variant rounded-full flex items-center justify-center hidden md:flex"
+              className="relative p-2 hover:opacity-90 hover:scale-[1.02] transition-all cursor-pointer active:scale-95 duration-200 text-on-surface hover:bg-surface-variant rounded-full flex items-center justify-center hidden md:flex"
             >
               <span className="material-symbols-outlined" data-icon="shopping_cart">
                 shopping_cart
@@ -211,7 +211,7 @@ const Navbar = () => {
           {/* Mobile Menu Toggle */}
           <button
             aria-label="Menu"
-            className="md:hidden p-2 text-on-secondary-container dark:text-secondary-fixed-dim flex items-center justify-center"
+            className="md:hidden p-2 text-on-surface flex items-center justify-center"
           >
             <span className="material-symbols-outlined">menu</span>
           </button>

@@ -1,6 +1,6 @@
 const asyncHandler = require('../utils/asyncHandler');
 const restaurantService = require('../services/restaurant.service');
-const MenuItem = require('../models/MenuItem');
+const MenuItem = require('../models/menuItem.model');
 
 // @desc    Get all restaurants (or featured via query)
 // @route   GET /api/restaurants
@@ -84,7 +84,7 @@ exports.createRestaurant = asyncHandler(async (req, res, next) => {
     const restaurant = await restaurantService.createRestaurant(req.body);
 
     // Update the user with the new restaurantId
-    await require('../models/User').findByIdAndUpdate(req.user.id, {
+    await require('../models/user.model').findByIdAndUpdate(req.user.id, {
         restaurantId: restaurant._id
     });
 
@@ -216,3 +216,4 @@ exports.deleteMenuItem = asyncHandler(async (req, res, next) => {
         data: {}
     });
 });
+

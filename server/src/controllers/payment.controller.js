@@ -1,5 +1,5 @@
 const asyncHandler = require('../utils/asyncHandler');
-const Order = require('../models/Order');
+const Order = require('../models/order.model');
 const socketManager = require('../socket');
 const sendEmail = require('../utils/sendEmail');
 
@@ -73,3 +73,4 @@ exports.webhook = asyncHandler(async (req, res, next) => {
     // Return a 200 response to acknowledge receipt of the event
     res.json({ received: true });
 });
+

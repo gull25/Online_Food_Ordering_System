@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { initializeAuth } from './redux/authSlice';
+import { setWishlist } from './redux/wishlistSlice';
 import ConditionalRoutes from './ConditionalRoutes';
 import api from './api/axios';
 import { Toaster } from 'react-hot-toast';
@@ -20,6 +21,9 @@ function App() {
       try {
         const userInfo = JSON.parse(userInfoString);
         dispatch(initializeAuth(userInfo));
+        if (userInfo && userInfo.favorites) {
+          dispatch(setWishlist(userInfo.favorites));
+        }
       } catch {
         // Corrupted data — treat as guest but mark initialization done.
         dispatch(initializeAuth(null));

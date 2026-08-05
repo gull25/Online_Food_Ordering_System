@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../models/user.model');
 
 class UserRepository {
     async findByEmail(email, selectPassword = false) {
@@ -27,3 +27,4 @@ class UserRepository {
 }
 
 module.exports = new UserRepository();
+

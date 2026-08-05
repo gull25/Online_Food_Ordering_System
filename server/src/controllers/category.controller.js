@@ -1,5 +1,5 @@
-const Category = require('../models/Category');
-const MenuItem = require('../models/MenuItem');
+const Category = require('../models/category.model');
+const MenuItem = require('../models/menuItem.model');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
@@ -112,3 +112,4 @@ exports.deleteCategory = asyncHandler(async (req, res, next) => {
         data: {}
     });
 });
+

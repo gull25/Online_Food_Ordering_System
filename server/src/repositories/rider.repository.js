@@ -1,5 +1,5 @@
-const Rider = require('../models/Rider');
-const Order = require('../models/Order');
+const Rider = require('../models/rider.model');
+const Order = require('../models/order.model');
 
 class RiderRepository {
     async findByUserId(userId) {
@@ -67,3 +67,4 @@ class RiderRepository {
 }
 
 module.exports = new RiderRepository();
+

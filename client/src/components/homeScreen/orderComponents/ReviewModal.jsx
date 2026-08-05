@@ -93,8 +93,8 @@ const ReviewModal = ({ order, onClose, onSuccess }) => {
           {/* Actions */}
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full h-12 rounded-xl bg-primary text-white font-button text-button font-bold hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+            disabled={isSubmitting || rating === 0}
+            className="w-full h-12 rounded-xl bg-primary text-on-primary font-button text-button font-bold hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>

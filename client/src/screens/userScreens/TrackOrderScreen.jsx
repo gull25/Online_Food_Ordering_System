@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchOrderByIdThunk } from '../../redux/orderSlice';
 import TopNavBar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
+import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
 import OrderStatusSteps from '../../components/homeScreen/orderComponents/OrderStatusSteps';
 import OrderMap from '../../components/homeScreen/orderComponents/OrderMap';
 import DeliveryDetails from '../../components/homeScreen/orderComponents/DeliveryDetails';
@@ -314,7 +314,7 @@ const TrackOrderPage = () => {
 
       </main>
 
-      <Footer />
+      <HomeFooter />
 
       {/* Review Modal */}
       {showReviewModal && (

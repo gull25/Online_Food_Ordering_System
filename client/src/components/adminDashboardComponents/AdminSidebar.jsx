@@ -35,14 +35,14 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
     if (activeTab === tabName) {
       return 'flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-primary font-bold border-r-4 border-primary bg-surface-container-high/50 font-label text-label cursor-pointer';
     }
-    return 'flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-secondary hover:bg-surface-variant/40 font-label text-label cursor-pointer';
+    return 'flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-on-surface-variant hover:bg-surface-variant/40 font-label text-label cursor-pointer';
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-surface-container-low border-r border-outline-variant/30 flex flex-col z-40">
+    <aside className="h-screen w-64 bg-surface-container-low border-r border-outline-variant/30 flex flex-col z-40 shrink-0">
       <div className="px-6 py-10 flex flex-col gap-2">
         <h1 className="font-h3 text-h3 text-primary font-bold">Foodora Admin</h1>
-        <p className="font-label text-label text-on-secondary-container uppercase tracking-wider">
+        <p className="font-label text-label text-on-surface-variant uppercase tracking-wider">
           Management Suite
         </p>
       </div>

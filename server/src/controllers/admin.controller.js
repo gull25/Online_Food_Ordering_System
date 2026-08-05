@@ -1,7 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
-const Order = require('../models/Order');
-const Restaurant = require('../models/Restaurant');
-const Rider = require('../models/Rider');
+const Order = require('../models/order.model');
+const Restaurant = require('../models/restaurant.model');
+const Rider = require('../models/rider.model');
 const ApiError = require('../utils/ApiError');
 
 
@@ -150,4 +150,38 @@ exports.getRiders = asyncHandler(async (req, res, next) => {
         count: riders.length,
         data: riders
     });
+});
+
+// @desc    Download sales report (CSV)
+// @route   GET /api/admin/reports/sales
+// @access  Private (Admin / Restaurant Admin)
+exports.downloadSalesReport = asyncHandler(async (req, res, next) => {
+    const query = req.user.role === 'admin'
+        ? {}
+        : { restaurant: req.user.restaurantId };
+
+    const orders = await Order.find(query).populate('user', 'name email').sort({ createdAt: -1 });
+
+    // Build CSV String
+    let csv = 'Order ID,Date,Customer Name,Customer Email,Status,Items Count,Total Amount\n';
+
+    orders.forEach(order => {
+        const id = order._id;
+        const date = new Date(order.createdAt).toLocaleDateString();
+        const customerName = order.user?.name || 'Guest';
+        const customerEmail = order.user?.email || 'N/A';
+        const status = order.status;
+        const itemsCount = Array.isArray(order.items) ? order.items.length : 0;
+        const totalAmount = (order.totalAmount || 0).toFixed(2);
+
+        // Escape quotes to prevent CSV injection/formatting issues
+        const safeName = `"${customerName.replace(/"/g, '""')}"`;
+        const safeEmail = `"${customerEmail.replace(/"/g, '""')}"`;
+
+        csv += `${id},${date},${safeName},${safeEmail},${status},${itemsCount},${totalAmount}\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=sales_report.csv');
+    res.status(200).send(csv);
 });

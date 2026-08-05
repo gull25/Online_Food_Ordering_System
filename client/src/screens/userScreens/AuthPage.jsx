@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../assets/styles/AuthPage.css';
+
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthForm from './AuthForm';
 

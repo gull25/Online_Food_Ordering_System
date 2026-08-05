@@ -1,4 +1,4 @@
-const MenuItem = require('../models/MenuItem');
+const MenuItem = require('../models/menuItem.model');
 
 class MenuItemRepository {
     async findByRestaurant(restaurantId) {
@@ -26,3 +26,4 @@ class MenuItemRepository {
 }
 
 module.exports = new MenuItemRepository();
+

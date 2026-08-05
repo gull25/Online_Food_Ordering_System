@@ -6,6 +6,7 @@ import { ProtectedRoute, GuestRoute } from './ProtectedRoute';
 
 // ── Layouts ───────────────────────────────────────────────────────────────────
 import AdminLayout from './components/adminDashboardComponents/AdminLayout';
+import RiderLayout from './components/riderDashboardComponents/RiderLayout';
 
 // ── Loading Fallback ──────────────────────────────────────────────────────────
 import LoadingSkeleton from './components/common/LoadingSkeleton';
@@ -21,21 +22,21 @@ const CheckoutScreen = React.lazy(() => import('./screens/userScreens/CheckoutSc
 const ProfileScreen = React.lazy(() => import('./screens/userScreens/ProfileScreen'));
 
 // Admin-facing
-const AdminDashboardPage = React.lazy(() => import('./screens/dashboard/AdminDashboard/dashboard/AdminDashboardPage'));
-const AdminOrdersPage = React.lazy(() => import('./screens/dashboard/AdminDashboard/orders/AdminOrdersPage'));
-const AdminMyRestaurantPage = React.lazy(() => import('./screens/dashboard/AdminDashboard/restaurant/AdminMyRestaurantPage'));
-const AdminCategoriesPage = React.lazy(() => import('./screens/dashboard/AdminDashboard/categories/AdminCategoriesPage'));
-const AdminOffersPage = React.lazy(() => import('./screens/dashboard/AdminDashboard/offers/AdminOffersPage'));
-const AdminProductsPage = React.lazy(() => import('./screens/dashboard/AdminDashboard/products/AdminProductsPage'));
-const AdminAnalyticsPage = React.lazy(() => import('./screens/dashboard/AdminDashboard/analytics/AdminAnalyticsPage'));
-const RestaurantOnboardingPage = React.lazy(() => import('./screens/dashboard/AdminDashboard/restaurant/RestaurantOnboardingPage'));
-const StripeReturnPage = React.lazy(() => import('./screens/dashboard/AdminDashboard/dashboard/StripeReturnPage'));
+const AdminDashboardPage = React.lazy(() => import('./screens/dashboard/admin/dashboard/AdminDashboardPage'));
+const AdminOrdersPage = React.lazy(() => import('./screens/dashboard/admin/orders/AdminOrdersPage'));
+const AdminMyRestaurantPage = React.lazy(() => import('./screens/dashboard/admin/restaurant/AdminMyRestaurantPage'));
+const AdminCategoriesPage = React.lazy(() => import('./screens/dashboard/admin/categories/AdminCategoriesPage'));
+const AdminOffersPage = React.lazy(() => import('./screens/dashboard/admin/offers/AdminOffersPage'));
+const AdminProductsPage = React.lazy(() => import('./screens/dashboard/admin/products/AdminProductsPage'));
+const AdminAnalyticsPage = React.lazy(() => import('./screens/dashboard/admin/analytics/AdminAnalyticsPage'));
+const RestaurantOnboardingPage = React.lazy(() => import('./screens/dashboard/admin/restaurant/RestaurantOnboardingPage'));
+const StripeReturnPage = React.lazy(() => import('./screens/dashboard/admin/dashboard/StripeReturnPage'));
 
 // Rider-facing
-const RiderDashboardPage = React.lazy(() => import('./screens/dashboard/UserDashboard/dashboard/RiderDashboard'));
-const ActiveDeliveriesPage = React.lazy(() => import('./screens/dashboard/UserDashboard/deliveries/ActiveDeliveries'));
-const EarningsPage = React.lazy(() => import('./screens/dashboard/UserDashboard/earnings/Earnings'));
-const RatingsPage = React.lazy(() => import('./screens/dashboard/UserDashboard/ratings/Ratings'));
+const RiderDashboardPage = React.lazy(() => import('./screens/dashboard/rider/dashboard/RiderDashboard'));
+const ActiveDeliveriesPage = React.lazy(() => import('./screens/dashboard/rider/deliveries/ActiveDeliveries'));
+const EarningsPage = React.lazy(() => import('./screens/dashboard/rider/earnings/Earnings'));
+const RatingsPage = React.lazy(() => import('./screens/dashboard/rider/ratings/Ratings'));
 
 // Utility
 const NotFoundPage = React.lazy(() => import('./screens/errorPages/NotFoundPage'));
@@ -85,10 +86,12 @@ const ConditionalRoutes = () => {
 
         {/* ── Rider Routes (requires isAuthenticated + role === 'rider') ─── */}
         <Route element={<ProtectedRoute allowedRoles={['rider']} />}>
-          <Route path="/rider/dashboard" element={<RiderDashboardPage />} />
-          <Route path="/rider/active-deliveries" element={<ActiveDeliveriesPage />} />
-          <Route path="/rider/earnings" element={<EarningsPage />} />
-          <Route path="/rider/ratings" element={<RatingsPage />} />
+          <Route element={<RiderLayout />}>
+            <Route path="/rider/dashboard" element={<RiderDashboardPage />} />
+            <Route path="/rider/active-deliveries" element={<ActiveDeliveriesPage />} />
+            <Route path="/rider/earnings" element={<EarningsPage />} />
+            <Route path="/rider/ratings" element={<RatingsPage />} />
+          </Route>
         </Route>
 
         {/* ── 404 Catch-all ─────────────────────────────────────────────── */}

@@ -1,10 +1,10 @@
 const userRepository = require('../repositories/user.repository');
-const Restaurant = require('../models/Restaurant');
+const Restaurant = require('../models/restaurant.model');
 const generateToken = require('../utils/generateToken');
 const ApiError = require('../utils/ApiError');
 const sendEmail = require('../utils/sendEmail');
 const crypto = require('crypto');
-const User = require('../models/User');
+const User = require('../models/user.model');
 
 class AuthService {
     async register(userData) {
@@ -25,8 +25,8 @@ class AuthService {
 
         // Auto-create Rider profile if role is 'rider'
         if (user.role === 'rider') {
-            const Rider = require('../models/Rider');
-            const Restaurant = require('../models/Restaurant');
+            const Rider = require('../models/rider.model');
+            const Restaurant = require('../models/restaurant.model');
             let dummyRestaurant = await Restaurant.findOne();
             if (!dummyRestaurant) {
                 dummyRestaurant = await Restaurant.create({
@@ -146,3 +146,4 @@ class AuthService {
 }
 
 module.exports = new AuthService();
+

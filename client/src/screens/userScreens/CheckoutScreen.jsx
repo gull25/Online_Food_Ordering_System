@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import TopNavBar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
+import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
 import CartItem from '../../components/ui/CartItem/CartItem';
 import CheckoutProgress from '../../components/homeScreen/checkoutComponents/CheckoutProgress';
 import DeliveryForm from '../../components/homeScreen/checkoutComponents/DeliveryForm';
@@ -338,7 +338,7 @@ const CheckoutPage = () => {
         </div>
       </main>
 
-      <Footer />
+      <HomeFooter />
 
       {paymentModalOpen && clientSecret && (
         <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>

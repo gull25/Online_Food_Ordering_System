@@ -1,4 +1,4 @@
-const Order = require('../models/Order');
+const Order = require('../models/order.model');
 
 class OrderRepository {
     async create(data) {
@@ -35,3 +35,4 @@ class OrderRepository {
 }
 
 module.exports = new OrderRepository();
+

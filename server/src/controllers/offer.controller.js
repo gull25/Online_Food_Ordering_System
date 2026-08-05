@@ -1,4 +1,4 @@
-const Offer = require('../models/Offer');
+const Offer = require('../models/offer.model');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
@@ -117,3 +117,4 @@ exports.deleteOffer = asyncHandler(async (req, res, next) => {
         data: {}
     });
 });
+

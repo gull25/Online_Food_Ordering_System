@@ -12,7 +12,7 @@ const NewsletterSignup = ({ newsletterSubscribed, handleNewsletterSubmit, newsle
         <h2 className="font-h2 text-h2-mobile md:text-h2 text-white mb-4">
           Never miss a tasty deal
         </h2>
-        <p className="text-surface-variant/80 font-body text-body mb-8">
+        <p className="text-white/80 font-body text-body mb-8">
           Join 50,000+ foodies receiving the best weekly promotions directly in their inbox.
         </p>
 
@@ -23,7 +23,7 @@ const NewsletterSignup = ({ newsletterSubscribed, handleNewsletterSubmit, newsle
             </span>
             <div className="text-left">
               <h4 className="font-button text-button">Successfully Subscribed!</h4>
-              <p className="text-small text-surface-variant/80">
+              <p className="text-small text-white/80">
                 We've sent a welcome email to your inbox.
               </p>
             </div>
@@ -50,7 +50,7 @@ const NewsletterSignup = ({ newsletterSubscribed, handleNewsletterSubmit, newsle
           </form>
         )}
 
-        <p className="mt-4 text-[12px] text-surface-variant/50">
+        <p className="mt-4 text-[12px] text-white/50">
           By subscribing, you agree to our Terms of Service and Privacy Policy.
         </p>
       </div>

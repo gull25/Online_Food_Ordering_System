@@ -15,7 +15,7 @@ const RestaurantCard = ({ restaurant }) => {
   return (
     <div
       onClick={() => isAuthenticated ? navigate(`/restaurant/${cardId}`) : navigate('/auth', { state: { message: 'Please login or create an account to continue.' } })}
-      className="bg-white rounded-2xl border border-outline-variant overflow-hidden hover:shadow-xl transition-all cursor-pointer"
+      className="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden hover:shadow-xl transition-all cursor-pointer"
     >
       <div className="h-52 relative">
         <div

@@ -34,7 +34,7 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, r
                 {restaurant?.name || 'Loading...'}
               </h1>
             )}
-            <div className="flex items-center gap-3 flex-wrap text-surface-container-lowest font-body text-body opacity-90">
+            <div className="flex items-center gap-3 flex-wrap text-white/90 font-body text-body opacity-90">
               <span className="flex items-center gap-1">
                 <span
                   className="material-symbols-outlined text-lg text-[#FFB59E]"
@@ -42,17 +42,17 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, r
                 >
                   star
                 </span>{' '}
-                {restaurant?.rating || 'New'} {restaurant?.ratingCount ? `(${restaurant.ratingCount}+ ratings)` : ''}
+                {restaurant?.rating || 'New'} {restaurant?.numReviews > 0 ? `(${restaurant.numReviews} rating${restaurant.numReviews > 1 ? 's' : ''})` : ''}
               </span>
-              <span className="w-1 h-1 rounded-full bg-surface-container-lowest"></span>
+              <span className="w-1 h-1 rounded-full bg-white/50"></span>
               <span>{restaurant?.priceRange || '$$'}</span>
-              <span className="w-1 h-1 rounded-full bg-surface-container-lowest"></span>
+              <span className="w-1 h-1 rounded-full bg-white/50"></span>
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-lg">location_on</span> {restaurant?.location?.address || 'Location unavailable'}
+                <span className="material-symbols-outlined text-lg">location_on</span> {restaurant?.address || 'Location unavailable'}
               </span>
-              <span className="w-1 h-1 rounded-full bg-surface-container-lowest"></span>
+              <span className="w-1 h-1 rounded-full bg-white/50"></span>
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-lg">schedule</span> {restaurant?.deliveryTime || '30-45'} min
+                <span className="material-symbols-outlined text-lg">schedule</span> {restaurant?.estimatedDeliveryTime || '30-45 min'}
               </span>
             </div>
           </div>

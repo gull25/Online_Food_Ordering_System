@@ -1,18 +1,17 @@
 const asyncHandler = require('../utils/asyncHandler');
-const MenuItem = require('../models/MenuItem');
-const Offer = require('../models/Offer');
-const Category = require('../models/Category');
+const MenuItem = require('../models/menuItem.model');
+const Offer = require('../models/offer.model');
+const Category = require('../models/category.model');
 
 // @desc    Get trending menu items
 // @route   GET /api/public/trending
 // @access  Public
 exports.getTrending = asyncHandler(async (req, res, next) => {
-    // Ideally this would be calculated by most ordered items.
-    // For now, we will fetch random/featured items, or highest rated.
-    // Since we don't have individual menu item ratings, we'll just fetch a few items across the DB.
+    // Fetch top 8 items sorted by orderCount descending
     const items = await MenuItem.find({ isAvailable: true })
         .populate('restaurant', 'name rating')
-        .limit(8);
+        .sort({ orderCount: -1 })
+        .limit(10);
 
     res.status(200).json({
         success: true,
@@ -74,3 +73,4 @@ exports.validateOffer = asyncHandler(async (req, res, next) => {
         }
     });
 });
+

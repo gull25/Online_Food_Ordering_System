@@ -153,7 +153,7 @@ const OrderMap = ({ restaurantLocation, customerLocation, riderLocation, restaur
       {/* No locations placeholder */}
       {!restaurantLoc && !customerLoc && !riderLoc && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-2 shadow-md">
+          <div className="bg-surface-container-lowest/90 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-2 shadow-md">
             <span className="material-symbols-outlined text-secondary">location_off</span>
             <span className="font-label text-label text-on-surface-variant">Location data unavailable</span>
           </div>

@@ -6,6 +6,9 @@ import { Provider } from 'react-redux';
 import { store } from './redux/store';
 import { ThemeProvider } from './contexts/ThemeContext';
 import './assets/styles/index.css';
+import { injectStore } from './api/axios';
+
+injectStore(store);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

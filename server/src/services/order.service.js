@@ -1,7 +1,7 @@
 const orderRepository = require('../repositories/order.repository');
-const MenuItem = require('../models/MenuItem');
-const Offer = require('../models/Offer');
-const Restaurant = require('../models/Restaurant');
+const MenuItem = require('../models/menuItem.model');
+const Offer = require('../models/offer.model');
+const Restaurant = require('../models/restaurant.model');
 const ApiError = require('../utils/ApiError');
 const { geocodeAddress } = require('../utils/geocoder');
 
@@ -166,6 +166,17 @@ class OrderService {
 
         const newOrder = await orderRepository.create(data);
 
+        // Increment orderCount for each menu item to track popularity for Trending Section
+        try {
+            for (const cartItem of data.items) {
+                await MenuItem.findByIdAndUpdate(cartItem.menuItem, {
+                    $inc: { orderCount: cartItem.quantity }
+                });
+            }
+        } catch (err) {
+            console.error('[OrderService] Failed to increment order counts:', err.message);
+        }
+
         // Update Stripe Payment Intent metadata with the real MongoDB Order ID
         if (data.stripePaymentIntentId) {
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -240,11 +251,11 @@ class OrderService {
     }
 
     async assignRider(orderId, riderId) {
-        const Order = require('../models/Order');
+        const Order = require('../models/order.model');
         const order = await Order.findById(orderId);
         if (!order) throw new ApiError(404, 'Order not found');
 
-        const Rider = require('../models/Rider');
+        const Rider = require('../models/rider.model');
         const rider = await Rider.findById(riderId);
         if (!rider) throw new ApiError(404, 'Rider not found');
 
@@ -282,3 +293,4 @@ class OrderService {
 }
 
 module.exports = new OrderService();
+

@@ -1,8 +1,12 @@
 import axios from 'axios';
-import { store } from '../redux/store';
 import { logout } from '../redux/authSlice';
 import { clearCart } from '../redux/cartSlice';
 import toast from 'react-hot-toast';
+
+let store;
+export const injectStore = (_store) => {
+  store = _store;
+};
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api', // adjust base URL according to your setup

@@ -24,7 +24,7 @@ const OrderStatusSteps = ({ TIMELINE_STEPS, currentStep }) => {
             <div
               className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1 shadow-sm transition-all duration-500 ${
                 isCompleted
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary text-on-primary'
                   : isActive
                   ? 'border-2 border-primary bg-surface-container-lowest text-primary'
                   : 'border-2 border-surface-variant bg-surface-container-lowest text-secondary'

@@ -11,20 +11,7 @@ const AdminHeader = ({ title, subtitle, searchQuery, setSearchQuery, showToast, 
         </p>
       </div>
       <div className="flex items-center gap-4">
-        {setSearchQuery && (
-          <div className="relative w-80 group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary transition-colors">
-              search
-            </span>
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-12 pl-12 pr-4 bg-surface-container-low border border-outline-variant/30 rounded-xl font-body text-body focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-              placeholder="Search orders, customers..."
-              type="text"
-            />
-          </div>
-        )}
+
         {actions}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-xl overflow-hidden">
           <ThemeToggle />

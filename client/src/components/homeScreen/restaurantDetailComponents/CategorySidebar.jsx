@@ -25,7 +25,7 @@ const CategorySidebar = ({ MENU_CATEGORIES, categoryCounts, activeCategory, scro
                 {count > 0 ? (
                   <span
                     className={`font-label text-label px-2 py-1 rounded-full ${
-                      isActive ? 'bg-primary text-white' : 'bg-surface text-on-surface-variant'
+                      isActive ? 'bg-primary text-on-primary' : 'bg-surface text-on-surface-variant'
                     }`}
                   >
                     {count}

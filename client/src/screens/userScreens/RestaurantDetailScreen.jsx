@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import TopNavBar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
+import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
 import FoodCard from '../../components/ui/FoodCard/FoodCard';
 import RestaurantHeader from '../../components/homeScreen/restaurantDetailComponents/RestaurantHeader';
 import CategorySidebar from '../../components/homeScreen/restaurantDetailComponents/CategorySidebar';
@@ -11,6 +11,7 @@ import FloatingCartSummary from '../../components/homeScreen/restaurantDetailCom
 import ReviewsSection from '../../components/homeScreen/restaurantDetailComponents/ReviewsSection';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart } from '../../redux/cartSlice';
+import { toggleFavoriteThunk } from '../../redux/wishlistSlice';
 import { toast } from 'react-hot-toast';
 
 import { fetchRestaurantDetails } from '../../redux/restaurantSlice';
@@ -26,6 +27,8 @@ const RestaurantDetailPage = () => {
   const { currentRestaurant, loading: restaurantLoading } = useSelector((state) => state.restaurants);
   const { items: menuItems, loading: menuLoading } = useSelector((state) => state.menu);
   const { items: cart, totalQuantity: totalCartCount, restaurantId: cartRestaurantId } = useSelector((state) => state.cart);
+  const favorites = useSelector((state) => state.wishlist.items);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
   const handleAddToCart = useCallback((item) => {
     const itemRestId = item.restaurant || item.restaurantId || item.restaurant?._id;
@@ -37,7 +40,15 @@ const RestaurantDetailPage = () => {
   }, [dispatch, cartRestaurantId]);
   
   const handleRemoveFromCart = useCallback((itemId) => dispatch(removeFromCart(itemId)), [dispatch]);
-  const [isFavorite, setIsFavorite] = useState(false);
+  
+  const isFavorite = Array.isArray(favorites) && favorites.includes(id);
+  const handleToggleFavorite = () => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to add favorites');
+      return;
+    }
+    dispatch(toggleFavoriteThunk(id));
+  };
   const [shareText, setShareText] = useState('Share');
 
   const [categories, setCategories] = useState([]);
@@ -148,7 +159,7 @@ const RestaurantDetailPage = () => {
         handleShare={handleShare}
         shareText={shareText}
         isFavorite={isFavorite}
-        setIsFavorite={setIsFavorite}
+        setIsFavorite={handleToggleFavorite}
         restaurant={currentRestaurant}
         loading={restaurantLoading}
       />
@@ -231,7 +242,7 @@ const RestaurantDetailPage = () => {
         totalCartPrice={totalCartPrice}
       />
 
-      <Footer />
+      <HomeFooter />
     </div>
   );
 };

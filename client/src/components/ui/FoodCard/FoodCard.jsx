@@ -10,7 +10,7 @@ const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
           src={item.image}
         />
         {item.rating && (
-          <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
+          <div className="absolute top-2 left-2 bg-surface-container-highest/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
             <span
               className="material-symbols-outlined text-[14px] text-tertiary-container flex items-center justify-center"
               style={{ fontVariationSettings: "'FILL' 1" }}
@@ -29,11 +29,11 @@ const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
             <h3 className="text-[20px] font-semibold text-on-surface leading-tight">
               {item.name}
             </h3>
-            <span className="text-[#FF5A1F] font-button text-button ml-2">
+            <span className="text-primary font-button text-button ml-2">
               €{item.price.toFixed(2)}
             </span>
           </div>
-          <p className="text-[14px] font-normal text-on-secondary-container line-clamp-2 mt-2">
+          <p className="text-[14px] font-normal text-on-surface/80 line-clamp-2 mt-2">
             {item.description}
           </p>
         </div>
@@ -43,7 +43,7 @@ const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
               <span
                 className={`px-2 py-1 rounded-full font-label text-label flex items-center gap-1 w-fit ${
                   item.tag === 'Spicy'
-                    ? 'bg-[#FFDAD6] text-[#93000A]'
+                    ? 'bg-error-container text-on-error-container'
                     : 'bg-surface-container text-on-surface-variant'
                 }`}
               >

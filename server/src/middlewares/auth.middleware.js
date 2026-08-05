@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const Restaurant = require('../models/Restaurant');
+const User = require('../models/user.model');
+const Restaurant = require('../models/restaurant.model');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
@@ -23,7 +23,7 @@ const protect = asyncHandler(async (req, res, next) => {
             }
 
             if (req.user.role === 'rider') {
-                const Rider = require('../models/Rider');
+                const Rider = require('../models/rider.model');
                 const rider = await Rider.findOne({ user: req.user._id });
                 if (rider) {
                     req.user.riderId = rider._id.toString();
@@ -72,3 +72,4 @@ const optionalAuth = asyncHandler(async (req, res, next) => {
 });
 
 module.exports = { protect, optionalAuth };
+

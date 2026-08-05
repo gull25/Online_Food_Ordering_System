@@ -6,9 +6,9 @@ import TrendingSection from '../../components/homeScreen/homeScreenComponents/Tr
 import HowItWorksSection from '../../components/homeScreen/homeScreenComponents/HowItWorksSection';
 import CuratedCollectionsSection from '../../components/homeScreen/homeScreenComponents/CuratedCollectionsSection';
 import FeaturedRestaurantsSection from '../../components/homeScreen/homeScreenComponents/FeaturedRestaurantsSection';
-import AppPromotionSection from '../../components/homeScreen/homeScreenComponents/AppPromotionSection';
+
 import useFadeInAnimation from '../../components/hooks/useFadeInAnimation';
-import '../../assets/styles/HomePage.css';
+
 
 const HomePage = () => {
   
@@ -24,7 +24,7 @@ const HomePage = () => {
         <HowItWorksSection />
         <CuratedCollectionsSection />
         <FeaturedRestaurantsSection />
-        <AppPromotionSection />
+
       </main>
       <HomeFooter />
     </>

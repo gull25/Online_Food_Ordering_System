@@ -1,4 +1,4 @@
-const Restaurant = require('../models/Restaurant');
+const Restaurant = require('../models/restaurant.model');
 
 class RestaurantRepository {
     async findAll(query = {}, options = { includeUnapproved: false }) {
@@ -65,3 +65,4 @@ class RestaurantRepository {
 }
 
 module.exports = new RestaurantRepository();
+

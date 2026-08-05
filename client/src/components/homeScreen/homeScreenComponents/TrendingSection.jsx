@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../../../api/axios';
@@ -8,6 +8,14 @@ const TrendingSection = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [trendingItems, setTrendingItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const scrollContainerRef = useRef(null);
+
+  const scroll = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = direction === 'left' ? -300 : 300;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     const fetchTrending = async () => {
@@ -32,15 +40,15 @@ const TrendingSection = () => {
                 <p className="text-body font-body text-secondary">The most ordered dishes in your area right now</p>
               </div>
               <div className="flex gap-stack_sm">
-                <button className="p-2 rounded-full border border-outline hover:bg-surface-container transition-all flex items-center justify-center">
+                <button onClick={() => scroll('left')} className="p-2 rounded-full border border-outline hover:bg-surface-container transition-all flex items-center justify-center">
                   <span className="material-symbols-outlined">chevron_left</span>
                 </button>
-                <button className="p-2 rounded-full border border-outline hover:bg-surface-container transition-all flex items-center justify-center">
+                <button onClick={() => scroll('right')} className="p-2 rounded-full border border-outline hover:bg-surface-container transition-all flex items-center justify-center">
                   <span className="material-symbols-outlined">chevron_right</span>
                 </button>
               </div>
             </div>
-            <div className="flex gap-gutter overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
+            <div ref={scrollContainerRef} className="flex gap-gutter overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
               {loading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="min-w-[280px] h-80 bg-surface-container rounded-2xl animate-pulse"></div>
@@ -52,7 +60,7 @@ const TrendingSection = () => {
                   <div
                     key={item._id}
                     onClick={() => isAuthenticated ? navigate(`/restaurant/${item.restaurant?._id || item.restaurant}`) : navigate('/auth', { state: { message: 'Please login or create an account to continue.' } })}
-                    className="min-w-[280px] bg-white rounded-2xl border border-outline-variant hover:shadow-lg transition-all group cursor-pointer flex flex-col"
+                    className="min-w-[280px] bg-surface-container-lowest rounded-2xl border border-outline-variant hover:shadow-lg transition-all group cursor-pointer flex flex-col"
                   >
                     <div className="h-48 rounded-t-2xl overflow-hidden relative">
                       <div
@@ -61,7 +69,7 @@ const TrendingSection = () => {
                           backgroundImage: `url(${item.image && item.image !== 'no-photo.jpg' ? item.image : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80'})`,
                         }}
                       ></div>
-                      <div className="absolute top-3 right-3 bg-white/90 glass-effect px-2 py-1 rounded-lg text-primary font-bold text-label flex items-center gap-1">
+                      <div className="absolute top-3 right-3 bg-surface-container-highest/90 bg-white/80 backdrop-blur-[12px] px-2 py-1 rounded-lg text-primary font-bold text-label flex items-center gap-1">
                         <span className="material-symbols-outlined text-[16px] fill">star</span> {item.restaurant?.rating || '4.5'}
                       </div>
                     </div>

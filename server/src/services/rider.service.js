@@ -7,11 +7,11 @@ class RiderService {
     async getProfile(userId) {
         let rider = await riderRepository.findByUserId(userId);
         if (!rider) {
-            const User = require('../models/User');
+            const User = require('../models/user.model');
             const user = await User.findById(userId);
             if (!user) throw new ApiError(404, 'User not found');
             
-            const Restaurant = require('../models/Restaurant');
+            const Restaurant = require('../models/restaurant.model');
             let dummyRestaurant = await Restaurant.findOne();
             if (!dummyRestaurant) {
                 dummyRestaurant = await Restaurant.create({
@@ -27,7 +27,7 @@ class RiderService {
                     email: `dummy_${Date.now()}@test.com`
                 });
             }
-            const Rider = require('../models/Rider');
+            const Rider = require('../models/rider.model');
             await Rider.create({
                 user: userId,
                 name: user.name,
@@ -183,3 +183,4 @@ class RiderService {
 }
 
 module.exports = new RiderService();
+
