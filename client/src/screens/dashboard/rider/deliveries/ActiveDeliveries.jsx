@@ -148,7 +148,7 @@ const ActiveDeliveries = () => {
                                                 Live GPS
                                             </span>
                                         )}
-                                        <span className="text-secondary font-inter text-xs font-bold leading-4">Est. €{(activeOrder.totalAmount * 0.10).toFixed(2)} Earned</span>
+                                        <span className="text-secondary font-inter text-xs font-bold leading-4">Est. €{(activeOrder.riderEarning || (activeOrder.totalAmount * 0.10) || 0).toFixed(2)} Earned</span>
                                     </div>
                                 </div>
                                 <h3 className="font-inter text-xl font-semibold leading-7 text-on-background">Order #{activeOrder?._id?.toString()?.slice(-4)?.toUpperCase() || 'ID'}</h3>

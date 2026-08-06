@@ -80,6 +80,10 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Rider'
     },
+    riderEarning: {
+        type: Number,
+        default: 0
+    },
     isReviewed: {
         type: Boolean,
         default: false

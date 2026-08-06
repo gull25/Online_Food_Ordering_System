@@ -16,17 +16,8 @@ const RiderSidebar = ({ activeTab }) => {
                         <span className="font-inter text-xs font-bold leading-4">{link.label}</span>
                     </Link>
                 ))}
-                <a className="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-transform active:scale-95" href="#">
-                    <span className="material-symbols-outlined">settings</span>
-                    <span className="font-inter text-xs font-bold leading-4">Settings</span>
-                </a>
             </nav>
-            <div className="px-3 border-t border-outline-variant pt-4">
-                <a className="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-transform active:scale-95" href="#">
-                    <span className="material-symbols-outlined">help</span>
-                    <span className="font-inter text-xs font-bold leading-4">Help Center</span>
-                </a>
-            </div>
+
         </aside>
     );
 };

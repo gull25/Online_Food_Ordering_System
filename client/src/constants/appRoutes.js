@@ -25,5 +25,4 @@ export const APP_ROUTES = {
   RIDER_DASHBOARD: '/rider/dashboard',
   RIDER_DELIVERIES: '/rider/active-deliveries',
   RIDER_EARNINGS: '/rider/earnings',
-  RIDER_RATINGS: '/rider/ratings',
 };

@@ -2,6 +2,7 @@ const riderRepository = require('../repositories/rider.repository');
 const orderRepository = require('../repositories/order.repository');
 const ApiError = require('../utils/ApiError');
 const socketManager = require('../socket');
+const Order = require('../models/order.model');
 
 class RiderService {
     async getProfile(userId) {
@@ -123,8 +124,8 @@ class RiderService {
         // Free Rider
         await riderRepository.updateStatus(rider._id, 'Available');
         
-        // Let's assume rider earns flat 10% of order total amount for this demo
-        const riderEarning = order.totalAmount * 0.10;
+        // Use pre-calculated earning from order, fallback to 10% for older orders
+        const riderEarning = order.riderEarning !== undefined ? order.riderEarning : (order.totalAmount * 0.10);
         await riderRepository.updateEarnings(rider._id, riderEarning);
 
         return order;
@@ -133,22 +134,76 @@ class RiderService {
     async getEarnings(userId, period) {
         const rider = await this.getProfile(userId);
         
-        // Mock virtual weekly chart for now
+        // Aggregate real weekly chart
+        const startOfWeek = new Date();
+        startOfWeek.setHours(0, 0, 0, 0);
+        const dayOfWeek = startOfWeek.getDay() === 0 ? 6 : startOfWeek.getDay() - 1; 
+        startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        const weeklyOrders = await Order.find({
+            rider: rider._id,
+            status: 'DELIVERED',
+            updatedAt: { $gte: startOfWeek, $lte: endOfWeek }
+        }).lean();
+
         const weeklyChart = [0, 0, 0, 0, 0, 0, 0];
         
-        // We could aggregate from completed orders, but returning current model state + virtual
+        let basePay = 0;
+        let tips = 0;
+
+        weeklyOrders.forEach(order => {
+            const date = new Date(order.updatedAt);
+            const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1;
+            const earn = order.riderEarning !== undefined ? order.riderEarning : (order.totalAmount * 0.10);
+            weeklyChart[dayIndex] += earn;
+            
+            // For now, distribute it artificially if it's just a flat amount
+            basePay += earn * 0.8;
+            tips += earn * 0.2;
+        });
+
+        // Format date string for the frontend (e.g. "Oct 14 - Oct 20")
+        const dateOptions = { month: 'short', day: 'numeric' };
+        const dateRangeString = `${startOfWeek.toLocaleDateString('en-US', dateOptions)} - ${endOfWeek.toLocaleDateString('en-US', dateOptions)}`;
+        
+        // Sort payout history by newest first
+        const sortedPayoutHistory = (rider.payoutHistory || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+
         return {
             availableBalance: rider.totalEarnings,
-            basePay: rider.totalEarnings * 0.8,
-            tips: rider.totalEarnings * 0.2,
+            basePay: basePay,
+            tips: tips,
             incentives: rider.rewardPoints,
             totalDeliveries: rider.totalDeliveries,
             hoursOnline: rider.totalDeliveries * 0.6, // proxy
             weeklyChart,
-            payoutHistory: [
-                { id: '1', date: new Date().toISOString(), amount: rider.totalEarnings, status: 'Completed', method: 'Bank Transfer' }
-            ]
+            payoutHistory: sortedPayoutHistory,
+            dateRangeString
         };
+    }
+
+    async cashOut(userId) {
+        const rider = await this.getProfile(userId);
+        if (rider.totalEarnings <= 0) {
+            throw new ApiError(400, 'Insufficient balance for cash out');
+        }
+        
+        const payout = {
+            amount: rider.totalEarnings,
+            date: new Date(),
+            status: 'Completed',
+            method: 'Instant Payout'
+        };
+        
+        rider.payoutHistory.push(payout);
+        rider.totalEarnings = 0; // Reset balance
+        await rider.save();
+        
+        return payout;
     }
 
     async getPerformance(userId) {
@@ -185,16 +240,59 @@ class RiderService {
         
         const todayEarnings = todayOrders.reduce((sum, ord) => sum + (ord.totalAmount * 0.10), 0);
 
+        // Aggregate yesterday's stats
+        const startOfYesterday = new Date(startOfDay);
+        startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+        const yesterdayOrders = await riderRepository.getCompletedOrders(rider._id, {
+            createdAt: { $gte: startOfYesterday, $lt: startOfDay }
+        });
+        const yesterdayEarnings = yesterdayOrders.reduce((sum, ord) => sum + (ord.totalAmount * 0.10), 0);
+
+        // Recent Deliveries
+        const history = await orderRepository.findRiderHistory(rider._id);
+        const recentDeliveries = history.slice(0, 5);
+
+        // Weekly Chart Data (Current Week - Monday to Sunday)
+        const startOfWeek = new Date();
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1)); // Monday
+        startOfWeek.setHours(0,0,0,0);
+        
+        const weekOrders = await riderRepository.getCompletedOrders(rider._id, {
+            createdAt: { $gte: startOfWeek }
+        });
+
+        const weeklyChart = [
+            { dayName: 'MON', earnings: 0 },
+            { dayName: 'TUE', earnings: 0 },
+            { dayName: 'WED', earnings: 0 },
+            { dayName: 'THU', earnings: 0 },
+            { dayName: 'FRI', earnings: 0 },
+            { dayName: 'SAT', earnings: 0 },
+            { dayName: 'SUN', earnings: 0 },
+        ];
+
+        weekOrders.forEach(order => {
+            let dayIndex = new Date(order.createdAt).getDay() - 1; 
+            if (dayIndex === -1) dayIndex = 6; 
+            if(dayIndex >= 0 && dayIndex < 7) {
+                weeklyChart[dayIndex].earnings += (order.totalAmount * 0.10);
+            }
+        });
+
         return {
             activeOrder,
             metrics: {
                 todayEarnings,
+                yesterdayEarnings,
+                remainingInShift: 4, // Mocked for now
                 totalDeliveries: todayOrders.length,
                 rating: rider.rating || 4.92,
                 onlineTime: '3h 42m',
                 acceptance: '94%',
                 time: '4.2m'
-            }
+            },
+            recentDeliveries,
+            weeklyChart
         };
     }
 }

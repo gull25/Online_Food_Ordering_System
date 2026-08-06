@@ -188,18 +188,17 @@ const AdminLiveDeliveries = () => {
               <div
                 key={order._id}
                 onClick={() => setActiveOrderId(order._id)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col gap-2 ${
-                  activeOrderId === order._id
+                className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col gap-2 ${activeOrderId === order._id
                     ? 'bg-primary/5 border-primary shadow-sm'
                     : 'bg-surface border-surface-variant hover:bg-surface-variant'
-                }`}
+                  }`}
               >
                 <div className="flex justify-between items-center">
                   <span className="font-button text-button font-bold">
                     #{order._id.slice(-6).toUpperCase()}
                   </span>
-                  <span className="text-xs bg-primary text-white px-2 py-1 rounded-full flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-white rounded-full inline-block animate-pulse" /> Live
+                  <span className="text-xs bg-primary text-white px-2 py-1 rounded-full flex items-center gap-1 font-bold">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full inline-block animate-pulse" /> LIVE
                   </span>
                 </div>
                 <div className="text-small text-on-surface-variant flex items-center gap-2">
@@ -211,9 +210,9 @@ const AdminLiveDeliveries = () => {
                   {order.rider?.name || 'Rider'}
                 </div>
                 {riderPositions[order._id] && (
-                  <div className="text-xs text-primary flex items-center gap-1 mt-1">
+                  <div className="text-xs text-primary flex items-center gap-1 mt-1 font-bold">
                     <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>my_location</span>
-                    GPS Active
+                    GPS ACTIVE
                   </div>
                 )}
               </div>
@@ -234,7 +233,7 @@ const AdminLiveDeliveries = () => {
                 attribution='&copy; OpenStreetMap'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              
+
               <MapUpdater />
               <FitBounds activeOrder={activeOrder} riderPos={activeRiderPos} />
 
@@ -274,9 +273,9 @@ const AdminLiveDeliveries = () => {
 
             {/* No location placeholder */}
             {!riderLoc && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow flex items-center gap-2 pointer-events-none">
-                <span className="material-symbols-outlined text-secondary" style={{ fontSize: '18px' }}>location_searching</span>
-                <span className="text-xs text-on-surface-variant">Waiting for rider GPS...</span>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[400] bg-surface-container-lowest/95 backdrop-blur-md px-5 py-2.5 rounded-full shadow-lg border border-outline-variant/30 flex items-center gap-2 pointer-events-none">
+                <span className="material-symbols-outlined text-primary animate-pulse" style={{ fontSize: '20px' }}>location_searching</span>
+                <span className="font-inter text-sm font-bold text-on-surface tracking-wide">Waiting for rider GPS...</span>
               </div>
             )}
           </div>

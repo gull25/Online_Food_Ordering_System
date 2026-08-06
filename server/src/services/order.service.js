@@ -103,6 +103,7 @@ class OrderService {
         data.tax = tax;
         data.serviceFee = serviceFee;
         data.totalAmount = Math.max(0, calculatedTotal);
+        data.riderEarning = Math.max(0, calculatedTotal * 0.10);
 
         // 5. Setup Payment Gateway
         let clientSecret = null;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchEarningsThunk } from '../../../../redux/riderSlice';
+import { fetchEarningsThunk, cashOutThunk } from '../../../../redux/riderSlice';
 
 const Earnings = () => {
     const [timeframe, setTimeframe] = useState('weekly');
@@ -25,19 +25,20 @@ const Earnings = () => {
         }, 100);
     }, []);
 
-    const handleCashOut = () => {
-        if (cashOutState !== 'default') return;
+    const handleCashOut = async () => {
+        if (cashOutState !== 'default' || !earnings?.availableBalance || earnings.availableBalance <= 0) return;
 
         setCashOutState('processing');
 
-        setTimeout(() => {
+        try {
+            await dispatch(cashOutThunk()).unwrap();
             setCashOutState('transferred');
-            
-            // Reset after 3 seconds
             setTimeout(() => {
                 setCashOutState('default');
             }, 3000);
-        }, 1500);
+        } catch (error) {
+            setCashOutState('default');
+        }
     };
 
     if (loading || !earnings) {
@@ -121,7 +122,7 @@ const Earnings = () => {
                                             <span className="w-3 h-3 rounded-full bg-tertiary"></span>
                                             Surge & Incentives
                                         </span>
-                                        <span className="font-inter text-xs font-bold leading-4 text-on-background">€{earnings?.incentives || '0'.toFixed(2)}</span>
+                                        <span className="font-inter text-xs font-bold leading-4 text-on-background">€{earnings?.incentives?.toFixed(2) || '0.00'}</span>
                                     </div>
                                 </div>
                             </section>
@@ -152,7 +153,7 @@ const Earnings = () => {
                                 <div className="flex justify-between items-center mb-stack-lg">
                                     <div>
                                         <h3 className="font-inter text-xl font-semibold leading-7">Weekly Performance</h3>
-                                        <p className="text-label-sm font-label-sm text-on-surface-variant">Oct 14 - Oct 20</p>
+                                        <p className="text-label-sm font-label-sm text-on-surface-variant">{earnings?.dateRangeString || 'Current Week'}</p>
                                     </div>
                                     <div className="flex gap-2 bg-surface-container-low p-1 rounded-lg">
                                         <button className="px-3 py-1 text-label-sm font-label-bold bg-primary-container text-on-primary-container rounded-md">Weekly</button>
@@ -162,48 +163,25 @@ const Earnings = () => {
                                 
                                 {/* Visual Graph */}
                                 <div className="h-64 flex items-end justify-between px-2 pt-8 gap-stack-sm border-b border-outline-variant">
-                                    <div className="flex-1 group flex flex-col items-center">
-                                        <div className="w-full bg-primary/20 rounded-t-sm transition-[height] duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:bg-primary/40 relative" style={{ height: chartHeights.mon }}>
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest text-label-sm px-2 py-1 rounded transition-opacity">$42</div>
-                                        </div>
-                                        <span className="text-label-sm font-label-sm mt-stack-sm text-on-surface-variant">M</span>
-                                    </div>
-                                    <div className="flex-1 group flex flex-col items-center">
-                                        <div className="w-full bg-primary/20 rounded-t-sm transition-[height] duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:bg-primary/40 relative" style={{ height: chartHeights.tue }}>
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest text-label-sm px-2 py-1 rounded transition-opacity">$68</div>
-                                        </div>
-                                        <span className="text-label-sm font-label-sm mt-stack-sm text-on-surface-variant">T</span>
-                                    </div>
-                                    <div className="flex-1 group flex flex-col items-center">
-                                        <div className="w-full bg-primary/20 rounded-t-sm transition-[height] duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:bg-primary/40 relative" style={{ height: chartHeights.wed }}>
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest text-label-sm px-2 py-1 rounded transition-opacity">$55</div>
-                                        </div>
-                                        <span className="text-label-sm font-label-sm mt-stack-sm text-on-surface-variant">W</span>
-                                    </div>
-                                    <div className="flex-1 group flex flex-col items-center">
-                                        <div className="w-full bg-primary rounded-t-sm transition-[height] duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:brightness-110 relative" style={{ height: chartHeights.thu }}>
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest text-label-sm px-2 py-1 rounded transition-opacity">$92</div>
-                                        </div>
-                                        <span className="text-label-sm font-label-sm mt-stack-sm text-on-surface-variant">T</span>
-                                    </div>
-                                    <div className="flex-1 group flex flex-col items-center">
-                                        <div className="w-full bg-primary/20 rounded-t-sm transition-[height] duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:bg-primary/40 relative" style={{ height: chartHeights.fri }}>
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest text-label-sm px-2 py-1 rounded transition-opacity">$80</div>
-                                        </div>
-                                        <span className="text-label-sm font-label-sm mt-stack-sm text-on-surface-variant">F</span>
-                                    </div>
-                                    <div className="flex-1 group flex flex-col items-center">
-                                        <div className="w-full bg-primary/20 rounded-t-sm transition-[height] duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:bg-primary/40 relative" style={{ height: chartHeights.sat }}>
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest text-label-sm px-2 py-1 rounded transition-opacity">$38</div>
-                                        </div>
-                                        <span className="text-label-sm font-label-sm mt-stack-sm text-on-surface-variant">S</span>
-                                    </div>
-                                    <div className="flex-1 group flex flex-col items-center">
-                                        <div className="w-full bg-primary/20 rounded-t-sm transition-[height] duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:bg-primary/40 relative" style={{ height: chartHeights.sun }}>
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest text-label-sm px-2 py-1 rounded transition-opacity">$28</div>
-                                        </div>
-                                        <span className="text-label-sm font-label-sm mt-stack-sm text-on-surface-variant">S</span>
-                                    </div>
+                                    {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((dayKey, index) => {
+                                        const dayValue = earnings?.weeklyChart?.[index] || 0;
+                                        const maxEarnings = Math.max(...(earnings?.weeklyChart || [0]), 100); // 100 as minimum scale
+                                        const heightPercentage = `${(dayValue / maxEarnings) * 100}%`;
+                                        const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+                                        return (
+                                            <div key={dayKey} className="flex-1 group flex flex-col items-center h-full justify-end">
+                                                <div className={`w-full ${dayValue > 0 ? 'bg-primary' : 'bg-primary/20'} rounded-t-sm transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:brightness-110 relative`} style={{ height: chartHeights[dayKey] !== '0%' ? heightPercentage : '0%' }}>
+                                                    {dayValue > 0 && (
+                                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest text-label-sm px-2 py-1 rounded transition-opacity">
+                                                            ${dayValue.toFixed(2)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className="text-label-sm font-label-sm mt-stack-sm text-on-surface-variant">{dayLabels[index]}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </section>
 
@@ -217,66 +195,31 @@ const Earnings = () => {
                                     </button>
                                 </div>
                                 <div className="max-h-[400px] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#eef4ff] [&::-webkit-scrollbar-thumb]:bg-[#dce3f0] [&::-webkit-scrollbar-thumb]:rounded-sm">
-                                    <div className="flex items-center justify-between p-6 hover:bg-surface-container-high transition-colors border-b border-outline-variant/30">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                                                <span className="material-symbols-outlined">account_balance</span>
+                                    {earnings?.payoutHistory?.length > 0 ? (
+                                        earnings.payoutHistory.map((payout, i) => (
+                                            <div key={i} className="flex items-center justify-between p-6 hover:bg-surface-container-high transition-colors border-b border-outline-variant/30">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${payout.method === 'Instant Payout' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'}`}>
+                                                        <span className="material-symbols-outlined">{payout.method === 'Instant Payout' ? 'bolt' : 'account_balance'}</span>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-inter text-xs font-bold leading-4">{payout.method}</p>
+                                                        <p className="text-label-sm font-label-sm text-on-surface-variant">{payout.status} • {new Date(payout.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-inter text-xs font-bold leading-4">€{payout.amount.toFixed(2)}</p>
+                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${payout.status === 'Completed' ? 'text-secondary bg-secondary/10' : 'text-amber-600 bg-amber-100'}`}>
+                                                        {payout.status}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-inter text-xs font-bold leading-4">Bank Transfer • **** 4291</p>
-                                                <p className="text-label-sm font-label-sm text-on-surface-variant">Completed • Oct 15, 2023</p>
-                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="p-6 text-center text-on-surface-variant font-label-sm">
+                                            No payout history available.
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-inter text-xs font-bold leading-4">$342.15</p>
-                                            <span className="text-[10px] uppercase font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded">Paid</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between p-6 hover:bg-surface-container-high transition-colors border-b border-outline-variant/30">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                                                <span className="material-symbols-outlined">account_balance</span>
-                                            </div>
-                                            <div>
-                                                <p className="font-inter text-xs font-bold leading-4">Bank Transfer • **** 4291</p>
-                                                <p className="text-label-sm font-label-sm text-on-surface-variant">Completed • Oct 08, 2023</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-inter text-xs font-bold leading-4">$410.50</p>
-                                            <span className="text-[10px] uppercase font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded">Paid</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between p-6 hover:bg-surface-container-high transition-colors border-b border-outline-variant/30">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                                <span className="material-symbols-outlined">bolt</span>
-                                            </div>
-                                            <div>
-                                                <p className="font-inter text-xs font-bold leading-4">Instant Payout</p>
-                                                <p className="text-label-sm font-label-sm text-on-surface-variant">Completed • Oct 03, 2023</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-inter text-xs font-bold leading-4">$85.00</p>
-                                            <span className="text-[10px] uppercase font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded">Paid</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between p-6 hover:bg-surface-container-high transition-colors">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                                                <span className="material-symbols-outlined">account_balance</span>
-                                            </div>
-                                            <div>
-                                                <p className="font-inter text-xs font-bold leading-4">Bank Transfer • **** 4291</p>
-                                                <p className="text-label-sm font-label-sm text-on-surface-variant">Completed • Sep 24, 2023</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-inter text-xs font-bold leading-4">$388.20</p>
-                                            <span className="text-[10px] uppercase font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded">Paid</span>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             </section>
                         </div>

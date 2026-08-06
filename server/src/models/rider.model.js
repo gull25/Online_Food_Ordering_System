@@ -59,7 +59,14 @@ const riderSchema = new mongoose.Schema(
             type: mongoose.Schema.ObjectId,
             ref: 'Order',
             default: null
-        }
+        },
+        // ── Payout History ────────────────────────────────────────────────────
+        payoutHistory: [{
+            amount: Number,
+            date: { type: Date, default: Date.now },
+            status: { type: String, enum: ['Completed', 'Processing', 'Failed'], default: 'Completed' },
+            method: { type: String, default: 'Bank Transfer' }
+        }]
     },
     {
         timestamps: true

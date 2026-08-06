@@ -32,7 +32,6 @@ const StripeReturnPage = React.lazy(() => import('./screens/dashboard/admin/dash
 const RiderDashboardPage = React.lazy(() => import('./screens/dashboard/rider/dashboard/RiderDashboard'));
 const ActiveDeliveriesPage = React.lazy(() => import('./screens/dashboard/rider/deliveries/ActiveDeliveries'));
 const EarningsPage = React.lazy(() => import('./screens/dashboard/rider/earnings/Earnings'));
-const RatingsPage = React.lazy(() => import('./screens/dashboard/rider/ratings/Ratings'));
 
 const NotFoundPage = React.lazy(() => import('./screens/errorPages/NotFoundPage'));
 const UnauthorizedPage = React.lazy(() => import('./screens/errorPages/UnauthorizedPage'));
@@ -79,7 +78,6 @@ const ConditionalRoutes = () => {
             <Route path={APP_ROUTES.RIDER_DASHBOARD} element={<RiderDashboardPage />} />
             <Route path={APP_ROUTES.RIDER_DELIVERIES} element={<ActiveDeliveriesPage />} />
             <Route path={APP_ROUTES.RIDER_EARNINGS} element={<EarningsPage />} />
-            <Route path={APP_ROUTES.RIDER_RATINGS} element={<RatingsPage />} />
           </Route>
         </Route>
 

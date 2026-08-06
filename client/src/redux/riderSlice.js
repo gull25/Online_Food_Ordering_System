@@ -142,6 +142,20 @@ export const fetchEarningsThunk = createAsyncThunk(
     }
 );
 
+export const cashOutThunk = createAsyncThunk(
+    'rider/cashOut',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/rider/cashout');
+            toast.success('Cash out successful!');
+            return response.data.data;
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to cash out');
+            return rejectWithValue(error.response?.data?.message);
+        }
+    }
+);
+
 export const fetchPerformanceThunk = createAsyncThunk(
     'rider/fetchPerformance',
     async (_, { rejectWithValue }) => {
@@ -222,6 +236,13 @@ const riderSlice = createSlice({
             .addCase(fetchEarningsThunk.pending, (state) => { state.loading = true; state.error = null; })
             .addCase(fetchEarningsThunk.fulfilled, (state, action) => { state.loading = false; state.earnings = action.payload; })
             .addCase(fetchEarningsThunk.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
+
+            .addCase(cashOutThunk.fulfilled, (state, action) => {
+                if (state.earnings) {
+                    state.earnings.availableBalance = 0;
+                    state.earnings.payoutHistory.unshift(action.payload);
+                }
+            })
 
             .addCase(fetchPerformanceThunk.pending, (state) => { state.loading = true; state.error = null; })
             .addCase(fetchPerformanceThunk.fulfilled, (state, action) => { state.loading = false; state.performance = action.payload; })

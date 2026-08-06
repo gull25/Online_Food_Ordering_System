@@ -24,6 +24,7 @@ router.put('/pickup/:id', riderController.confirmPickup);
 router.put('/start/:id', riderController.startDelivery);
 router.put('/deliver/:id', riderController.confirmDelivery);
 router.get('/earnings', riderController.getEarnings);
+router.post('/cashout', riderController.cashOut);
 router.get('/performance', riderController.getPerformance);
 
 module.exports = router;

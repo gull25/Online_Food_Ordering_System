@@ -85,6 +85,14 @@ exports.getEarnings = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, data });
 });
 
+// @desc    Cash out earnings
+// @route   POST /api/rider/cashout
+// @access  Private (Rider)
+exports.cashOut = asyncHandler(async (req, res) => {
+    const data = await riderService.cashOut(req.user.id);
+    res.status(200).json({ success: true, data });
+});
+
 // @desc    Get performance
 // @route   GET /api/rider/performance
 // @access  Private (Rider)

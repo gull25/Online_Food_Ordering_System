@@ -52,7 +52,13 @@ const RiderDashboard = () => {
                             </div>
                             <div className="font-inter text-[40px] font-bold leading-[48px] tracking-tight text-on-surface">€{dashboard?.metrics?.todayEarnings?.toFixed(2) || '0.00'}</div>
                             <div className="mt-2 flex items-center gap-1">
-                                <span className="text-secondary text-label-bold font-label-bold">+12% vs yesterday</span>
+                                <span className={`text-label-bold font-label-bold ${dashboard?.metrics?.todayEarnings >= (dashboard?.metrics?.yesterdayEarnings || 0) ? 'text-secondary' : 'text-error'}`}>
+                                    {dashboard?.metrics?.yesterdayEarnings ? (
+                                        `${dashboard?.metrics?.todayEarnings >= dashboard?.metrics?.yesterdayEarnings ? '+' : ''}${Math.round(((dashboard?.metrics?.todayEarnings - dashboard?.metrics?.yesterdayEarnings) / dashboard?.metrics?.yesterdayEarnings) * 100)}% vs yesterday`
+                                    ) : (
+                                        'No data for yesterday'
+                                    )}
+                                </span>
                             </div>
                         </div>
                         <div className="bg-surface-container-high border border-outline-variant p-4 rounded-xl flex flex-col justify-between">
@@ -61,7 +67,7 @@ const RiderDashboard = () => {
                                 <span className="text-primary material-symbols-outlined">local_shipping</span>
                             </div>
                             <div className="font-inter text-[40px] font-bold leading-[48px] tracking-tight text-on-surface">{dashboard?.metrics?.totalDeliveries || 0}</div>
-                            <div className="mt-2 text-label-bold font-label-bold text-on-surface-variant">4 remaining in shift</div>
+                            <div className="mt-2 text-label-bold font-label-bold text-on-surface-variant">{dashboard?.metrics?.remainingInShift || 0} remaining in shift</div>
                         </div>
                         <div className="bg-surface-container-high border border-outline-variant p-4 rounded-xl flex flex-col justify-between">
                             <div className="flex justify-between items-start mb-2">
@@ -133,43 +139,25 @@ const RiderDashboard = () => {
                                     </select>
                                 </div>
                                 <div className="h-64 flex items-end justify-between gap-2 pt-4">
-                                    <div className="flex-grow flex flex-col items-center gap-3">
-                                        <div className="w-full bg-primary-container/20 rounded-t-lg relative group h-32">
-                                            <div className="absolute bottom-0 w-full bg-primary rounded-t-lg h-[60%] transition-all duration-500 hover:h-[65%]"></div>
-                                            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-surface p-1 rounded border border-outline-variant text-[10px]">€92</div>
-                                        </div>
-                                        <span className="font-label-bold text-[10px] text-on-surface-variant">MON</span>
-                                    </div>
-                                    <div className="flex-grow flex flex-col items-center gap-3">
-                                        <div className="w-full bg-primary-container/20 rounded-t-lg relative group h-32">
-                                            <div className="absolute bottom-0 w-full bg-primary rounded-t-lg h-[85%] transition-all duration-500"></div>
-                                        </div>
-                                        <span className="font-label-bold text-[10px] text-on-surface-variant">TUE</span>
-                                    </div>
-                                    <div className="flex-grow flex flex-col items-center gap-3">
-                                        <div className="w-full bg-primary-container/20 rounded-t-lg relative group h-32">
-                                            <div className="absolute bottom-0 w-full bg-primary rounded-t-lg h-[45%] transition-all duration-500"></div>
-                                        </div>
-                                        <span className="font-label-bold text-[10px] text-on-surface-variant">WED</span>
-                                    </div>
-                                    <div className="flex-grow flex flex-col items-center gap-3">
-                                        <div className="w-full bg-primary-container/20 rounded-t-lg relative group h-32">
-                                            <div className="absolute bottom-0 w-full bg-primary rounded-t-lg h-[95%] transition-all duration-500"></div>
-                                        </div>
-                                        <span className="font-label-bold text-[10px] text-on-surface-variant">THU</span>
-                                    </div>
-                                    <div className="flex-grow flex flex-col items-center gap-3">
-                                        <div className="w-full bg-primary-container/20 rounded-t-lg relative group h-32">
-                                            <div className="absolute bottom-0 w-full bg-primary rounded-t-lg h-[75%] transition-all duration-500"></div>
-                                        </div>
-                                        <span className="font-label-bold text-[10px] text-on-surface-variant">FRI</span>
-                                    </div>
-                                    <div className="flex-grow flex flex-col items-center gap-3">
-                                        <div className="w-full bg-primary-container/20 rounded-t-lg relative group h-32">
-                                            <div className="absolute bottom-0 w-full bg-secondary-container rounded-t-lg h-full animate-pulse"></div>
-                                        </div>
-                                        <span className="font-label-bold text-[10px] text-secondary">TOD</span>
-                                    </div>
+                                    {dashboard?.weeklyChart?.map((day, index) => {
+                                        const maxEarnings = Math.max(...(dashboard?.weeklyChart?.map(d => d.earnings) || [1]));
+                                        const heightPercent = maxEarnings > 0 ? (day.earnings / maxEarnings) * 100 : 0;
+                                        const isToday = new Date().getDay() - 1 === index || (new Date().getDay() === 0 && index === 6);
+                                        return (
+                                            <div key={day.dayName} className="flex-grow flex flex-col items-center gap-3">
+                                                <div className="w-full bg-primary-container/20 rounded-t-lg relative group h-32">
+                                                    <div 
+                                                        className={`absolute bottom-0 w-full ${isToday ? 'bg-secondary-container animate-pulse' : 'bg-primary'} rounded-t-lg transition-all duration-500`}
+                                                        style={{ height: `${heightPercent}%` }}
+                                                    ></div>
+                                                    <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-surface p-1 rounded border border-outline-variant text-[10px] z-10 shadow-sm">
+                                                        €{day.earnings.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <span className={`font-label-bold text-[10px] ${isToday ? 'text-secondary' : 'text-on-surface-variant'}`}>{isToday ? 'TOD' : day.dayName}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -182,46 +170,22 @@ const RiderDashboard = () => {
                                     <button className="text-primary font-inter text-xs font-bold leading-4 hover:underline">View All</button>
                                 </div>
                                 <div className="flex-grow overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                    <div className="p-4 border-b border-outline-variant hover:bg-surface-container transition-colors">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="font-inter text-xs font-bold leading-4">#4428 • Delivered</span>
-                                            <span className="text-secondary font-inter text-xs font-bold leading-4">€7.20</span>
-                                        </div>
-                                        <p className="font-inter text-sm font-normal leading-5 text-on-surface-variant">Cocolo Ramen X-berg</p>
-                                        <p className="font-inter text-[11px] font-medium leading-[14px] text-on-surface-variant/60 mt-1">14:22 • 2.4 km</p>
-                                    </div>
-                                    <div className="p-4 border-b border-outline-variant hover:bg-surface-container transition-colors">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="font-inter text-xs font-bold leading-4">#4427 • Delivered</span>
-                                            <span className="text-secondary font-inter text-xs font-bold leading-4">€12.50</span>
-                                        </div>
-                                        <p className="font-inter text-sm font-normal leading-5 text-on-surface-variant">Mustafa's Gemuse Kebab</p>
-                                        <p className="font-inter text-[11px] font-medium leading-[14px] text-on-surface-variant/60 mt-1">13:45 • 4.1 km</p>
-                                    </div>
-                                    <div className="p-4 border-b border-outline-variant hover:bg-surface-container transition-colors">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="font-inter text-xs font-bold leading-4">#4426 • Delivered</span>
-                                            <span className="text-secondary font-inter text-xs font-bold leading-4">€6.80</span>
-                                        </div>
-                                        <p className="font-inter text-sm font-normal leading-5 text-on-surface-variant">Angry Chicken</p>
-                                        <p className="font-inter text-[11px] font-medium leading-[14px] text-on-surface-variant/60 mt-1">13:10 • 1.2 km</p>
-                                    </div>
-                                    <div className="p-4 border-b border-outline-variant hover:bg-surface-container transition-colors">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="font-inter text-xs font-bold leading-4">#4425 • Delivered</span>
-                                            <span className="text-secondary font-inter text-xs font-bold leading-4">€9.10</span>
-                                        </div>
-                                        <p className="font-inter text-sm font-normal leading-5 text-on-surface-variant">Vöner</p>
-                                        <p className="font-inter text-[11px] font-medium leading-[14px] text-on-surface-variant/60 mt-1">12:30 • 3.5 km</p>
-                                    </div>
-                                    <div className="p-4 hover:bg-surface-container transition-colors">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="font-inter text-xs font-bold leading-4">#4424 • Delivered</span>
-                                            <span className="text-secondary font-inter text-xs font-bold leading-4">€8.30</span>
-                                        </div>
-                                        <p className="font-inter text-sm font-normal leading-5 text-on-surface-variant">Umami X-berg</p>
-                                        <p className="font-inter text-[11px] font-medium leading-[14px] text-on-surface-variant/60 mt-1">12:05 • 2.8 km</p>
-                                    </div>
+                                    {dashboard?.recentDeliveries?.length > 0 ? (
+                                        dashboard.recentDeliveries.map((delivery) => (
+                                            <div key={delivery._id} className="p-4 border-b border-outline-variant hover:bg-surface-container transition-colors">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className="font-inter text-xs font-bold leading-4">#{delivery._id.toString().slice(-4).toUpperCase()} • Delivered</span>
+                                                    <span className="text-secondary font-inter text-xs font-bold leading-4">€{(delivery.totalAmount * 0.10).toFixed(2)}</span>
+                                                </div>
+                                                <p className="font-inter text-sm font-normal leading-5 text-on-surface-variant">{delivery.restaurant?.name || 'Restaurant'}</p>
+                                                <p className="font-inter text-[11px] font-medium leading-[14px] text-on-surface-variant/60 mt-1">
+                                                    {new Date(delivery.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="p-4 text-center text-sm text-on-surface-variant">No recent deliveries found.</div>
+                                    )}
                                 </div>
                                 <div className="p-4 bg-surface-container mt-auto">
                                     <div className="bg-secondary-container/10 p-2 rounded border border-secondary-container/20 flex items-center gap-3">

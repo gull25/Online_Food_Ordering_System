@@ -13,6 +13,5 @@ export const ADMIN_SIDEBAR_LINKS = [
 export const RIDER_SIDEBAR_LINKS = [
   { id: 'dashboard', label: 'Overview', path: APP_ROUTES.RIDER_DASHBOARD, icon: 'dashboard' },
   { id: 'active-deliveries', label: 'Active Deliveries', path: APP_ROUTES.RIDER_DELIVERIES, icon: 'local_shipping' },
-  { id: 'earnings', label: 'Earnings', path: APP_ROUTES.RIDER_EARNINGS, icon: 'account_balance_wallet' },
-  { id: 'ratings', label: 'Ratings', path: APP_ROUTES.RIDER_RATINGS, icon: 'star' }
+  { id: 'earnings', label: 'Earnings', path: APP_ROUTES.RIDER_EARNINGS, icon: 'account_balance_wallet' }
 ];
