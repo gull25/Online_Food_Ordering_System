@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+import Icon from '../../common/Icon';
 const MenuItemModal = ({ item, isOpen, onClose, onAddToCart }) => {
   const [selectedSize, setSelectedSize] = useState(
     item?.sizes?.length > 0 ? item.sizes[0] : null
@@ -41,7 +42,7 @@ const MenuItemModal = ({ item, isOpen, onClose, onAddToCart }) => {
         <div className="h-64 w-full relative bg-surface-variant rounded-t-3xl p-4">
           <img src={item.image} alt={item.name} className="w-full h-full object-contain object-center drop-shadow-md" />
           <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors">
-            <span className="material-symbols-outlined">close</span>
+            <Icon name="close" />
           </button>
         </div>
 
@@ -109,7 +110,7 @@ const MenuItemModal = ({ item, isOpen, onClose, onAddToCart }) => {
           <button 
             onClick={handleAddToCart}
             disabled={item.sizes?.length > 0 && !selectedSize}
-            className="w-full py-4 bg-primary text-white rounded-xl font-button font-bold text-lg hover:opacity-90 shadow-lg disabled:opacity-50 transition-all flex justify-between px-6"
+            className="w-full py-4 bg-primary text-on-primary rounded-xl font-button font-bold text-lg hover:opacity-90 shadow-lg disabled:opacity-50 transition-all flex justify-between px-6"
           >
             <span>Add to Cart</span>
             <span>${currentPrice.toFixed(2)}</span>

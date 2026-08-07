@@ -92,18 +92,36 @@ class OrderService {
             }
         }
 
+        // The restaurant is needed for the delivery fee before totals are
+        // computed, so fetch it once here rather than only in the Stripe path.
+        const restaurant = await Restaurant.findById(data.restaurant);
+        if (!restaurant) throw new ApiError(404, 'Restaurant not found');
+
         const discountAmount = subtotal * (discountPercent / 100);
         const taxableAmount = Math.max(0, subtotal - discountAmount);
         const tax = taxableAmount * 0.087; // 8.7%
         const serviceFee = subtotal > 0 ? 2.50 : 0;
-        const calculatedTotal = subtotal - discountAmount + tax + serviceFee;
+
+        // Delivery fee comes from the restaurant record — the same value the
+        // checkout screen shows the customer.
+        //
+        // It was previously left out of the server-side total entirely, so the
+        // order summary quoted (subtotal − discount + tax + service + delivery)
+        // while the customer was actually charged that figure minus the delivery
+        // fee, and the restaurant was never credited for delivery.
+        const deliveryFee = subtotal > 0 ? (restaurant.deliveryFee || 0) : 0;
+
+        const calculatedTotal = subtotal - discountAmount + tax + serviceFee + deliveryFee;
 
         data.subtotal = subtotal;
         data.discountAmount = discountAmount;
         data.tax = tax;
         data.serviceFee = serviceFee;
-        data.totalAmount = Math.max(0, calculatedTotal);
-        data.riderEarning = Math.max(0, calculatedTotal * 0.10);
+        data.deliveryFee = deliveryFee;
+        // Round to cents so the stored total matches what the gateway charges
+        // exactly, rather than differing by a floating-point remainder.
+        data.totalAmount = Math.max(0, Math.round(calculatedTotal * 100) / 100);
+        data.riderEarning = Math.max(0, Math.round(data.totalAmount * 0.10 * 100) / 100);
 
         // 5. Setup Payment Gateway
         let clientSecret = null;
@@ -113,9 +131,6 @@ class OrderService {
         if (data.paymentGateway === 'stripe') {
             const stripe = require('../config/stripe');
             const amountInCents = Math.round(data.totalAmount * 100);
-
-            const restaurant = await Restaurant.findById(data.restaurant);
-            if (!restaurant) throw new ApiError(404, 'Restaurant not found');
 
             const customer = await stripe.customers.create();
             const paymentIntentPayload = {

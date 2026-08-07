@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import Icon from '../../../../components/common/Icon';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEarningsThunk, cashOutThunk } from '../../../../redux/riderSlice';
+import { RiderPageSkeleton } from '../../../../components/common/Skeleton';
 
 const Earnings = () => {
     const [timeframe, setTimeframe] = useState('weekly');
@@ -42,7 +44,7 @@ const Earnings = () => {
     };
 
     if (loading || !earnings) {
-        return <div className="min-h-screen bg-background flex items-center justify-center text-primary"><span className="material-symbols-outlined animate-spin text-4xl">sync</span></div>;
+        return <RiderPageSkeleton />;
     }
 
     return (
@@ -57,11 +59,11 @@ const Earnings = () => {
                                     <div className="flex items-baseline gap-unit text-primary">
                                         <span className="font-inter text-[40px] font-bold leading-[48px] tracking-tight">$</span>
                                         <div className="font-inter text-[40px] font-bold leading-[48px] tracking-tight text-on-surface mt-2 mb-1">
-                                            €{earnings?.availableBalance?.toFixed(2) || '0.00'}
+                                            ${earnings?.availableBalance?.toFixed(2) || '0.00'}
                                         </div>
                                     </div>
                                     <p className="text-label-sm font-label-sm text-secondary mt-stack-sm flex items-center gap-1">
-                                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                                        <Icon name="check_circle" className="text-[14px]" />
                                         Ready for instant payout
                                     </p>
                                     <button 
@@ -70,24 +72,24 @@ const Earnings = () => {
                                         className={`mt-stack-lg w-full py-4 rounded-lg font-inter text-xs font-bold leading-4 flex items-center justify-center gap-stack-sm transition-all ${
                                             cashOutState === 'default' ? 'bg-primary-container text-on-primary-container hover:brightness-110 active:scale-[0.98]' :
                                             cashOutState === 'processing' ? 'bg-primary-container text-on-primary-container opacity-70 cursor-not-allowed' :
-                                            'bg-secondary-container text-on-secondary-container'
+                                            'bg-success-container text-on-success-container'
                                         }`}
                                     >
                                         {cashOutState === 'default' && (
                                             <>
-                                                <span className="material-symbols-outlined">account_balance_wallet</span>
+                                                <Icon name="account_balance_wallet" />
                                                 Cash Out Now
                                             </>
                                         )}
                                         {cashOutState === 'processing' && (
                                             <>
-                                                <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                                                <Icon name="progress_activity" className="animate-spin" />
                                                 Processing...
                                             </>
                                         )}
                                         {cashOutState === 'transferred' && (
                                             <>
-                                                <span className="material-symbols-outlined">check</span>
+                                                <Icon name="check" />
                                                 Transferred!
                                             </>
                                         )}
@@ -95,7 +97,7 @@ const Earnings = () => {
                                 </div>
                                 {/* Subtle Background Accent */}
                                 <div className="absolute -right-4 -bottom-4 opacity-10">
-                                    <span className="material-symbols-outlined text-[120px]">payments</span>
+                                    <Icon name="payments" className="text-[120px]" />
                                 </div>
                             </section>
 
@@ -105,24 +107,24 @@ const Earnings = () => {
                                 <div className="space-y-stack-md">
                                     <div className="flex justify-between items-center py-2 border-b border-outline-variant/30">
                                         <div className="flex items-center gap-stack-sm">
-                                            <span className="material-symbols-outlined text-on-surface-variant">delivery_dining</span>
+                                            <Icon name="delivery_dining" className="text-on-surface-variant" />
                                             <span className="font-inter text-sm font-normal leading-5">Base Pay</span>
                                         </div>
-                                        <span className="font-inter text-xs font-bold leading-4 text-on-background">€{earnings?.basePay?.toFixed(2) || '0.00'}</span>
+                                        <span className="font-inter text-xs font-bold leading-4 text-on-background">${earnings?.basePay?.toFixed(2) || '0.00'}</span>
                                     </div>
                                     <div className="flex justify-between items-center py-2 border-b border-outline-variant/30">
                                         <span className="text-on-surface-variant font-inter text-sm font-normal leading-5 flex items-center gap-2">
                                             <span className="w-3 h-3 rounded-full bg-secondary"></span>
                                             Tips
                                         </span>
-                                        <span className="font-inter text-xs font-bold leading-4 text-on-background">€{earnings?.tips?.toFixed(2) || '0.00'}</span>
+                                        <span className="font-inter text-xs font-bold leading-4 text-on-background">${earnings?.tips?.toFixed(2) || '0.00'}</span>
                                     </div>
                                     <div className="flex justify-between items-center py-2 border-b border-outline-variant/30">
                                         <span className="text-on-surface-variant font-inter text-sm font-normal leading-5 flex items-center gap-2">
                                             <span className="w-3 h-3 rounded-full bg-tertiary"></span>
                                             Surge & Incentives
                                         </span>
-                                        <span className="font-inter text-xs font-bold leading-4 text-on-background">€{earnings?.incentives?.toFixed(2) || '0.00'}</span>
+                                        <span className="font-inter text-xs font-bold leading-4 text-on-background">${earnings?.incentives?.toFixed(2) || '0.00'}</span>
                                     </div>
                                 </div>
                             </section>
@@ -134,14 +136,14 @@ const Earnings = () => {
                                         <span className="font-inter text-xs font-bold leading-4 text-on-surface-variant uppercase tracking-wider">Deliveries</span>
                                         <div className="font-inter text-[40px] font-bold leading-[48px] tracking-tight text-on-surface mt-2">{earnings.totalDeliveries}</div>
                                     </div>
-                                    <span className="material-symbols-outlined text-4xl text-primary opacity-50 group-hover:scale-110 transition-transform self-end">local_shipping</span>
+                                    <Icon name="local_shipping" className="text-4xl text-primary opacity-50 group-hover:scale-110 transition-transform self-end" />
                                 </div>
                                 <div className="bg-surface-container-high border border-outline-variant rounded-xl p-6 h-full flex flex-col justify-between group hover:border-secondary/30 transition-colors">
                                     <div>
                                         <span className="font-inter text-xs font-bold leading-4 text-on-surface-variant uppercase tracking-wider">Online Time</span>
                                         <div className="font-inter text-[40px] font-bold leading-[48px] tracking-tight text-on-surface mt-2">{earnings.hoursOnline.toFixed(1)}h</div>
                                     </div>
-                                    <span className="material-symbols-outlined text-4xl text-secondary opacity-50 group-hover:scale-110 transition-transform self-end">schedule</span>
+                                    <Icon name="schedule" className="text-4xl text-secondary opacity-50 group-hover:scale-110 transition-transform self-end" />
                                 </div>
                             </div>
                         </div>
@@ -191,7 +193,7 @@ const Earnings = () => {
                                     <h3 className="font-inter text-xl font-semibold leading-7">Payout History</h3>
                                     <button className="text-primary font-inter text-xs font-bold leading-4 flex items-center gap-1 hover:underline">
                                         View Statement
-                                        <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                                        <Icon name="open_in_new" className="text-[18px]" />
                                     </button>
                                 </div>
                                 <div className="max-h-[400px] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#eef4ff] [&::-webkit-scrollbar-thumb]:bg-[#dce3f0] [&::-webkit-scrollbar-thumb]:rounded-sm">
@@ -200,7 +202,7 @@ const Earnings = () => {
                                             <div key={i} className="flex items-center justify-between p-6 hover:bg-surface-container-high transition-colors border-b border-outline-variant/30">
                                                 <div className="flex items-center gap-4">
                                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${payout.method === 'Instant Payout' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'}`}>
-                                                        <span className="material-symbols-outlined">{payout.method === 'Instant Payout' ? 'bolt' : 'account_balance'}</span>
+                                                        <Icon name={payout.method === 'Instant Payout' ? 'bolt' : 'account_balance'} />
                                                     </div>
                                                     <div>
                                                         <p className="font-inter text-xs font-bold leading-4">{payout.method}</p>
@@ -208,8 +210,8 @@ const Earnings = () => {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="font-inter text-xs font-bold leading-4">€{payout.amount.toFixed(2)}</p>
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${payout.status === 'Completed' ? 'text-secondary bg-secondary/10' : 'text-amber-600 bg-amber-100'}`}>
+                                                    <p className="font-inter text-xs font-bold leading-4">${payout.amount.toFixed(2)}</p>
+                                                    <span className={`text-[12px] uppercase font-bold px-2 py-0.5 rounded ${payout.status === 'Completed' ? 'text-on-success-container bg-success-container' : 'text-on-warning-container bg-warning-container'}`}>
                                                         {payout.status}
                                                     </span>
                                                 </div>

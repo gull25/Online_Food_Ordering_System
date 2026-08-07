@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Icon from '../../../../components/common/Icon';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../api/axios';
 import { Toaster, toast } from 'react-hot-toast';
 import { useDebounce } from '../../../../helper/useDebounce';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
-import LoadingSkeleton from '../../../../components/common/LoadingSkeleton';
+import { AdminPageSkeleton } from '../../../../components/common/Skeleton';
 
 const AdminMyRestaurantPage = () => {
   const { user } = useSelector((state) => state.auth);
@@ -188,14 +189,14 @@ const AdminMyRestaurantPage = () => {
     return groups;
   }, [filteredItems, categories]);
 
-  if (loading) return <LoadingSkeleton />;
+  if (loading) return <AdminPageSkeleton withStats rows={4} columns={4} />;
 
   if (!restaurant) {
     return (
       <div className="bg-background text-on-background min-h-screen flex">
         <main className="p-margin_desktop flex-1 flex items-center justify-center">
           <div className="text-center">
-            <span className="material-symbols-outlined text-[64px] text-secondary mb-4">store_off</span>
+            <Icon name="store_off" className="text-[64px] text-secondary mb-4" />
             <h2 className="font-h2 text-h2 text-on-surface mb-2">No Restaurant Found</h2>
             <p className="text-secondary font-body">Your account is not linked to any restaurant yet.</p>
           </div>
@@ -206,15 +207,6 @@ const AdminMyRestaurantPage = () => {
 
   return (
     <div className="bg-background text-on-background min-h-screen">
-      {/* Visual stylesheet overrides */}
-      <style>{`
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-          display: inline-block;
-          line-height: 1;
-        }
-      `}</style>
-
       {/* Main Content Area */}
       <main className="p-margin_desktop">
         
@@ -230,7 +222,7 @@ const AdminMyRestaurantPage = () => {
         {!restaurant.stripeOnboardingComplete && (
           <div className="mt-8 bg-error-container text-on-error-container p-6 rounded-2xl border border-error/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex gap-4">
-              <span className="material-symbols-outlined text-3xl">account_balance</span>
+              <Icon name="account_balance" className="text-3xl" />
               <div>
                 <h3 className="font-h3 text-h3 font-bold mb-1">Action Required: Connect Stripe</h3>
                 <p className="text-body font-body text-sm">You must connect your bank account to receive automated payouts before your restaurant can be listed publicly.</p>
@@ -281,9 +273,9 @@ const AdminMyRestaurantPage = () => {
 
               <button
                 onClick={() => openModal()}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-button text-button hover:opacity-90 transition-all shadow-md cursor-pointer"
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-all shadow-md cursor-pointer"
               >
-                <span className="material-symbols-outlined text-white">add</span>
+                <Icon name="add" className="text-white" />
                 Add Item
               </button>
             </div>
@@ -315,7 +307,7 @@ const AdminMyRestaurantPage = () => {
                       href={`#${cat._id}`}
                     >
                       <span className="font-semibold text-small">{cat.name}</span>
-                      <span className="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[10px] font-bold">
+                      <span className="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[12px] font-bold">
                         {itemsByCategory[cat._id]?.length || 0}
                       </span>
                     </a>
@@ -372,13 +364,13 @@ const AdminMyRestaurantPage = () => {
                               onClick={() => openModal(item)}
                               className="p-2 rounded-lg bg-surface-container-highest text-secondary hover:text-primary transition-colors border border-outline-variant/30 cursor-pointer"
                             >
-                              <span className="material-symbols-outlined">edit</span>
+                              <Icon name="edit" />
                             </button>
                             <button
                               onClick={() => handleDelete(item._id)}
                               className="p-2 rounded-lg bg-surface-container-highest text-secondary hover:text-error transition-colors border border-outline-variant/30 cursor-pointer"
                             >
-                              <span className="material-symbols-outlined">delete</span>
+                              <Icon name="delete" />
                             </button>
                           </div>
                         </div>
@@ -400,7 +392,7 @@ const AdminMyRestaurantPage = () => {
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-h3 text-h3 text-on-surface">{editingItem ? 'Edit Menu Item' : 'New Menu Item'}</h3>
               <button onClick={closeModal} className="p-2 hover:bg-surface-container rounded-full transition-colors">
-                <span className="material-symbols-outlined text-secondary">close</span>
+                <Icon name="close" className="text-secondary" />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -506,7 +498,7 @@ const AdminMyRestaurantPage = () => {
                   <div key={index} className="flex gap-2 mb-2">
                     <input type="text" placeholder="Size (e.g. Large)" value={size.name} onChange={(e) => { const newSizes = [...formData.sizes]; newSizes[index].name = e.target.value; setFormData({...formData, sizes: newSizes}); }} className="flex-1 px-3 py-2 rounded-lg border border-outline-variant" required />
                     <input type="number" step="0.01" placeholder="Addl. Price" value={size.additionalPrice} onChange={(e) => { const newSizes = [...formData.sizes]; newSizes[index].additionalPrice = parseFloat(e.target.value); setFormData({...formData, sizes: newSizes}); }} className="w-24 px-3 py-2 rounded-lg border border-outline-variant" required />
-                    <button type="button" onClick={() => { const newSizes = formData.sizes.filter((_, i) => i !== index); setFormData({...formData, sizes: newSizes}); }} className="text-error"><span className="material-symbols-outlined">delete</span></button>
+                    <button type="button" onClick={() => { const newSizes = formData.sizes.filter((_, i) => i !== index); setFormData({...formData, sizes: newSizes}); }} className="text-error"><Icon name="delete" /></button>
                   </div>
                 ))}
               </div>
@@ -521,7 +513,7 @@ const AdminMyRestaurantPage = () => {
                   <div key={index} className="flex gap-2 mb-2">
                     <input type="text" placeholder="Add-on (e.g. Extra Cheese)" value={addon.name} onChange={(e) => { const newAddons = [...formData.addOns]; newAddons[index].name = e.target.value; setFormData({...formData, addOns: newAddons}); }} className="flex-1 px-3 py-2 rounded-lg border border-outline-variant" required />
                     <input type="number" step="0.01" placeholder="Price" value={addon.price} onChange={(e) => { const newAddons = [...formData.addOns]; newAddons[index].price = parseFloat(e.target.value); setFormData({...formData, addOns: newAddons}); }} className="w-24 px-3 py-2 rounded-lg border border-outline-variant" required />
-                    <button type="button" onClick={() => { const newAddons = formData.addOns.filter((_, i) => i !== index); setFormData({...formData, addOns: newAddons}); }} className="text-error"><span className="material-symbols-outlined">delete</span></button>
+                    <button type="button" onClick={() => { const newAddons = formData.addOns.filter((_, i) => i !== index); setFormData({...formData, addOns: newAddons}); }} className="text-error"><Icon name="delete" /></button>
                   </div>
                 ))}
               </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Icon from '../../components/common/Icon';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateProfileThunk } from '../../redux/userSlice';
 import toast from 'react-hot-toast';
@@ -74,7 +75,7 @@ const ProfilePage = () => {
                 disabled
                 className="w-full h-12 bg-surface-variant/30 border border-outline-variant rounded-xl px-4 font-body text-body text-on-surface-variant cursor-not-allowed"
               />
-              <p className="text-[11px] text-secondary mt-1 ml-1">Email cannot be changed.</p>
+              <p className="text-[12px] text-secondary mt-1 ml-1">Email cannot be changed.</p>
             </div>
 
             {/* Role (Read-only) */}
@@ -123,7 +124,7 @@ const ProfilePage = () => {
                 className={`w-full h-12 bg-primary text-on-primary font-button text-button rounded-xl shadow-md shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 <span>{loading ? 'Saving...' : 'Save Changes'}</span>
-                {!loading && <span className="material-symbols-outlined text-[18px]">save</span>}
+                {!loading && <Icon name="save" className="text-[18px]" />}
               </button>
             </div>
           </form>

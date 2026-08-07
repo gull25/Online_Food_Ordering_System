@@ -1,5 +1,5 @@
-import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { Suspense, useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { APP_ROUTES, USER_ROLES } from './constants';
 
 import { ProtectedRoute, GuestRoute } from './ProtectedRoute';
@@ -7,7 +7,7 @@ import { ProtectedRoute, GuestRoute } from './ProtectedRoute';
 import AdminLayout from './components/adminDashboardComponents/AdminLayout';
 import RiderLayout from './components/riderDashboardComponents/RiderLayout';
 
-import LoadingSkeleton from './components/common/LoadingSkeleton';
+import RouteProgress from './components/common/RouteProgress';
 
 const HomeScreen = React.lazy(() => import('./screens/userScreens/HomeScreen'));
 const AuthScreen = React.lazy(() => import('./screens/userScreens/AuthPage')); // To be split
@@ -36,9 +36,26 @@ const EarningsPage = React.lazy(() => import('./screens/dashboard/rider/earnings
 const NotFoundPage = React.lazy(() => import('./screens/errorPages/NotFoundPage'));
 const UnauthorizedPage = React.lazy(() => import('./screens/errorPages/UnauthorizedPage'));
 
+/**
+ * Resets scroll on navigation. Without this, moving from a scrolled listing to
+ * a detail page lands the user halfway down the new page. Hash links and
+ * browser back/forward (which restore their own position) are left alone.
+ */
+const ScrollToTop = () => {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname, hash]);
+
+  return null;
+};
+
 const ConditionalRoutes = () => {
   return (
-    <Suspense fallback={<LoadingSkeleton />}>
+    <Suspense fallback={<RouteProgress />}>
+      <ScrollToTop />
       <Routes>
         <Route path={APP_ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
         <Route path={APP_ROUTES.HOME} element={<HomeScreen />} />

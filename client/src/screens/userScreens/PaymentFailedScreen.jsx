@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../../components/common/Icon';
 import { Link } from 'react-router-dom';
 import TopNavBar from '../../components/layout/Navbar';
 import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
@@ -11,7 +12,7 @@ const PaymentFailedScreen = () => {
       <main className="pt-24 pb-16 px-margin_mobile md:px-margin_desktop max-w-container_max mx-auto flex-grow w-full flex items-center justify-center">
         <div className="bg-surface-container-lowest rounded-2xl p-8 md:p-12 shadow-sm border border-outline-variant text-center max-w-md w-full">
           <div className="w-20 h-20 bg-error-container text-on-error-container rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="material-symbols-outlined text-4xl">error</span>
+            <Icon name="error" className="text-4xl" />
           </div>
           
           <h1 className="text-h2 font-h2 font-bold mb-4 text-on-surface">Payment Failed</h1>

@@ -1,22 +1,27 @@
 import React from 'react';
 
+import Icon from '../../common/Icon';
 const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
   return (
     <div className="bg-surface-container-lowest rounded-16 border border-surface-variant overflow-hidden hover:shadow-[0px_4px_20px_rgba(0,0,0,0.04)] transition-all duration-300 flex flex-col sm:flex-row group">
-      <div className="w-full sm:w-[140px] h-[200px] sm:h-auto relative overflow-hidden flex-shrink-0 bg-surface-container">
-        <img
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          alt={item.name}
-          src={item.image}
-        />
+      <div className="w-full sm:w-[140px] h-[200px] sm:h-auto relative overflow-hidden shrink-0 bg-surface-container">
+        {item.image && item.image !== 'no-photo.jpg' ? (
+          <img
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            alt={item.name}
+            loading="lazy"
+            src={item.image}
+          />
+        ) : (
+          // Menu items without a photo previously rendered <img src={undefined}>,
+          // which shows the browser's broken-image glyph.
+          <div className="w-full h-full flex items-center justify-center bg-surface-container">
+            <Icon name="restaurant" className="text-[40px] text-on-surface-variant/40" />
+          </div>
+        )}
         {item.rating && (
           <div className="absolute top-2 left-2 bg-surface-container-highest/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
-            <span
-              className="material-symbols-outlined text-[14px] text-tertiary-container flex items-center justify-center"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              thumb_up
-            </span>
+            <Icon name="thumb_up" className="text-[14px] text-tertiary-container flex items-center justify-center" filled />
             <span className="font-label text-label text-on-surface">
               {item.rating}
             </span>
@@ -29,8 +34,11 @@ const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
             <h3 className="text-[20px] font-semibold text-on-surface leading-tight">
               {item.name}
             </h3>
-            <span className="text-primary font-button text-button ml-2">
-              €{item.price.toFixed(2)}
+            {/* Every other price in the app (cart, checkout, receipts, admin)
+                is in $. This card alone rendered €, so the same dish appeared
+                to change currency between the menu and the cart. */}
+            <span className="text-primary font-button text-button ml-2 whitespace-nowrap">
+              ${Number(item.price || 0).toFixed(2)}
             </span>
           </div>
           <p className="text-[14px] font-normal text-on-surface/80 line-clamp-2 mt-2">
@@ -47,11 +55,7 @@ const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
                     : 'bg-surface-container text-on-surface-variant'
                 }`}
               >
-                {item.tag === 'Spicy' && (
-                  <span className="material-symbols-outlined text-[12px] flex items-center justify-center">
-                    local_fire_department
-                  </span>
-                )}
+                {item.tag === 'Spicy' && <Icon name="local_fire_department" className="text-[12px]" />}
                 {item.tag}
               </span>
             )}

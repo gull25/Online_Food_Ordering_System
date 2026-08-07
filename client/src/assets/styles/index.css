@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+/**
+ * Bind the `dark:` variant to the `.dark` class on <html>.
+ *
+ * Tailwind v4 defaults `dark:` to `@media (prefers-color-scheme: dark)` — the
+ * operating system's setting. This app switches themes by toggling a `.dark`
+ * class instead (see ThemeContext), so the two disagreed whenever the OS and
+ * the in-app toggle differed: the colour tokens came from `:root.dark` (light)
+ * while `dark:` utilities fired off the OS (dark).
+ *
+ * The footer is where that showed up worst — `dark:bg-surface-container-lowest`
+ * resolved to white while its text was `text-white`, leaving an invisible
+ * footer. Pointing the variant at the class keeps every `dark:` utility in step
+ * with the theme the user actually chose.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Colors */
   --color-surface-variant: #dce3f0;
@@ -50,13 +66,60 @@
   --color-outline: #8f7067;
   --color-surface-container: #e7eefb;
 
+  /* ── Semantic status colours ───────────────────────────────────────────────
+     Status UI was previously painted with raw Tailwind palette classes
+     (bg-green-100 / text-red-500 / text-blue-500). Those are fixed light-mode
+     values, so every badge and metric became low-contrast or garish the moment
+     the app switched to dark. These tokens have a dark-mode counterpart below,
+     so status colour follows the theme like everything else. */
+  --color-success: #0f7a3d;
+  --color-on-success: #ffffff;
+  --color-success-container: #d7f5e3;
+  --color-on-success-container: #05351a;
+
+  --color-warning: #8a5200;
+  --color-on-warning: #ffffff;
+  --color-warning-container: #ffe6c7;
+  --color-on-warning-container: #3d2200;
+
+  --color-info: #0b5cad;
+  --color-on-info: #ffffff;
+  --color-info-container: #d6e8ff;
+  --color-on-info-container: #002f5e;
+
   /* Border Radius */
   --radius-DEFAULT: 0.25rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-full: 9999px;
 
+  /* Numeric radius scale — used widely across the app as rounded-12 / rounded-16 / … */
+  --radius-4: 4px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-20: 20px;
+  --radius-24: 24px;
+  --radius-28: 28px;
+  --radius-32: 32px;
+
+  /* Motion tokens — one source of truth for every transition in the app */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
   /* Spacing */
+  /* The rider screens were written against a hyphenated naming scheme
+     (`stack-sm`, `unit`, `container-margin`) while the rest of the app uses
+     underscores (`stack_sm`). None of the hyphenated names resolved, so those
+     panels rendered with no padding, margins or gaps at all — which is why the
+     rider dashboard looked cramped next to the customer and admin screens.
+     Both spellings now map to the same values. */
+  --spacing-container-margin: 16px;
+  --spacing-unit: 8px;
+  --spacing-stack-sm: 8px;
+  --spacing-stack-md: 16px;
+  --spacing-stack-lg: 32px;
   --spacing-base: 8px;
   --spacing-margin_mobile: 16px;
   --spacing-stack_md: 16px;
@@ -66,16 +129,29 @@
   --spacing-gutter: 24px;
   --spacing-stack_sm: 8px;
 
+  /* ── Tailwind's own size scale ────────────────────────────────────────────
+     `text-xs` is used ~48 times for metadata, chips and helper text. At its
+     12px default that read noticeably smaller than everything around it, so the
+     floor is lifted here rather than by editing every call site. `text-sm`
+     (~122 uses) stays at 14px — that is already a comfortable secondary size. */
+  --text-xs: 0.8125rem;   /* 12px → 13px */
+  --text-xs--line-height: 1.5;
+
   /* Typography Fonts */
-  --font-h3: "Inter", sans-serif;
-  --font-h2-mobile: "Inter", sans-serif;
-  --font-body: "Inter", sans-serif;
-  --font-h1: "Inter", sans-serif;
-  --font-h1-mobile: "Inter", sans-serif;
-  --font-button: "Inter", sans-serif;
-  --font-small: "Inter", sans-serif;
-  --font-label: "Inter", sans-serif;
-  --font-h2: "Inter", sans-serif;
+  /* `font-inter` is used ~40 times across the rider dashboard but was never
+     defined, so those elements silently fell back to the inherited family.
+     Aliasing it keeps that markup working and on-system. */
+  /* Legacy alias: ~40 rider-dashboard elements still say `font-inter`. */
+  --font-inter: "Poppins", sans-serif;
+  --font-h3: "Poppins", sans-serif;
+  --font-h2-mobile: "Poppins", sans-serif;
+  --font-body: "Poppins", sans-serif;
+  --font-h1: "Poppins", sans-serif;
+  --font-h1-mobile: "Poppins", sans-serif;
+  --font-button: "Poppins", sans-serif;
+  --font-small: "Poppins", sans-serif;
+  --font-label: "Poppins", sans-serif;
+  --font-h2: "Poppins", sans-serif;
 
   /* Typography sizes are defined explicitly in @layer utilities to preserve exact weights */
 }
@@ -83,21 +159,51 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  button, 
-  [role="button"], 
+  /* Keeps native form controls, scrollbars and autofill in sync with the theme */
+  :root {
+    color-scheme: light;
+  }
+
+  :root.dark {
+    color-scheme: dark;
+  }
+
+  button,
+  [role="button"],
   a {
-    @apply cursor-pointer transition-all duration-200;
+    @apply cursor-pointer;
+    transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+    transition-duration: 200ms;
+    transition-timing-function: var(--ease-out-soft);
   }
 
-  button:active, 
-  [role="button"]:active {
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
     @apply scale-[0.97];
   }
 
-  button:hover {
+  button:not(:disabled):hover {
     @apply opacity-90;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    @apply cursor-not-allowed;
+  }
+
+  /* Visible, consistent keyboard focus everywhere — never on mouse clicks */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Images should never blow out their container while loading */
+  img {
+    @apply max-w-full;
   }
 
   :root.dark {
@@ -107,10 +213,16 @@
     --color-on-primary: #5e1700;
     --color-primary-container: #ff5a1f;
     --color-on-primary-container: #541400;
-    --color-secondary: #4ae183;
-    --color-on-secondary: #003919;
-    --color-secondary-container: #06bb63;
-    --color-on-secondary-container: #00431f;
+
+    /* `text-secondary` is this app's muted body text — captions, metadata,
+       helper copy. In dark mode it was #4ae183, a saturated green, so every
+       secondary line turned neon and read as a link or a success state. A
+       desaturated neutral (≈11:1 on #131313) restores the hierarchy the light
+       theme already had with #555f6f. */
+    --color-secondary: #bdc7d9;
+    --color-on-secondary: #26303f;
+    --color-secondary-container: #3d4756;
+    --color-on-secondary-container: #d9e3f6;
     --color-tertiary: #92ccff;
     --color-on-tertiary: #003351;
     --color-tertiary-container: #3599dc;
@@ -127,99 +239,383 @@
     --color-surface-container: #201f1f;
     --color-surface-container-low: #1c1b1b;
     --color-surface-container-lowest: #0e0e0e;
+
+    /* Error/status colours need dark-mode counterparts too — #ba1a1a on a
+       #131313 surface is only ~3:1 and reads as muddy rather than urgent. */
+    --color-error: #ffb4ab;
+    --color-on-error: #690005;
+    --color-error-container: #93000a;
+    --color-on-error-container: #ffdad6;
+
+    --color-success: #6ede9f;
+    --color-on-success: #05351a;
+    --color-success-container: #145c39;
+    --color-on-success-container: #c7f5da;
+
+    --color-warning: #ffbe6a;
+    --color-on-warning: #3d2200;
+    --color-warning-container: #6d4000;
+    --color-on-warning-container: #ffe6c7;
+
+    --color-info: #8fc4ff;
+    --color-on-info: #002f5e;
+    --color-info-container: #0d4a85;
+    --color-on-info-container: #d6e8ff;
   }
 }
 
 @layer utilities {
-  .material-symbols-outlined {
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  /* The Material Symbols rules that lived here are gone along with the font.
+     Icons are React SVG components now (see components/common/Icon.jsx), so
+     there is no ligature text to hide and no webfont to wait on. */
+
+  /* Frosted panel used for map overlays on the admin screens. Previously a
+     hardcoded rgba(255,255,255,0.8) declared inside per-page <style> tags,
+     which stayed white in dark mode. */
+  .glass-card {
+    background: color-mix(in srgb, var(--color-surface-container-lowest) 80%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
-  .material-symbols-outlined.fill {
-    font-variation-settings: 'FILL' 1;
-  }
-
-
-  /* Exact Typography Classes translated from v3 config */
-  .text-h1 {
-    font-size: 32px;
-    line-height: 120%;
-    letter-spacing: -0.01em;
-    font-weight: 700;
-  }
-
-  @media (min-width: 768px) {
-    .text-h1 {
-      font-size: 48px;
-      letter-spacing: -0.02em;
-    }
-  }
-
-  .text-h2 {
-    font-size: 28px;
-    line-height: 130%;
-    font-weight: 700;
-  }
-
-  @media (min-width: 768px) {
-    .text-h2 {
-      font-size: 36px;
-    }
-  }
-
-  .text-h3 {
-    font-size: 20px;
-    line-height: 140%;
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
     font-weight: 600;
   }
 
-  @media (min-width: 768px) {
-    .text-h3 {
-      font-size: 24px;
-    }
-  }
 
-  .text-body {
-    font-size: 14px;
-    line-height: 160%;
-    font-weight: 400;
-  }
+  /* Typography note.
 
-  @media (min-width: 768px) {
-    .text-body {
-      font-size: 16px;
-    }
-  }
+     The type scale is defined below as `@utility` rules, outside this layer.
+     Hand-written classes inside `@layer utilities` are plain CSS: Tailwind
+     cannot generate variants for them, so `md:text-h2` and `md:text-h1` never
+     compiled at all. Nineteen headings across the app were written as
+     `text-h2-mobile md:text-h2` and therefore stayed locked at the mobile size
+     on desktop, while headings written as plain `text-h2` did resize — two
+     different behaviours for the same heading level. */
 
-  .text-button {
-    font-size: 14px;
-    line-height: 100%;
-    font-weight: 600;
-  }
-
-  @media (min-width: 768px) {
-    .text-button {
-      font-size: 16px;
-    }
-  }
-
-  .text-small {
-    font-size: 12px;
-    line-height: 150%;
-    font-weight: 400;
-  }
-
-  @media (min-width: 768px) {
-    .text-small {
-      font-size: 14px;
-    }
-  }
-
-  .text-label {
-    font-size: 12px;
+  /* Label variants used throughout the rider dashboard. `text-label-bold`,
+     `font-label-bold` and `text-label-sm` were referenced but never defined,
+     so those labels rendered at the inherited body size — which is why the
+     rider screens looked a size larger than the rest of the app. */
+  .text-label-bold,
+  .font-label-bold {
+    font-size: 13px;
     line-height: 100%;
     letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+
+  .text-label-sm {
+    font-size: 12px;
+    line-height: 140%;
+    letter-spacing: 0.04em;
     font-weight: 600;
+  }
+
+  .text-label-md {
+    font-size: 14px;
+    line-height: 150%;
+    font-weight: 500;
+  }
+
+  /* Rider screens reference `text-headline-md-mobile` and
+     `leading-7-mobile`; neither existed, so those headings inherited body
+     sizing and the rider dashboard read a size smaller than admin/customer. */
+  .text-headline-md-mobile {
+    font-size: 20px;
+    line-height: 140%;
+    font-weight: 700;
+  }
+
+  .leading-7-mobile {
+    line-height: 1.75rem;
+  }
+
+  /* ── Scrollbar hiding for horizontal carousels/nav strips ────────────────── */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ── Enter/exit animation utilities ───────────────────────────────────────
+     Composable transforms driven by custom properties, so `animate-in fade-in
+     zoom-in-95 slide-in-from-top-4 duration-300` reads as one animation
+     instead of four competing ones. `duration-*` feeds in via --tw-duration. */
+  .animate-in {
+    animation-name: enter;
+    animation-duration: var(--tw-duration, 200ms);
+    animation-timing-function: var(--ease-out-soft);
+    animation-fill-mode: both;
+    --enter-opacity: initial;
+    --enter-scale: initial;
+    --enter-rotate: initial;
+    --enter-translate-x: initial;
+    --enter-translate-y: initial;
+  }
+
+  .animate-out {
+    animation-name: exit;
+    animation-duration: var(--tw-duration, 150ms);
+    animation-timing-function: var(--ease-in-out-soft);
+    animation-fill-mode: both;
+    --exit-opacity: initial;
+    --exit-scale: initial;
+    --exit-rotate: initial;
+    --exit-translate-x: initial;
+    --exit-translate-y: initial;
+  }
+
+  .fade-in { --enter-opacity: 0; }
+  .fade-in-0 { --enter-opacity: 0; }
+  .fade-in-50 { --enter-opacity: 0.5; }
+  .fade-out { --exit-opacity: 0; }
+  .fade-out-0 { --exit-opacity: 0; }
+
+  .zoom-in { --enter-scale: 0; }
+  .zoom-in-50 { --enter-scale: 0.5; }
+  .zoom-in-75 { --enter-scale: 0.75; }
+  .zoom-in-90 { --enter-scale: 0.9; }
+  .zoom-in-95 { --enter-scale: 0.95; }
+  .zoom-out-95 { --exit-scale: 0.95; }
+  .zoom-out-90 { --exit-scale: 0.9; }
+
+  .spin-in-90 { --enter-rotate: 90deg; }
+
+  .slide-in-from-top-1 { --enter-translate-y: -0.25rem; }
+  .slide-in-from-top-2 { --enter-translate-y: -0.5rem; }
+  .slide-in-from-top-4 { --enter-translate-y: -1rem; }
+  .slide-in-from-top-8 { --enter-translate-y: -2rem; }
+  .slide-in-from-bottom-1 { --enter-translate-y: 0.25rem; }
+  .slide-in-from-bottom-2 { --enter-translate-y: 0.5rem; }
+  .slide-in-from-bottom-4 { --enter-translate-y: 1rem; }
+  .slide-in-from-bottom-8 { --enter-translate-y: 2rem; }
+  .slide-in-from-left-4 { --enter-translate-x: -1rem; }
+  .slide-in-from-left-8 { --enter-translate-x: -2rem; }
+  .slide-in-from-right-4 { --enter-translate-x: 1rem; }
+  .slide-in-from-right-8 { --enter-translate-x: 2rem; }
+  .slide-out-to-top-4 { --exit-translate-y: -1rem; }
+  .slide-out-to-bottom-4 { --exit-translate-y: 1rem; }
+  .slide-out-to-right-4 { --exit-translate-x: 1rem; }
+
+  /* Stagger children without touching their markup */
+  .stagger-children > * {
+    animation: enter var(--tw-duration, 450ms) var(--ease-out-soft) both;
+    --enter-opacity: 0;
+    --enter-translate-y: 0.75rem;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+  .stagger-children > *:nth-child(7) { animation-delay: 360ms; }
+  .stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+  .stagger-children > *:nth-child(n + 9) { animation-delay: 480ms; }
+
+  /* ── Skeleton shimmer ─────────────────────────────────────────────────────
+     Theme-token driven so it reads correctly in both light and dark mode. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-surface-container-high);
+    isolation: isolate;
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--color-surface-container-lowest) 65%, transparent) 50%,
+      transparent 100%
+    );
+    animation: skeleton-shimmer 1.6s var(--ease-in-out-soft) infinite;
+  }
+
+  /* Card/section lift used on hoverable surfaces */
+  .lift-hover {
+    transition: transform 300ms var(--ease-out-soft), box-shadow 300ms var(--ease-out-soft);
+  }
+
+  .lift-hover:hover {
+    transform: translateY(-4px);
+  }
+}
+
+/* ── Type scale ───────────────────────────────────────────────────────────────
+   Declared with `@utility` (not `@layer utilities`) so Tailwind can generate
+   variants — `md:text-h2`, `lg:text-h1` and friends now actually compile.
+
+   Sizes are fluid via clamp() rather than snapping at a single 768px
+   breakpoint. The old rules jumped h1 from 32px straight to 48px and h2 from
+   28px to 36px the instant the viewport crossed 768px, which is the size jump
+   you see when resizing. clamp() interpolates between a 360px and a 1280px
+   viewport instead, so text grows smoothly and never lurches.
+
+   The `-mobile` names are kept as aliases of the same fluid values. That way
+   the existing `text-h2-mobile md:text-h2` markup renders correctly at every
+   width without touching nineteen call sites, and the two spellings can no
+   longer disagree.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* 32px → 48px */
+@utility text-h1 {
+  font-size: clamp(2rem, 1.609rem + 1.74vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+@utility text-h1-mobile {
+  font-size: clamp(2rem, 1.609rem + 1.74vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+/* 28px → 36px */
+@utility text-h2 {
+  font-size: clamp(1.75rem, 1.554rem + 0.87vw, 2.25rem);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+@utility text-h2-mobile {
+  font-size: clamp(1.75rem, 1.554rem + 0.87vw, 2.25rem);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+/* 20px → 24px */
+@utility text-h3 {
+  font-size: clamp(1.25rem, 1.152rem + 0.43vw, 1.5rem);
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+@utility text-h3-mobile {
+  font-size: clamp(1.25rem, 1.152rem + 0.43vw, 1.5rem);
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+/* 15px → 16px. The floor was 14px, which is small for primary reading text on
+   a phone; the ceiling is unchanged so desktop layouts keep their proportions. */
+@utility text-body {
+  font-size: clamp(0.9375rem, 0.913rem + 0.11vw, 1rem);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* 15px → 16px — matches body so button labels never look smaller than the
+   sentence that introduces them. */
+@utility text-button {
+  font-size: clamp(0.9375rem, 0.913rem + 0.11vw, 1rem);
+  line-height: 1;
+  font-weight: 600;
+}
+
+/* 13px → 15px. Captions, metadata and helper copy: the old 12px floor was
+   below comfortable reading size on small screens. */
+@utility text-small {
+  font-size: clamp(0.8125rem, 0.777rem + 0.16vw, 0.9375rem);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* 13px, fixed. Labels sit in chips and badges whose boxes shouldn't breathe
+   with the viewport — but 12px was too small to read comfortably in a status
+   pill, so the fixed size is raised one step. */
+@utility text-label {
+  font-size: 0.8125rem;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+/* ── Keyframes ────────────────────────────────────────────────────────────── */
+@keyframes enter {
+  from {
+    opacity: var(--enter-opacity, 1);
+    transform: translate3d(
+        var(--enter-translate-x, 0),
+        var(--enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--enter-scale, 1),
+        var(--enter-scale, 1),
+        var(--enter-scale, 1)
+      )
+      rotate(var(--enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--exit-opacity, 1);
+    transform: translate3d(
+        var(--exit-translate-x, 0),
+        var(--exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--exit-scale, 1),
+        var(--exit-scale, 1),
+        var(--exit-scale, 1)
+      )
+      rotate(var(--exit-rotate, 0));
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-100%) scaleX(0.35);
+  }
+  50% {
+    transform: translateX(20%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.4);
+  }
+}
+
+/* ── Respect the user's motion preference ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton::after {
+    display: none;
   }
 }
 

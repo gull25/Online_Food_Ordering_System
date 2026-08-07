@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Icon from '../../../../components/common/Icon';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../api/axios';
 import { toast } from 'react-hot-toast';
@@ -32,9 +33,7 @@ const StripeReturnPage = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
       <div className="bg-surface-container-lowest p-10 rounded-3xl border border-outline-variant/30 shadow-xl max-w-md w-full">
-        <span className={`material-symbols-outlined text-6xl mb-6 ${error ? 'text-error' : 'text-primary animate-pulse'}`}>
-          {error ? 'error' : 'sync'}
-        </span>
+        <Icon name={error ? 'error' : 'sync'} className={`text-6xl mb-6 ${error ? 'text-error' : 'text-primary animate-pulse'}`} />
         <h1 className="text-h2 font-h2 text-on-surface mb-4">Stripe Connect</h1>
         <p className="text-body font-body text-secondary mb-8">{status}</p>
         

@@ -1,14 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import Icon from '../common/Icon';
 import { Outlet, useLocation } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 
 /**
  * AdminLayout — wrapper for all /admin/* pages.
+ *
+ * The sidebar is a static rail from `lg` up and an off-canvas drawer below it.
+ * Previously it was a hard 256px column at every width, so on a phone it took
+ * two thirds of the viewport and squeezed every admin page into a ~119px
+ * gutter — tables, charts and headers all crushed against the edge with no way
+ * to dismiss the rail.
  */
 const AdminLayout = () => {
   const location = useLocation();
   const path = location.pathname;
-  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   let activeTab = 'dashboard';
   if (path.includes('orders')) activeTab = 'orders';
   else if (path.includes('my-restaurant')) activeTab = 'my-restaurant';
@@ -17,10 +25,50 @@ const AdminLayout = () => {
   else if (path.includes('products')) activeTab = 'products';
   else if (path.includes('analytics')) activeTab = 'analytics';
 
+  // Close the drawer whenever the route changes, so it never covers the page
+  // the user just navigated to.
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [path]);
+
+  // Escape closes the drawer, matching the other overlays in the app.
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setIsSidebarOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isSidebarOpen]);
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <AdminSidebar activeTab={activeTab} />
+      {/* Backdrop — only below lg, where the sidebar is an overlay */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+        />
+      )}
+
+      <AdminSidebar activeTab={activeTab} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
       <div className="flex-1 overflow-y-auto min-w-0">
+        {/* Mobile top bar — the only affordance for reaching the drawer */}
+        <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-margin_mobile h-16 bg-surface-container-low/95 backdrop-blur-md border-b border-outline-variant/30">
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            aria-label="Open navigation menu"
+            aria-expanded={isSidebarOpen}
+            className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-variant transition-colors"
+          >
+            <Icon name="menu" />
+          </button>
+          <span className="font-h3 text-h3 text-primary font-bold">Foodora Admin</span>
+        </div>
+
         <Outlet />
       </div>
     </div>

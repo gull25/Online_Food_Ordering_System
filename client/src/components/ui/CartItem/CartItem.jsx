@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../../common/Icon';
 const CartItem = ({ item, onUpdateQuantity, onDelete }) => {
   return (
     <div className="flex flex-wrap md:flex-nowrap gap-4 pb-6 border-b border-outline-variant last:border-0 last:pb-0">
@@ -34,7 +35,7 @@ const CartItem = ({ item, onUpdateQuantity, onDelete }) => {
               aria-label="Decrease quantity"
               className="w-8 h-8 flex items-center justify-center hover:bg-surface-container-high rounded-full transition-colors"
             >
-              <span className="material-symbols-outlined text-[18px]">remove</span>
+              <Icon name="remove" className="text-[18px]" />
             </button>
             <span className="font-bold">{item.quantity}</span>
             <button
@@ -42,7 +43,7 @@ const CartItem = ({ item, onUpdateQuantity, onDelete }) => {
               aria-label="Increase quantity"
               className="w-8 h-8 flex items-center justify-center hover:bg-surface-container-high rounded-full transition-colors"
             >
-              <span className="material-symbols-outlined text-[18px]">add</span>
+              <Icon name="add" className="text-[18px]" />
             </button>
           </div>
           <div className="flex items-center gap-4">
@@ -54,7 +55,7 @@ const CartItem = ({ item, onUpdateQuantity, onDelete }) => {
               aria-label="Delete item"
               className="text-secondary hover:text-error transition-colors flex items-center justify-center"
             >
-              <span className="material-symbols-outlined">delete</span>
+              <Icon name="delete" />
             </button>
           </div>
         </div>

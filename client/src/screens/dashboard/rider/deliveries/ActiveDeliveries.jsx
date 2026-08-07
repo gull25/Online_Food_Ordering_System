@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import Icon from '../../../../components/common/Icon';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchActiveOrderThunk, confirmPickupThunk, confirmDeliveryThunk, acceptDeliveryThunk, startDeliveryThunk } from '../../../../redux/riderSlice';
+import { RiderPageSkeleton } from '../../../../components/common/Skeleton';
 import { socket } from '../../../../helper/socket';
 import LiveTracker from '../../../../components/homeScreen/orderComponents/LiveTracker';
 
@@ -80,19 +82,23 @@ const ActiveDeliveries = () => {
         }
     };
 
-    if (loading) {
-        return <div className="min-h-screen bg-background flex items-center justify-center text-primary"><span className="material-symbols-outlined animate-spin text-4xl">sync</span></div>;
+    // First paint only. This page refetches on every `rider:new_delivery` and
+    // `orderStatusUpdate` socket event; keying the skeleton purely off
+    // `loading` made the entire screen — map included — drop to a skeleton and
+    // rebuild each time one arrived.
+    if (loading && !activeOrder) {
+        return <RiderPageSkeleton />;
     }
 
     if (error) {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center text-error space-y-4 p-4 text-center">
-                <span className="material-symbols-outlined text-6xl">error</span>
+                <Icon name="error" className="text-6xl" />
                 <p className="font-inter text-xl font-semibold leading-7 text-on-background">Failed to load active deliveries.</p>
                 <p className="text-label-md text-error bg-error/10 p-3 rounded-lg border border-error/20 max-w-md">{error}</p>
                 <button 
                     onClick={() => dispatch(fetchActiveOrderThunk())} 
-                    className="px-6 py-2 bg-primary text-white rounded-lg font-label-bold mt-4 hover:bg-primary/90 transition-colors"
+                    className="px-6 py-2 bg-primary text-on-primary rounded-lg font-label-bold mt-4 hover:bg-primary/90 transition-colors"
                 >
                     Retry
                 </button>
@@ -121,10 +127,10 @@ const ActiveDeliveries = () => {
                         {/* Floating Map Controls */}
                         <div className="absolute top-4 right-4 flex-col gap-2 z-10 hidden lg:flex">
                             <button className="bg-surface-container-high p-3 rounded-lg border border-outline-variant shadow-lg text-on-surface hover:bg-surface-bright">
-                                <span className="material-symbols-outlined">my_location</span>
+                                <Icon name="my_location" />
                             </button>
                             <button className="bg-surface-container-high p-3 rounded-lg border border-outline-variant shadow-lg text-on-surface hover:bg-surface-bright">
-                                <span className="material-symbols-outlined">layers</span>
+                                <Icon name="layers" />
                             </button>
                         </div>
                     </div>
@@ -143,12 +149,12 @@ const ActiveDeliveries = () => {
                                     </span>
                                     <div className="flex gap-2 items-center">
                                         {gpsActive && (
-                                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-green-600 bg-green-100 px-2 py-1 rounded-full animate-pulse">
-                                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                            <span className="flex items-center gap-1 text-[12px] font-bold uppercase text-on-success-container bg-success-container px-2 py-1 rounded-full">
+                                                <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse"></span>
                                                 Live GPS
                                             </span>
                                         )}
-                                        <span className="text-secondary font-inter text-xs font-bold leading-4">Est. €{(activeOrder.riderEarning || (activeOrder.totalAmount * 0.10) || 0).toFixed(2)} Earned</span>
+                                        <span className="text-secondary font-inter text-xs font-bold leading-4">Est. ${(activeOrder.riderEarning || (activeOrder.totalAmount * 0.10) || 0).toFixed(2)} Earned</span>
                                     </div>
                                 </div>
                                 <h3 className="font-inter text-xl font-semibold leading-7 text-on-background">Order #{activeOrder?._id?.toString()?.slice(-4)?.toUpperCase() || 'ID'}</h3>
@@ -189,16 +195,16 @@ const ActiveDeliveries = () => {
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant">
-                                                    <span className="material-symbols-outlined text-primary">person</span>
+                                                    <Icon name="person" className="text-primary" />
                                                 </div>
                                                 <div>
                                                     <p className="font-inter text-xs font-bold leading-4 text-on-background">{activeOrder.user?.name || 'Customer'}</p>
-                                                    <p className="font-inter text-[11px] font-medium leading-[14px] text-on-surface-variant">{activeOrder.deliveryAddress?.instructions || 'No instructions'}</p>
+                                                    <p className="font-inter text-[12px] font-medium leading-[14px] text-on-surface-variant">{activeOrder.deliveryAddress?.instructions || 'No instructions'}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
                                                 <button className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-primary border border-outline-variant transition-transform active:scale-95">
-                                                    <span className="material-symbols-outlined">call</span>
+                                                    <Icon name="call" />
                                                 </button>
                                             </div>
                                         </div>
@@ -207,13 +213,13 @@ const ActiveDeliveries = () => {
                                     {/* Action Buttons */}
                                     <div className="space-y-stack-md pt-stack-sm">
                                         <button onClick={openNavigation} className="w-full bg-primary-container text-on-primary-container font-label-bold text-headline-md-mobile py-4 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-lg shadow-primary/10">
-                                            <span className="material-symbols-outlined">navigation</span>
+                                            <Icon name="navigation" />
                                             START NAVIGATION
                                         </button>
                                         
                                         {activeOrder.status === 'RIDER_ASSIGNED' && (
                                             <div className="flex gap-2">
-                                                <button onClick={() => dispatch(acceptDeliveryThunk(activeOrder._id))} className="flex-1 bg-primary text-white font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
+                                                <button onClick={() => dispatch(acceptDeliveryThunk(activeOrder._id))} className="flex-1 bg-primary text-on-primary font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
                                                     ACCEPT
                                                 </button>
                                                 <button onClick={() => dispatch(confirmPickupThunk(activeOrder._id))} className="flex-1 bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
@@ -235,7 +241,7 @@ const ActiveDeliveries = () => {
                                 </>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-4 pt-10">
-                                    <span className="material-symbols-outlined text-6xl text-on-surface-variant">inbox</span>
+                                    <Icon name="inbox" className="text-6xl text-on-surface-variant" />
                                     <p className="text-on-surface-variant font-body-md text-center">No active deliveries at this moment.</p>
                                 </div>
                             )}
@@ -244,7 +250,7 @@ const ActiveDeliveries = () => {
                         {/* Emergency Contact Footer */}
                         <div className="p-4 border-t border-outline-variant bg-surface-dim">
                             <button className="w-full flex items-center justify-center gap-2 text-error font-inter text-xs font-bold leading-4 py-2 hover:bg-error/10 transition-colors rounded-lg">
-                                <span className="material-symbols-outlined">emergency</span>
+                                <Icon name="emergency" />
                                 REPORT AN ISSUE
                             </button>
                         </div>

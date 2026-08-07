@@ -57,7 +57,11 @@ export const cancelOrderThunk = createAsyncThunk(
 const initialState = {
   orders: [],
   currentOrder: null,
+  // `loading` covers reads (fetching an order or the order list).
+  // `mutating` covers writes, so a write never blanks a screen that is already
+  // showing data.
   loading: false,
+  mutating: false,
   error: null,
 };
 
@@ -130,13 +134,17 @@ const orderSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Cancel Order
+      // Cancel Order.
+      // Uses `mutating`, not `loading`: the track-order screen renders its
+      // full-page loading state off `loading`, so cancelling used to tear the
+      // whole page down to a spinner and rebuild it instead of just updating
+      // the status badge in place.
       .addCase(cancelOrderThunk.pending, (state) => {
-        state.loading = true;
+        state.mutating = true;
         state.error = null;
       })
       .addCase(cancelOrderThunk.fulfilled, (state, action) => {
-        state.loading = false;
+        state.mutating = false;
         if (state.currentOrder && state.currentOrder._id === action.payload._id) {
           state.currentOrder = action.payload;
         }
@@ -146,7 +154,7 @@ const orderSlice = createSlice({
         }
       })
       .addCase(cancelOrderThunk.rejected, (state, action) => {
-        state.loading = false;
+        state.mutating = false;
         state.error = action.payload;
       });
   },

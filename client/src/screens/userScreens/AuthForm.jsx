@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../../components/common/Icon';
 import { useAuthForm } from '../../components/hooks/useAuthForm';
 import { USER_ROLES } from '../../constants';
 
@@ -26,7 +27,7 @@ const AuthForm = () => {
     <div className="w-full max-w-[440px] flex flex-col items-center" id="auth-container">
       {/* Mobile Logo */}
       <div className="md:hidden mb-stack_lg flex items-center gap-2">
-        <span className="material-symbols-outlined text-primary text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>restaurant</span>
+        <Icon name="restaurant" className="text-primary text-[32px]" filled />
         <h2 className="font-h2-mobile text-h2-mobile text-primary font-extrabold tracking-tight">Foodora</h2>
       </div>
 
@@ -61,7 +62,7 @@ const AuthForm = () => {
       {/* Error Message from Global State or Form Validation */}
       {(errorMsg || Object.keys(errors).length > 0) && (
         <div className="w-full p-3 mb-4 bg-error-container text-on-error-container rounded-xl font-body text-small flex items-center gap-2 animate-in fade-in">
-          <span className="material-symbols-outlined text-[18px]">error</span>
+          <Icon name="error" className="text-[18px]" />
           {typeof errorMsg === 'string' && errorMsg ? errorMsg : Object.values(errors)[0]?.message || 'Please fix the errors below'}
         </div>
       )}
@@ -106,7 +107,7 @@ const AuthForm = () => {
           <div className="relative">
             <input {...register('password')} className={`w-full h-[52px] px-4 rounded-xl border transition-all font-body outline-none focus:ring-2 ${errors.password ? 'border-error focus:border-error focus:ring-error/20' : inputErrorClass}`} placeholder="••••••••" type={showPassword ? "text" : "password"} required />
             <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors" type="button">
-              <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+              <Icon name={showPassword ? 'visibility_off' : 'visibility'} />
             </button>
           </div>
         </div>
@@ -118,7 +119,7 @@ const AuthForm = () => {
           type="submit"
         >
           {isSubmitting ? (
-            <span className="inline-block animate-spin material-symbols-outlined">sync</span>
+            <Icon name="sync" className="inline-block animate-spin" />
           ) : isSuccess ? (
             'Success!'
           ) : isRegister ? (
@@ -132,7 +133,7 @@ const AuthForm = () => {
       {/* Success Popup at the bottom of the form */}
       {successMsg && (
         <div className="w-full p-3 mt-4 bg-tertiary/10 text-tertiary rounded-xl font-body text-small flex items-center gap-2 animate-in fade-in">
-          <span className="material-symbols-outlined text-[18px]">check_circle</span>
+          <Icon name="check_circle" className="text-[18px]" />
           {successMsg}
         </div>
       )}

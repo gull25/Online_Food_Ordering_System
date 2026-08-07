@@ -6,11 +6,12 @@ export const fetchFeaturedRestaurants = createAsyncThunk(
     'restaurants/fetchFeatured',
     async (params, { rejectWithValue }) => {
         try {
-            let url = '/restaurants?featured=true';
-            if (params && params.lat && params.lng) {
-                url += `&lat=${params.lat}&lng=${params.lng}`;
+            const query = new URLSearchParams({ featured: 'true' });
+            if (params?.lat && params?.lng) {
+                query.set('lat', params.lat);
+                query.set('lng', params.lng);
             }
-            const response = await api.get(url);
+            const response = await api.get(`/restaurants?${query.toString()}`);
             return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch featured restaurants');
@@ -30,11 +31,21 @@ export const fetchRestaurantDetails = createAsyncThunk(
     }
 );
 
+/**
+ * List and detail track their own loading/error state.
+ *
+ * They previously shared one `loading` flag, so a detail fetch resolving would
+ * flip the featured list out of its loading state (and vice versa) — the two
+ * requests raced and whichever finished last dictated both spinners. Splitting
+ * them means each surface reflects only its own request.
+ */
 const initialState = {
     featuredRestaurants: [],
     currentRestaurant: null,
-    loading: false,
-    error: null,
+    listLoading: false,
+    listError: null,
+    detailLoading: false,
+    detailError: null,
     userLocation: null, // { lat, lng }
 };
 
@@ -44,6 +55,7 @@ const restaurantSlice = createSlice({
     reducers: {
         clearCurrentRestaurant: (state) => {
             state.currentRestaurant = null;
+            state.detailError = null;
         },
         setUserLocation: (state, action) => {
             state.userLocation = action.payload;
@@ -53,29 +65,30 @@ const restaurantSlice = createSlice({
         builder
             // Fetch Featured
             .addCase(fetchFeaturedRestaurants.pending, (state) => {
-                state.loading = true;
-                state.error = null;
+                state.listLoading = true;
+                state.listError = null;
             })
             .addCase(fetchFeaturedRestaurants.fulfilled, (state, action) => {
-                state.loading = false;
+                state.listLoading = false;
                 state.featuredRestaurants = action.payload || [];
             })
             .addCase(fetchFeaturedRestaurants.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
+                state.listLoading = false;
+                state.listError = action.payload;
             })
             // Fetch Details
             .addCase(fetchRestaurantDetails.pending, (state) => {
-                state.loading = true;
-                state.error = null;
+                state.detailLoading = true;
+                state.detailError = null;
             })
             .addCase(fetchRestaurantDetails.fulfilled, (state, action) => {
-                state.loading = false;
+                state.detailLoading = false;
                 state.currentRestaurant = action.payload || null;
             })
             .addCase(fetchRestaurantDetails.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
+                state.detailLoading = false;
+                state.detailError = action.payload;
+                state.currentRestaurant = null;
             });
     },
 });

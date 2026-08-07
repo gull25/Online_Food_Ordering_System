@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../../common/Icon';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
@@ -39,16 +40,16 @@ const RestaurantCard = ({ restaurant }) => {
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-h3 text-h3 font-bold">{name}</h3>
           <div className="bg-surface-container px-2 py-1 rounded-lg text-primary font-bold text-label flex items-center gap-1">
-            <span className="material-symbols-outlined text-[16px] fill">star</span> {rating}
+            <Icon name="star" className="text-[16px]" filled /> {rating}
           </div>
         </div>
         <p className="text-body text-secondary mb-4">{cardTags.join(' • ')}</p>
         <div className="flex items-center gap-4 text-small text-secondary border-t border-outline-variant pt-4">
           <div className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[18px]">schedule</span> {cardTime}
+            <Icon name="schedule" className="text-[18px]" /> {cardTime}
           </div>
           <div className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[18px]">payments</span> Min. ${minOrder}
+            <Icon name="payments" className="text-[18px]" /> Min. ${minOrder}
           </div>
         </div>
       </div>

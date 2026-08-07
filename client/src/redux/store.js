@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
-import cartReducer from './cartSlice';
+import cartReducer, { persistCart } from './cartSlice';
 import productReducer from './productSlice';
 import themeReducer from './themeSlice';
 import orderReducer from './orderSlice';
@@ -29,5 +29,20 @@ export const store = configureStore({
     admin: adminReducer,
     rider: riderReducer,
   },
-  devTools: process.env.NODE_ENV !== 'production',
+  devTools: import.meta.env.DEV,
+});
+
+/**
+ * Persist the cart on every change.
+ *
+ * Without this a page refresh silently emptied the cart — a user who reloaded
+ * mid-checkout lost everything they had selected. Only the cart slice is
+ * persisted; auth has its own storage and the rest is server-derived.
+ */
+let lastCartState = store.getState().cart;
+store.subscribe(() => {
+  const cartState = store.getState().cart;
+  if (cartState === lastCartState) return;
+  lastCartState = cartState;
+  persistCart(cartState);
 });

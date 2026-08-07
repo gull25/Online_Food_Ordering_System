@@ -10,8 +10,13 @@ export const ADMIN_SIDEBAR_LINKS = [
   { id: 'analytics', label: 'Analytics', path: APP_ROUTES.ADMIN_ANALYTICS, icon: 'analytics', roles: [] }
 ];
 
+/**
+ * Single source of truth for rider navigation — the desktop sidebar and the
+ * mobile bottom bar both render from this list, so they can't disagree about
+ * which destinations exist. `shortLabel` is what the narrow bottom bar shows.
+ */
 export const RIDER_SIDEBAR_LINKS = [
-  { id: 'dashboard', label: 'Overview', path: APP_ROUTES.RIDER_DASHBOARD, icon: 'dashboard' },
-  { id: 'active-deliveries', label: 'Active Deliveries', path: APP_ROUTES.RIDER_DELIVERIES, icon: 'local_shipping' },
-  { id: 'earnings', label: 'Earnings', path: APP_ROUTES.RIDER_EARNINGS, icon: 'account_balance_wallet' }
+  { id: 'dashboard', label: 'Overview', shortLabel: 'Home', path: APP_ROUTES.RIDER_DASHBOARD, icon: 'dashboard' },
+  { id: 'active-deliveries', label: 'Active Deliveries', shortLabel: 'Tasks', path: APP_ROUTES.RIDER_DELIVERIES, icon: 'local_shipping' },
+  { id: 'earnings', label: 'Earnings', shortLabel: 'Earnings', path: APP_ROUTES.RIDER_EARNINGS, icon: 'account_balance_wallet' }
 ];

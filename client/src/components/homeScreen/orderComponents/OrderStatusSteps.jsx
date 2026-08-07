@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../../common/Icon';
 const OrderStatusSteps = ({ TIMELINE_STEPS, currentStep }) => {
   return (
     <div className="relative pt-stack_sm flex flex-col gap-y-8">
@@ -31,9 +32,7 @@ const OrderStatusSteps = ({ TIMELINE_STEPS, currentStep }) => {
               }`}
             >
               {isCompleted ? (
-                <span className="material-symbols-outlined text-[14px] font-bold">
-                  check
-                </span>
+                <Icon name="check" className="text-[14px] font-bold" />
               ) : isActive ? (
                 <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
               ) : null}

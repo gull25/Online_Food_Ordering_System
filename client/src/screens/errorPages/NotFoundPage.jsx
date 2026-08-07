@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../../components/common/Icon';
 import { Link } from 'react-router-dom';
 
 /**
@@ -14,12 +15,7 @@ const NotFoundPage = () => {
       </span>
 
       {/* Icon */}
-      <span
-        className="material-symbols-outlined text-primary text-[64px] -mt-4 mb-stack_md"
-        style={{ fontVariationSettings: "'FILL' 1" }}
-      >
-        sentiment_dissatisfied
-      </span>
+      <Icon name="sentiment_dissatisfied" className="text-primary text-[64px] -mt-4 mb-stack_md" filled />
 
       {/* Heading */}
       <h1 className="font-h2 text-h2 text-on-surface font-bold mb-2">
@@ -34,7 +30,7 @@ const NotFoundPage = () => {
       {/* CTA */}
       <Link
         to="/"
-        className="px-stack_lg py-3 bg-primary text-white font-button rounded-xl shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+        className="px-stack_lg py-3 bg-primary text-on-primary font-button rounded-xl shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all duration-200"
       >
         Back to Home
       </Link>

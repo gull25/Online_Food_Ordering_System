@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import Icon from '../../components/common/Icon';
 import { useNavigate, Link } from 'react-router-dom';
 import TopNavBar from '../../components/layout/Navbar';
 import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
@@ -9,7 +10,7 @@ import OrderSummary from '../../components/homeScreen/checkoutComponents/OrderSu
 import PaymentMethods from '../../components/homeScreen/checkoutComponents/PaymentMethods';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { clearCart, removeFromCart, addToCart } from '../../redux/cartSlice';
+import { clearCart, removeFromCart, addToCart, removeItemCompletely } from '../../redux/cartSlice';
 import { createOrderThunk } from '../../redux/orderSlice';
 import StripePaymentModal from '../../components/homeScreen/checkoutComponents/StripePaymentModal';
 import { loadStripe } from '@stripe/stripe-js';
@@ -49,23 +50,31 @@ const CheckoutPage = () => {
   const [pendingOrderId, setPendingOrderId] = useState(null);
   const [restaurantData, setRestaurantData] = useState(null);
 
+  // Keyed on the restaurant id rather than the cart array: the previous version
+  // re-fetched the restaurant every time a quantity changed, purely to read a
+  // delivery fee that cannot change between those renders.
   React.useEffect(() => {
+    if (!cartRestaurantId) {
+      setRestaurantData(null);
+      return;
+    }
+
+    let cancelled = false;
     const fetchRestaurant = async () => {
-      if (cartItems.length > 0) {
-        const restId = cartItems[0].restaurant?._id || cartItems[0].restaurant;
-        if (restId) {
-          try {
-            const { default: api } = await import('../../api/axios');
-            const res = await api.get(`/restaurants/${restId}`);
-            setRestaurantData(res.data.data);
-          } catch (err) {
-            console.error('Failed to fetch restaurant for checkout', err);
-          }
-        }
+      try {
+        const { default: api } = await import('../../api/axios');
+        const res = await api.get(`/restaurants/${cartRestaurantId}`);
+        if (!cancelled) setRestaurantData(res.data.data);
+      } catch (err) {
+        console.error('Failed to fetch restaurant for checkout', err);
       }
     };
     fetchRestaurant();
-  }, [cartItems]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cartRestaurantId]);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -80,12 +89,14 @@ const CheckoutPage = () => {
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (formError) setFormError('');
-    setCurrentStep(1);
+    // Only step backwards if the user has moved past the details step —
+    // this previously reset the progress indicator to 1 on every keystroke,
+    // so the indicator jumped backwards while typing an address.
+    setCurrentStep((step) => (step > 1 ? 1 : step));
   };
 
   const handleDeliveryPreferenceChange = (pref) => {
     setDeliveryPreference(pref);
-    setCurrentStep(1);
   };
 
   const handlePaymentMethodChange = (method) => {
@@ -104,13 +115,15 @@ const CheckoutPage = () => {
     }
   };
 
+  /**
+   * Removes a line in one action.
+   *
+   * This used to dispatch `removeFromCart` once per unit in a loop, so deleting
+   * a quantity-8 line fired eight store updates and eight re-renders of the
+   * whole checkout.
+   */
   const deleteItem = (cartItemId) => {
-    const cartItem = cartItems.find(i => i.cartItemId === cartItemId);
-    if (cartItem) {
-      for (let i = 0; i < cartItem.quantity; i++) {
-        dispatch(removeFromCart(cartItemId));
-      }
-    }
+    dispatch(removeItemCompletely(cartItemId));
   };
 
   const handleApplyPromo = async () => {
@@ -242,7 +255,7 @@ const CheckoutPage = () => {
 
         {formError && (
           <div className="max-w-4xl mx-auto p-4 mb-6 bg-error-container text-on-error-container rounded-xl font-body text-small flex items-center gap-2 shadow-sm animate-in fade-in">
-            <span className="material-symbols-outlined">error</span>
+            <Icon name="error" />
             <span>{formError}</span>
           </div>
         )}
@@ -259,15 +272,13 @@ const CheckoutPage = () => {
               {cartItems.length === 0 ? (
                 <div className="py-16 flex flex-col items-center justify-center text-center bg-surface-container-lowest rounded-xl">
                   <div className="w-24 h-24 bg-surface-variant rounded-full flex items-center justify-center mb-6">
-                    <span className="material-symbols-outlined text-5xl text-on-surface-variant">
-                      shopping_cart_off
-                    </span>
+                    <Icon name="shopping_cart_off" className="text-5xl text-on-surface-variant" />
                   </div>
                   <h3 className="text-h3 font-h3 mb-2 text-on-surface">Your Cart is Empty</h3>
                   <p className="text-body font-body text-secondary max-w-md mx-auto mb-6">Looks like you haven't added any delicious items to your cart yet.</p>
                   <Link to="/" className="px-6 h-12 bg-primary text-on-primary rounded-xl font-button text-button flex items-center gap-2 hover:opacity-90 transition-opacity">
                     <span>Browse Restaurants</span>
-                    <span className="material-symbols-outlined">arrow_forward</span>
+                    <Icon name="arrow_forward" />
                   </Link>
                 </div>
               ) : (
@@ -323,10 +334,10 @@ const CheckoutPage = () => {
               <button
                 onClick={handleSubmitOrder}
                 disabled={isSubmitting}
-                className={`w-full h-14 bg-primary-container text-white font-button text-button rounded-xl shadow-lg shadow-primary-container/20 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`w-full h-14 bg-primary text-on-primary font-button text-button rounded-xl shadow-lg shadow-primary-container/20 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 <span>{isSubmitting ? 'Placing Order...' : 'Place Order'}</span>
-                {!isSubmitting && <span className="material-symbols-outlined">arrow_forward</span>}
+                {!isSubmitting && <Icon name="arrow_forward" />}
               </button>
 
               <p className="text-center text-secondary text-[12px] mt-4 px-4">

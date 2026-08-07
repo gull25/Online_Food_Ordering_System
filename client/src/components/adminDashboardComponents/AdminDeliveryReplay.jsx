@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { iconMarkup } from '../../helper/mapIconMarkup';
+import Icon from '../common/Icon';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -38,7 +40,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
   const restaurantIcon = useMemo(() => new L.DivIcon({
     className: '',
     html: `<div style="width:32px;height:32px;background:#1c1b1f;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
-             <span class="material-symbols-outlined" style="font-size:16px;color:white">restaurant</span>
+             ${iconMarkup('restaurant', { size: 16, color: 'white' })}
            </div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
@@ -47,7 +49,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
   const customerIcon = useMemo(() => new L.DivIcon({
     className: '',
     html: `<div style="width:32px;height:32px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #ae3200;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
-             <span class="material-symbols-outlined" style="font-size:16px;color:#ae3200">home</span>
+             ${iconMarkup('home', { size: 16, color: '#ae3200' })}
            </div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
@@ -56,7 +58,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
   const riderIcon = useMemo(() => new L.DivIcon({
     className: '',
     html: `<div style="width:36px;height:36px;background:#ae3200;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 10px rgba(174,50,0,0.4)">
-             <span class="material-symbols-outlined" style="font-size:20px;color:white">two_wheeler</span>
+             ${iconMarkup('two_wheeler', { size: 20, color: 'white' })}
            </div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 18],
@@ -124,7 +126,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
         <div className="bg-surface-container-lowest max-w-lg w-full rounded-2xl p-6 shadow-2xl">
           <h3 className="text-h3 font-bold text-on-surface mb-2">Delivery Playback</h3>
           <p className="text-on-surface-variant">No route history available for this order.</p>
-          <button onClick={onClose} className="mt-4 px-4 py-2 bg-primary text-white rounded-xl">Close</button>
+          <button onClick={onClose} className="mt-4 px-4 py-2 bg-primary text-on-primary rounded-xl">Close</button>
         </div>
       </div>
     );
@@ -149,7 +151,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
         <div className="px-6 py-4 border-b border-outline-variant/20 flex justify-between items-center bg-surface">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary">history</span>
+              <Icon name="history" className="text-primary" />
             </div>
             <div>
               <h3 className="font-h3 text-h3 font-bold text-on-surface leading-tight">Delivery Playback</h3>
@@ -157,7 +159,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
             </div>
           </div>
           <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-surface-variant flex items-center justify-center text-secondary transition-colors">
-            <span className="material-symbols-outlined">close</span>
+            <Icon name="close" />
           </button>
         </div>
 
@@ -212,11 +214,9 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
         <div className="px-6 py-4 bg-surface border-t border-outline-variant/20 flex items-center gap-4">
           <button 
             onClick={togglePlayback}
-            className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center hover:opacity-90 shadow-md transition-opacity shrink-0"
+            className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center hover:opacity-90 shadow-md transition-opacity shrink-0"
           >
-            <span className="material-symbols-outlined text-[24px]">
-              {isPlaying ? 'pause' : (currentIndex >= routeHistory.length - 1 ? 'replay' : 'play_arrow')}
-            </span>
+            <Icon name={isPlaying ? 'pause' : (currentIndex >= routeHistory.length - 1 ? 'replay' : 'play_arrow')} className="text-[24px]" />
           </button>
           
           <div className="flex-1 flex flex-col gap-1">

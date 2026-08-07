@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Icon from '../../components/common/Icon';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useDebounce } from '../../helper/useDebounce';
@@ -9,7 +10,21 @@ import FlashSaleBanner from '../../components/homeScreen/offersComponents/FlashS
 import OffersFilter from '../../components/homeScreen/offersComponents/OffersFilter';
 import NewUserDiscounts from '../../components/homeScreen/offersComponents/NewUserDiscounts';
 import api from '../../api/axios';
-import LoadingSkeleton from '../../components/common/LoadingSkeleton';
+import { OfferGridSkeleton, Skeleton } from '../../components/common/Skeleton';
+import { Reveal } from '../../components/common/Reveal';
+
+/**
+ * Resolves a usable image for an offer card.
+ *
+ * The API stores 'no-photo.jpg' as its "no image" sentinel and may omit the
+ * field entirely. The previous expression (`offer.image !== 'no-photo.jpg'`)
+ * was true for `undefined` too, so cards with no image rendered `src={undefined}`
+ * and showed a broken-image icon.
+ */
+const getOfferImage = (offer) => {
+  const candidates = [offer?.image, offer?.restaurantId?.image, offer?.restaurantId?.images?.banner];
+  return candidates.find((src) => src && src !== 'no-photo.jpg') || null;
+};
 
 const OffersPage = () => {
   // ── URL param: present when navigated via /restaurant/:id/offers ──────────
@@ -137,16 +152,23 @@ const OffersPage = () => {
     }
   };
 
-  if (loading) return <LoadingSkeleton />;
-
   return (
     <div className="bg-background text-on-background font-body min-h-screen relative flex flex-col">
       <TopNavBar />
 
-      <main className="max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg flex-grow w-full">
+      <main className="max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg grow w-full">
 
         {/* Restaurant context header — shown only in restaurant-specific mode */}
-        {restaurant && (
+        {loading && activeRestaurantId && (
+          <div className="flex items-center gap-4 mb-stack_md">
+            <Skeleton rounded="rounded-full" className="h-12 w-12" />
+            <div className="flex flex-col gap-2">
+              <Skeleton rounded="rounded" className="h-3 w-20" />
+              <Skeleton rounded="rounded" className="h-6 w-40" />
+            </div>
+          </div>
+        )}
+        {!loading && restaurant && (
           <div className="flex items-center gap-4 mb-stack_md">
             <Link to={`/restaurant/${restaurant._id}`} className="flex items-center gap-3 group">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-outline-variant/30 bg-surface-container flex-shrink-0 group-hover:border-primary transition-colors">
@@ -166,47 +188,66 @@ const OffersPage = () => {
           </div>
         )}
 
-        {/* Flash Sale Banner */}
-        <FlashSaleBanner
-          formattedTime={formattedTime}
-          copyPromoCode={copyPromoCode}
-          copiedCode={copiedCode}
-          offer={flashOffer}
-        />
+        {/* Flash Sale Banner — hero deal, hidden while loading and when absent */}
+        {loading ? (
+          <Skeleton rounded="rounded-32" className="w-full h-100 mb-stack_lg" />
+        ) : (
+          <FlashSaleBanner
+            formattedTime={formattedTime}
+            copyPromoCode={copyPromoCode}
+            copiedCode={copiedCode}
+            offer={flashOffer}
+          />
+        )}
 
         {/* Search Bar */}
         <OffersFilter searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
-        {/* New User Discounts (Bento Style Layout) */}
-        <NewUserDiscounts
-          copyPromoCode={copyPromoCode}
-          copiedCode={copiedCode}
-          offers={newOffers}
-        />
+        {/* Highlighted offers (Bento Style Layout) */}
+        {!loading && (
+          <NewUserDiscounts
+            copyPromoCode={copyPromoCode}
+            copiedCode={copiedCode}
+            offers={newOffers}
+          />
+        )}
 
         {/* All Offers Grid */}
         <section className="mb-stack_lg">
-          <div className="flex items-center justify-between mb-stack_md">
+          <div className="flex items-center justify-between mb-stack_md gap-4">
             <div className="flex items-center gap-3">
-              <h2 className="font-h2 text-h2-mobile md:text-h2 text-on-surface">Buy One Get One</h2>
-              <span className="bg-error-container text-on-error-container px-2 py-0.5 rounded font-label text-[10px] font-extrabold animate-bounce">
-                HOT
-              </span>
+              <h2 className="font-h2 text-h2-mobile md:text-h2 text-on-surface">All Offers</h2>
+              {!loading && filteredOffers.length > 0 && (
+                <span className="bg-primary-container/15 text-primary px-2.5 py-1 rounded-full font-label text-label">
+                  {filteredOffers.length}
+                </span>
+              )}
             </div>
           </div>
 
+          {loading && <OfferGridSkeleton count={4} />}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
-            {filteredOffers.map((offer) => (
+            {!loading && filteredOffers.map((offer) => (
               <div
                 key={offer._id}
-                className="bg-surface-container-lowest border border-outline-variant/30 rounded-[16px] overflow-hidden flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 group"
+                className="bg-surface-container-lowest border border-outline-variant/30 rounded-16 overflow-hidden flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 group animate-in fade-in slide-in-from-bottom-2 duration-500"
               >
                 <div className="relative h-48 overflow-hidden bg-surface-container-low">
-                  <img
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    alt={offer.title}
-                    src={offer.image !== 'no-photo.jpg' ? offer.image : (offer.restaurantId?.image || 'https://via.placeholder.com/400x300')}
-                  />
+                  {getOfferImage(offer) ? (
+                    <img
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      alt={offer.title}
+                      loading="lazy"
+                      src={getOfferImage(offer)}
+                    />
+                  ) : (
+                    // No image on the offer or its restaurant. A branded tile
+                    // beats a broken-image icon or a dead placeholder host.
+                    <div className="w-full h-full bg-gradient-to-br from-primary-container/25 to-tertiary-container/20 flex items-center justify-center">
+                      <Icon name="local_offer" className="text-[56px] text-primary/50" />
+                    </div>
+                  )}
                   <div
                     className={`absolute top-3 left-3 font-bold px-3 py-1 rounded-lg text-small shadow-sm ${
                       offer.type === 'EXCLUSIVE' ? 'bg-primary-container text-on-primary-container' : 'bg-primary text-on-primary'
@@ -219,25 +260,33 @@ const OffersPage = () => {
                       -{offer.discountPercentage}%
                     </div>
                   )}
-                  <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/60 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-full">
-                    <span className="material-symbols-outlined text-[12px]">schedule</span>{' '}
-                    Valid until {new Date(offer.validUntil).toLocaleDateString()}
-                  </div>
+                  {offer.validUntil && (
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/60 backdrop-blur-md text-white text-[12px] px-2 py-1 rounded-full">
+                      <Icon name="schedule" className="text-[12px]" />{' '}
+                      Valid until {new Date(offer.validUntil).toLocaleDateString()}
+                    </div>
+                  )}
                 </div>
-                <div className="p-4 flex-grow flex flex-col justify-between">
+                <div className="p-4 grow flex flex-col justify-between">
                   <div>
                     {/* Restaurant info — shown in global mode */}
-                    {!activeRestaurantId && offer.restaurantId && (
+                    {!activeRestaurantId && offer.restaurantId?.name && (
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 rounded-full bg-surface-container overflow-hidden border border-outline-variant/30 flex-shrink-0">
-                          <img
-                            className="w-full h-full object-cover"
-                            alt={offer.restaurantId?.name}
-                            src={offer.restaurantId?.image || 'https://via.placeholder.com/150'}
-                          />
+                        <div className="w-8 h-8 rounded-full bg-surface-container overflow-hidden border border-outline-variant/30 shrink-0 flex items-center justify-center">
+                          {offer.restaurantId.image ? (
+                            <img
+                              className="w-full h-full object-cover"
+                              alt=""
+                              aria-hidden="true"
+                              loading="lazy"
+                              src={offer.restaurantId.image}
+                            />
+                          ) : (
+                            <Icon name="storefront" className="text-[16px] text-on-surface-variant" />
+                          )}
                         </div>
                         <span className="font-button text-small text-on-surface truncate">
-                          {offer.restaurantId?.name}
+                          {offer.restaurantId.name}
                         </span>
                       </div>
                     )}
@@ -263,7 +312,7 @@ const OffersPage = () => {
                       to={`/restaurant/${offer.restaurantId?._id || activeRestaurantId}`}
                       className="px-4 py-3.5 rounded-xl bg-surface-container text-on-surface-variant hover:bg-primary hover:text-on-primary hover:shadow-sm font-button text-button text-center transition-all flex items-center justify-center"
                     >
-                      <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>
+                      <Icon name="restaurant_menu" className="text-[20px]" />
                     </Link>
                   </div>
                 </div>
@@ -272,11 +321,9 @@ const OffersPage = () => {
           </div>
 
           {/* Empty search state */}
-          {filteredOffers.length === 0 && (
+          {!loading && filteredOffers.length === 0 && (
             <div className="bg-surface-container-lowest rounded-16 p-12 text-center border border-outline-variant/30 mt-8 shadow-sm">
-              <span className="material-symbols-outlined text-4xl text-on-secondary-container mb-2">
-                search_off
-              </span>
+              <Icon name="search_off" className="text-4xl text-on-secondary-container mb-2" />
               <h3 className="font-h3 text-h3 text-on-surface mb-2">No promotions found</h3>
               <p className="text-on-surface/80 max-w-md mx-auto">
                 {searchQuery
@@ -290,7 +337,7 @@ const OffersPage = () => {
         </section>
 
         {/* How it works */}
-        <section className="bg-surface-container-high rounded-[32px] p-8 md:p-12 mb-stack_lg overflow-hidden relative shadow-sm">
+        <Reveal as="section" className="bg-surface-container-high rounded-32 p-8 md:p-12 mb-stack_lg overflow-hidden relative shadow-sm">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-stack_lg items-center">
             <div>
               <h2 className="font-h2 text-h2-mobile md:text-h2 text-on-surface mb-6">How to save more</h2>
@@ -318,30 +365,37 @@ const OffersPage = () => {
                 </div>
               </div>
             </div>
-            <div className="relative hidden lg:block h-[400px]">
+            <div className="relative hidden lg:block h-100">
               <img
                 className="w-full h-full object-contain rounded-2xl"
-                alt="Smartphone showing discount applied screen"
+                alt="Smartphone showing a discount applied at checkout"
+                loading="lazy"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0L7M4U-X5RDhfOZLk1cMV3SwuSUvpG_Z1PmStcizeL2CMV43-TUUrKSz6utpUSNK63m210YYXtP2rGoETQzItHpkQ69PhXnfXqw80VEXyHEoD6d3wrFmKpx2HUYo_gtkPDISe8g6C72Ex9zaV5G8jp7TGEe934wo8Hih6lhmARpZ-rMIokqAF2FojAaLiQ5ymC-j7Qeg2Uzjk1Y9sPmDxgsNbZvfktyZk50DQF_wJ0THMK3V6VbFalA"
               />
-              <div className="absolute -bottom-4 -right-4 bg-surface-container-lowest p-4 rounded-2xl shadow-xl flex items-center gap-3 animate-bounce border border-surface-variant">
-                <span className="material-symbols-outlined text-tertiary text-[32px]">check_circle</span>
+              {/* Floats gently rather than bouncing on a loop — a permanently
+                  animating badge pulls the eye away from the actual content. */}
+              <div
+                className="absolute -bottom-4 -right-4 bg-surface-container-lowest p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-surface-variant animate-in fade-in slide-in-from-bottom-4 duration-700"
+              >
+                <Icon name="check_circle" className="text-tertiary text-[32px]" />
                 <div>
-                  <p className="font-bold text-on-surface">Savings Applied!</p>
-                  <p className="text-small text-on-surface-variant">You saved $22.50</p>
+                  <p className="font-bold text-on-surface">Savings applied at checkout</p>
+                  <p className="text-small text-on-surface-variant">Promo codes are validated live</p>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </Reveal>
 
         {/* Newsletter Signup */}
-        <NewsletterSignup
-          newsletterSubscribed={newsletterSubscribed}
-          handleNewsletterSubmit={handleNewsletterSubmit}
-          newsletterEmail={newsletterEmail}
-          setNewsletterEmail={setNewsletterEmail}
-        />
+        <Reveal>
+          <NewsletterSignup
+            newsletterSubscribed={newsletterSubscribed}
+            handleNewsletterSubmit={handleNewsletterSubmit}
+            newsletterEmail={newsletterEmail}
+            setNewsletterEmail={setNewsletterEmail}
+          />
+        </Reveal>
       </main>
 
       <HomeFooter />

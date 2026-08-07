@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../Icon';
 const Loader = ({ fullPage = false }) => {
   return (
     <div
@@ -8,9 +9,7 @@ const Loader = ({ fullPage = false }) => {
       }`}
     >
       <div className="flex flex-col items-center gap-3">
-        <span className="material-symbols-outlined text-[48px] text-primary animate-spin">
-          sync
-        </span>
+        <Icon name="sync" className="text-[48px] text-primary animate-spin" />
         <span className="font-button text-small text-secondary">Loading...</span>
       </div>
     </div>
