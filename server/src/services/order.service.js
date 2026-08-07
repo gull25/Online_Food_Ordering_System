@@ -257,7 +257,7 @@ class OrderService {
     async updateOrderStatus(orderId, newStatus, role = 'admin', additionalData = {}) {
         const Order = require('../models/order.model');
         const { enforceTransition } = require('../utils/orderStatusMachine');
-        
+
         let order = await Order.findById(orderId);
         if (!order) throw new ApiError(404, 'Order not found');
 
@@ -279,7 +279,7 @@ class OrderService {
         // Socket notifications based on status
         try {
             socketManager.emitToOrderRoom(orderId, 'orderStatusUpdate', order);
-            
+
             switch (newStatus) {
                 case 'ACCEPTED':
                     socketManager.emitToOrderRoom(orderId, 'order:accepted', { orderId });
@@ -331,6 +331,10 @@ class OrderService {
 
         return { order, rider };
     }
+}
+
+module.exports = new OrderService();
+
 }
 
 module.exports = new OrderService();

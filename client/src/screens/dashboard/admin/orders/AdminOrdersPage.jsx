@@ -292,16 +292,16 @@ const AdminOrdersPage = () => {
                   <p className="font-label text-label text-secondary uppercase text-right mb-1">Status</p>
                   <span
                     className={`status-badge block text-center ${selectedOrder.status === 'DELIVERED'
-                        ? 'bg-green-100 text-green-700'
-                        : selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REJECTED'
-                          ? 'bg-red-100 text-red-700'
-                          : selectedOrder.status === 'PLACED' || selectedOrder.status === 'ACCEPTED'
-                            ? 'bg-gray-100 text-gray-700'
-                            : ['PREPARING', 'READY_FOR_PICKUP'].includes(selectedOrder.status)
-                              ? 'bg-orange-100 text-orange-700'
-                              : ['RIDER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(selectedOrder.status)
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-surface-variant text-on-surface-variant'
+                      ? 'bg-green-100 text-green-700'
+                      : selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REJECTED'
+                        ? 'bg-red-100 text-red-700'
+                        : selectedOrder.status === 'PLACED' || selectedOrder.status === 'ACCEPTED'
+                          ? 'bg-gray-100 text-gray-700'
+                          : ['PREPARING', 'READY_FOR_PICKUP'].includes(selectedOrder.status)
+                            ? 'bg-orange-100 text-orange-700'
+                            : ['RIDER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(selectedOrder.status)
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-surface-variant text-on-surface-variant'
                       }`}
                   >
                     {selectedOrder.status}
@@ -326,7 +326,7 @@ const AdminOrdersPage = () => {
                     value={assigningOrderId === selectedOrder._id ? selectedRiderId : ''}
                     onClick={() => { setAssigningOrderId(selectedOrder._id); fetchRiders(); }}
                     onChange={(e) => setSelectedRiderId(e.target.value)}
-                    className="flex-1 h-10 px-3 rounded-lg border border-outline-variant bg-white text-sm outline-none focus:border-primary"
+                    className="flex-1 h-10 px-3 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm outline-none focus:border-primary"
                   >
                     <option value="">Select a rider...</option>
                     {riders.map(r => (
@@ -351,12 +351,12 @@ const AdminOrdersPage = () => {
                   </h4>
                   <p className="text-xs text-secondary mb-3">Live real-time location from the Rider's device.</p>
                   <div className="h-[300px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
-                     <LiveTracker
-                        orderId={selectedOrder._id}
-                        restaurantLocation={selectedOrder.restaurant?.location}
-                        customerLocation={selectedOrder.deliveryAddress}
-                        isRiderView={false}
-                     />
+                    <LiveTracker
+                      orderId={selectedOrder._id}
+                      restaurantLocation={selectedOrder.restaurant?.location}
+                      customerLocation={selectedOrder.deliveryAddress}
+                      isRiderView={false}
+                    />
                   </div>
                 </div>
               )}
@@ -390,7 +390,7 @@ const AdminOrdersPage = () => {
                       toast.success(`Status updated to ${newStatus}`);
                     });
                 }}
-                className="flex-1 h-12 px-4 rounded-xl border border-outline-variant bg-white font-button text-small outline-none focus:border-primary cursor-pointer"
+                className="flex-1 h-12 px-4 rounded-xl border border-outline-variant bg-surface text-on-surface font-button text-small outline-none focus:border-primary cursor-pointer disabled:opacity-50"
               >
                 <option value="PLACED">Placed</option>
                 <option value="ACCEPTED">Accepted</option>
@@ -501,8 +501,8 @@ const AdminOrdersPage = () => {
                   setCurrentPage(1);
                 }}
                 className={`px-4 py-2 rounded-full font-label text-label transition-all cursor-pointer whitespace-nowrap ${activeFilter === btn.id
-                    ? 'bg-primary-container text-white font-bold'
-                    : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
+                  ? 'bg-primary-container text-white font-bold'
+                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
                   }`}
               >
                 {btn.label}
@@ -580,16 +580,16 @@ const AdminOrdersPage = () => {
                     <td className="px-6 py-4">
                       <span
                         className={`font-label text-label font-bold inline-block whitespace-nowrap ${order.status === 'DELIVERED'
-                            ? 'text-green-500'
-                            : order.status === 'CANCELLED' || order.status === 'REJECTED'
-                              ? 'text-red-500'
-                              : order.status === 'PLACED' || order.status === 'ACCEPTED'
-                                ? 'text-gray-400'
-                                : ['PREPARING', 'READY_FOR_PICKUP'].includes(order.status)
-                                  ? 'text-orange-500'
-                                  : ['RIDER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(order.status)
-                                    ? 'text-blue-500'
-                                    : 'text-on-surface-variant'
+                          ? 'text-green-500'
+                          : order.status === 'CANCELLED' || order.status === 'REJECTED'
+                            ? 'text-red-500'
+                            : order.status === 'PLACED' || order.status === 'ACCEPTED'
+                              ? 'text-gray-400'
+                              : ['PREPARING', 'READY_FOR_PICKUP'].includes(order.status)
+                                ? 'text-orange-500'
+                                : ['RIDER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(order.status)
+                                  ? 'text-blue-500'
+                                  : 'text-on-surface-variant'
                           }`}
                       >
                         {order.status}
@@ -641,8 +641,8 @@ const AdminOrdersPage = () => {
                   key={pg}
                   onClick={() => setCurrentPage(pg)}
                   className={`w-10 h-10 rounded-lg flex items-center justify-center font-button text-small cursor-pointer transition-all ${currentPage === pg
-                      ? 'bg-primary-container text-white font-bold'
-                      : 'border border-outline-variant text-secondary hover:bg-surface-variant'
+                    ? 'bg-primary-container text-white font-bold'
+                    : 'border border-outline-variant text-secondary hover:bg-surface-variant'
                     }`}
                 >
                   {pg}

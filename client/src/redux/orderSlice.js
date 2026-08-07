@@ -9,7 +9,8 @@ export const createOrderThunk = createAsyncThunk(
       const response = await api.post('/orders', orderData);
       return {
         order: response.data.data,
-        clientSecret: response.data.clientSecret
+        clientSecret: response.data.clientSecret,
+        paymentUrl: response.data.paymentUrl
       };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to place order');

@@ -104,7 +104,7 @@ exports.webhook = asyncHandler(async (req, res, next) => {
 
         if (orderId) {
             const order = await Order.findById(orderId).populate('user', 'email name');
-            if (order && order.status === 'Awaiting Payment') {
+            if (order && order.status === 'PENDING_PAYMENT') {
                 await confirmOrderPayment(order, 'stripe', paymentIntent.id, paymentIntent);
             }
         }
@@ -117,10 +117,10 @@ exports.easypaisaCallback = asyncHandler(async (req, res, next) => {
     const { orderId, transactionId, status, responseCode } = req.body;
 
     // Security: Verify hash/signature from Easypaisa here in production
-    
+
     if (orderId && status === 'SUCCESS') {
         const order = await Order.findById(orderId).populate('user', 'email name');
-        if (order && order.status === 'Awaiting Payment') {
+        if (order && order.status === 'PENDING_PAYMENT') {
             await confirmOrderPayment(order, 'easypaisa', transactionId, req.body);
             return res.json({ success: true, message: 'Order confirmed' });
         }
@@ -136,11 +136,13 @@ exports.jazzcashCallback = asyncHandler(async (req, res, next) => {
 
     if (orderId && pp_ResponseCode === '000') { // 000 means success in JazzCash
         const order = await Order.findById(orderId).populate('user', 'email name');
-        if (order && order.status === 'Awaiting Payment') {
+        if (order && order.status === 'PENDING_PAYMENT') {
             await confirmOrderPayment(order, 'jazzcash', pp_TxnRefNo, req.body);
             return res.json({ success: true, message: 'Order confirmed' });
         }
     }
 
     res.status(400).json({ success: false, message: 'Invalid or failed transaction' });
+});
+res.status(400).json({ success: false, message: 'Invalid or failed transaction' });
 });
