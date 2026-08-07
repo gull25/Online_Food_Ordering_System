@@ -64,10 +64,29 @@ export const fetchAdminAnalytics = createAsyncThunk(
   }
 );
 
+/**
+ * Loading state is split per concern.
+ *
+ * All four thunks previously shared one `loading` flag, and the orders table
+ * and dashboard rendered skeletons off it. Two consequences, both visible as
+ * flicker:
+ *
+ *  - Mutations blanked the list. Changing an order's status or assigning a
+ *    rider set `loading = true`, so the whole table dropped to skeleton rows
+ *    and snapped back on every single update.
+ *  - Concurrent fetches fought each other. The dashboard dispatches orders and
+ *    analytics together; whichever resolved first cleared the flag while the
+ *    other was still in flight, so skeletons appeared, vanished and reappeared.
+ *
+ * `updating` now covers mutations so lists stay on screen while a write is in
+ * flight, and the two fetches track independently.
+ */
 const initialState = {
   orders: [],
   analytics: null,
-  loading: false,
+  ordersLoading: false,
+  analyticsLoading: false,
+  updating: false,
   error: null,
   successMessage: null,
 };
@@ -77,7 +96,9 @@ const adminSlice = createSlice({
   initialState,
   reducers: {
     clearAdminState: (state) => {
-      state.loading = false;
+      state.ordersLoading = false;
+      state.analyticsLoading = false;
+      state.updating = false;
       state.error = null;
       state.successMessage = null;
     },
@@ -89,25 +110,25 @@ const adminSlice = createSlice({
     builder
       // fetchAdminOrders
       .addCase(fetchAdminOrders.pending, (state) => {
-        state.loading = true;
+        state.ordersLoading = true;
         state.error = null;
       })
       .addCase(fetchAdminOrders.fulfilled, (state, action) => {
-        state.loading = false;
+        state.ordersLoading = false;
         state.orders = action.payload;
       })
       .addCase(fetchAdminOrders.rejected, (state, action) => {
-        state.loading = false;
+        state.ordersLoading = false;
         state.error = action.payload;
       })
       
       // updateAdminOrderStatus
       .addCase(updateAdminOrderStatus.pending, (state) => {
-        state.loading = true;
+        state.updating = true;
         state.error = null;
       })
       .addCase(updateAdminOrderStatus.fulfilled, (state, action) => {
-        state.loading = false;
+        state.updating = false;
         state.successMessage = 'Order status updated successfully';
         const updatedOrder = action.payload;
         const index = state.orders.findIndex(o => o._id === updatedOrder._id);
@@ -116,17 +137,17 @@ const adminSlice = createSlice({
         }
       })
       .addCase(updateAdminOrderStatus.rejected, (state, action) => {
-        state.loading = false;
+        state.updating = false;
         state.error = action.payload;
       })
       
       // assignAdminRiderThunk
       .addCase(assignAdminRiderThunk.pending, (state) => {
-        state.loading = true;
+        state.updating = true;
         state.error = null;
       })
       .addCase(assignAdminRiderThunk.fulfilled, (state, action) => {
-        state.loading = false;
+        state.updating = false;
         state.successMessage = 'Rider assigned successfully';
         const updatedOrder = action.payload;
         const index = state.orders.findIndex(o => o._id === updatedOrder._id);
@@ -135,21 +156,21 @@ const adminSlice = createSlice({
         }
       })
       .addCase(assignAdminRiderThunk.rejected, (state, action) => {
-        state.loading = false;
+        state.updating = false;
         state.error = action.payload;
       })
 
       // fetchAdminAnalytics
       .addCase(fetchAdminAnalytics.pending, (state) => {
-        state.loading = true;
+        state.analyticsLoading = true;
         state.error = null;
       })
       .addCase(fetchAdminAnalytics.fulfilled, (state, action) => {
-        state.loading = false;
+        state.analyticsLoading = false;
         state.analytics = action.payload;
       })
       .addCase(fetchAdminAnalytics.rejected, (state, action) => {
-        state.loading = false;
+        state.analyticsLoading = false;
         state.error = action.payload;
       });
   },

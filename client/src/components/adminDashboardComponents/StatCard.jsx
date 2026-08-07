@@ -1,18 +1,17 @@
 import React from 'react';
 
+import Icon from '../common/Icon';
 const StatCard = ({ icon, trendText, trendUp, title, value, colorClass, iconColorClass }) => {
   return (
     <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all">
       <div className="flex justify-between items-start mb-4">
         <div className={`p-3 ${colorClass} rounded-xl ${iconColorClass} flex`}>
-          <span className="material-symbols-outlined">{icon}</span>
+          <Icon name={icon} />
         </div>
         {trendText && (
           <span className={`flex items-center ${trendUp ? 'text-tertiary' : 'text-primary'} font-label text-label`}>
             {trendUp !== undefined && (
-              <span className="material-symbols-outlined !text-sm mr-1">
-                {trendUp ? 'trending_up' : 'trending_down'}
-              </span>
+              <Icon name={trendUp ? 'trending_up' : 'trending_down'} className="text-sm mr-1" />
             )}
             {trendText}
           </span>

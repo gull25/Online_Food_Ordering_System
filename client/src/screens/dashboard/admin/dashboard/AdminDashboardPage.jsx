@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import Icon from '../../../../components/common/Icon';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import axiosInstance from '../../../../api/axios';
@@ -8,15 +9,15 @@ import StatCard from '../../../../components/adminDashboardComponents/StatCard';
 import OrderStatusSimulator from '../../../../components/adminDashboardComponents/OrderStatusSimulator';
 import AdminLiveDeliveries from '../../../../components/adminDashboardComponents/AdminLiveDeliveries';
 import { generateChartPaths } from '../../../../helper/chartUtils';
-
-// We use dynamic charting instead of static now
-const CHART_DATA_SET = {};
+import { StatCardSkeleton, ChartSkeleton } from '../../../../components/common/Skeleton';
+import { isTerminalOrder } from '../../../../constants/orderStatus';
+import { USER_ROLES, APP_ROUTES } from '../../../../constants';
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { analytics, orders, loading } = useSelector((state) => state.admin);
+  const { analytics, orders, analyticsLoading } = useSelector((state) => state.admin);
   const { user } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -24,8 +25,9 @@ const AdminDashboardPage = () => {
     dispatch(fetchAdminOrders());
   }, [dispatch]);
 
-  // Navigation active tab
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // True only for the very first load, so a background refresh doesn't blank
+  // out a dashboard the user is already reading.
+  const isInitialLoad = analyticsLoading && !analytics;
 
   const [chartRange, setChartRange] = useState('30');
   const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -70,15 +72,21 @@ const AdminDashboardPage = () => {
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState('');
+  const toastTimerRef = useRef(null);
 
-  // Handle toast trigger
+  // Handle toast trigger. The timer is tracked so a rapid second toast doesn't
+  // get cleared early by the first one's pending timeout, and so nothing fires
+  // after unmount.
   const showToast = (message) => {
     setToastMessage(message);
-    setTimeout(() => setToastMessage(''), 3000);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToastMessage(''), 3000);
   };
 
+  useEffect(() => () => clearTimeout(toastTimerRef.current), []);
+
   // Find the most recent active order to simulate
-  const activeOrderRaw = orders.find(o => !['DELIVERED', 'CANCELLED', 'REJECTED', 'REFUNDED'].includes(o.status)) || orders[0];
+  const activeOrderRaw = orders.find((o) => !isTerminalOrder(o.status)) || orders[0];
   
   const activeOrder = activeOrderRaw ? {
     id: `#${activeOrderRaw._id.substring(activeOrderRaw._id.length - 6).toUpperCase()}`,
@@ -98,16 +106,6 @@ const AdminDashboardPage = () => {
         setActiveDropdownId(null);
         showToast(`Order updated to ${newStatus}`);
       });
-  };
-
-  // Add Restaurant form submission
-  const handleAddRestaurant = (e) => {
-    e.preventDefault();
-    if (restaurantName.trim()) {
-      showToast(`Restaurant "${restaurantName}" successfully added!`);
-      setIsModalOpen(false);
-      setRestaurantName('');
-    }
   };
 
   // Quick Action handling
@@ -140,33 +138,20 @@ const AdminDashboardPage = () => {
 
   return (
     <div className="bg-background font-body text-on-surface antialiased overflow-x-hidden min-h-screen">
-      <style>{`
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-          display: inline-block;
-          line-height: 1;
-        }
-        .glass-card {
-          background: rgba(255, 255, 255, 0.8);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-        }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
 
       {/* Toast Alert overlay */}
       {toastMessage && (
-        <div className="fixed top-6 right-6 z-[70] bg-inverse-surface text-white px-6 py-4 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
-          <span className="material-symbols-outlined text-primary-fixed">info</span>
+        <div className="fixed top-6 right-6 z-[70] bg-inverse-surface text-inverse-on-surface px-6 py-4 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
+          <Icon name="info" className="text-primary-fixed" />
           <span className="font-button text-button text-sm">{toastMessage}</span>
         </div>
       )}
 
       {/* (Restaurant Addition Modal Removed, user is routed to /admin/onboarding instead) */}
 
-      {/* Main Content Canvas */}
-      <main className="p-margin_desktop max-w-container_max">
+      {/* Main Content Canvas. `max-w` without `mx-auto` left the whole
+          dashboard hard against the left edge on wide screens. */}
+      <main className="p-margin_mobile md:p-margin_desktop max-w-container_max mx-auto">
         {/* Header */}
         <AdminHeader 
           title={`Welcome back, ${user?.name?.split(' ')[0] || 'Admin'}`}
@@ -178,46 +163,60 @@ const AdminDashboardPage = () => {
 
         {/* Metric Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-stack_lg">
+          {isInitialLoad ? (
+            // Real skeletons instead of the previous "..." / "Loading..."
+            // placeholders, which made finished cards jump as the text resized.
+            Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          ) : (
+          <>
           <StatCard
             icon="shopping_bag"
             colorClass="bg-primary/5"
             iconColorClass="text-primary"
-            trendText={analytics?.trends ? analytics.trends.orders : "Loading..."}
-            trendUp={analytics?.trends ? analytics.trends.orders.includes('+') : true}
+            trendText={analytics?.trends?.orders}
+            trendUp={analytics?.trends?.orders?.includes('+')}
             title="Total Orders"
-            value={analytics ? analytics.orders.total.toLocaleString() : "..."}
+            // Optional chaining throughout: a partial analytics payload (any
+            // missing sub-object) previously threw and blanked the dashboard.
+            value={(analytics?.orders?.total ?? 0).toLocaleString()}
           />
           <StatCard
             icon="payments"
             colorClass="bg-tertiary/5"
             iconColorClass="text-tertiary"
-            trendText={analytics?.trends ? analytics.trends.revenue : "Loading..."}
-            trendUp={analytics?.trends ? analytics.trends.revenue.includes('+') : true}
+            trendText={analytics?.trends?.revenue}
+            trendUp={analytics?.trends?.revenue?.includes('+')}
             title="Total Revenue"
-            value={analytics ? `$${analytics.orders.revenue.toLocaleString()}` : "..."}
+            value={`$${(analytics?.orders?.revenue ?? 0).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`}
           />
           <StatCard
             icon="group"
             colorClass="bg-on-secondary-fixed-variant/5"
             iconColorClass="text-secondary"
-            trendText={analytics?.trends ? analytics.trends.customers : "Loading..."}
-            trendUp={analytics?.trends ? analytics.trends.customers.includes('+') : true}
+            trendText={analytics?.trends?.customers}
+            trendUp={analytics?.trends?.customers?.includes('+')}
             title="Active Customers"
-            value={analytics ? analytics.users.totalCustomers.toLocaleString() : "..."}
+            value={(analytics?.users?.totalCustomers ?? 0).toLocaleString()}
           />
           <StatCard
             icon="restaurant"
             colorClass="bg-outline/5"
             iconColorClass="text-on-surface-variant"
-            trendText={analytics?.trends ? analytics.trends.restaurants : "Loading..."}
+            trendText={analytics?.trends?.restaurants}
             trendUp={undefined}
             title="Active Restaurants"
-            value={analytics ? analytics.restaurants.active.toLocaleString() : "..."}
+            value={(analytics?.restaurants?.active ?? 0).toLocaleString()}
           />
+          </>
+          )}
         </section>
 
         {/* Main Chart Section */}
         <section className="mb-stack_lg">
+          {isInitialLoad ? <ChartSkeleton height={360} /> : (
           <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
             <div className="flex items-center justify-between mb-stack_lg">
               <div>
@@ -292,37 +291,51 @@ const AdminDashboardPage = () => {
                     fill="none"
                     stroke="#ae3200"
                     strokeLinecap="round"
+                    strokeLinejoin="round"
                     strokeWidth="4"
+                    // preserveAspectRatio="none" scales x and y by different
+                    // factors, which was stretching the stroke into an uneven
+                    // ribbon. This keeps it a constant 4px everywhere.
+                    vectorEffect="non-scaling-stroke"
                   ></path>
                   {dynamicChart.points.map((pt, idx) => (
                     <circle
                       key={idx}
                       onMouseEnter={() => setHoveredPoint({
                          ...pt,
+                         index: idx,
                          value: `$${pt.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                       })}
                       onMouseLeave={() => setHoveredPoint(null)}
-                      className="cursor-pointer transition-all hover:r-[10px]"
+                      // `hover:r-[10px]` was here — Tailwind has no utility for
+                      // the SVG `r` attribute, so the hover grow never happened.
+                      // Driving r from state actually works.
+                      className="cursor-pointer"
+                      style={{ transition: 'r 150ms var(--ease-out-soft)' }}
                       cx={pt.cx}
                       cy={pt.cy}
                       fill="#ae3200"
-                      r="6"
+                      r={hoveredPoint?.index === idx ? 9 : 6}
                     ></circle>
                   ))}
                 </svg>
 
                 {hoveredPoint && (
                   <div
-                    className="absolute bg-inverse-surface text-white px-3 py-2 rounded-lg shadow-xl -translate-x-1/2 -translate-y-full flex flex-col z-20 pointer-events-none"
+                    className="absolute bg-inverse-surface text-inverse-on-surface px-3 py-2 rounded-lg shadow-xl -translate-x-1/2 -translate-y-full flex flex-col z-20 pointer-events-none whitespace-nowrap"
                     style={{
-                      left: `${hoveredPoint.cx / 10}%`,
-                      top: `${hoveredPoint.cy - 10}px`,
+                      left: `${(hoveredPoint.cx / 1000) * 100}%`,
+                      // `cy` is in viewBox units (0–300), not pixels. Using it
+                      // directly as px placed the tooltip well away from its
+                      // point on a 360px-tall chart; a percentage tracks the
+                      // stretched SVG correctly at any height.
+                      top: `calc(${(hoveredPoint.cy / 300) * 100}% - 10px)`,
                     }}
                   >
-                    <span className="font-label text-[10px] text-surface-variant/70">
+                    <span className="font-label text-[12px] text-inverse-on-surface/70">
                       {hoveredPoint.date}
                     </span>
-                    <span className="font-button text-button text-white">
+                    <span className="font-button text-button text-inverse-on-surface">
                       {hoveredPoint.value}
                     </span>
                   </div>
@@ -336,6 +349,7 @@ const AdminDashboardPage = () => {
               ))}
             </div>
           </div>
+          )}
         </section>
 
         {/* Live Deliveries Map */}
@@ -362,14 +376,12 @@ const AdminDashboardPage = () => {
                   className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all group w-full cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">download</span>
+                    <Icon name="download" className="text-primary" />
                     <span className="font-button text-button text-on-surface">
                       Download Sales Report
                     </span>
                   </div>
-                  <span className="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
-                    chevron_right
-                  </span>
+                  <Icon name="chevron_right" className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
 
                 <Link
@@ -377,14 +389,12 @@ const AdminDashboardPage = () => {
                   className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all group w-full text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">campaign</span>
+                    <Icon name="campaign" className="text-primary" />
                     <span className="font-button text-button text-on-surface">
                       Create New Promotion
                     </span>
                   </div>
-                  <span className="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
-                    chevron_right
-                  </span>
+                  <Icon name="chevron_right" className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
 
                 <Link
@@ -392,14 +402,12 @@ const AdminDashboardPage = () => {
                   className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all group w-full text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">restaurant_menu</span>
+                    <Icon name="restaurant_menu" className="text-primary" />
                     <span className="font-button text-button text-on-surface">
                       Add New Menu Item
                     </span>
                   </div>
-                  <span className="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
-                    chevron_right
-                  </span>
+                  <Icon name="chevron_right" className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </div>
             </div>
@@ -414,28 +422,28 @@ const AdminDashboardPage = () => {
                   <>
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-primary text-3xl">local_pizza</span>
+                        <Icon name="local_pizza" className="text-primary text-3xl" />
                       </div>
                       <div>
-                        <h4 className="font-button text-button text-white font-semibold line-clamp-1">
+                        <h4 className="font-button text-button text-inverse-on-surface font-semibold line-clamp-1">
                           {analytics.topItems[0].name}
                         </h4>
-                        <p className="font-label text-label text-white/80">
+                        <p className="font-label text-label text-inverse-on-surface/80">
                           {analytics.topItems[0].quantity} orders
                         </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                        <p className="font-label text-[10px] text-white/60 uppercase">
+                        <p className="font-label text-[12px] text-inverse-on-surface/60 uppercase">
                           Revenue Generated
                         </p>
-                        <p className="font-button text-button text-white">${analytics.topItems[0].revenue.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                        <p className="font-button text-button text-inverse-on-surface">${analytics.topItems[0].revenue.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
                       </div>
                     </div>
                   </>
                 ) : (
-                  <p className="text-white">No data yet.</p>
+                  <p className="text-inverse-on-surface">No data yet.</p>
                 )}
               </div>
           </div>
@@ -443,24 +451,24 @@ const AdminDashboardPage = () => {
       </main>
 
       {/* Floating Action Button (FAB) - For Global Add */}
-      {!user?.restaurantId && user?.role === 'restaurant_admin' && (
+      {!user?.restaurantId && user?.role === USER_ROLES.RESTAURANT_ADMIN && (
       <button
-        onClick={() => navigate('/admin/onboarding')}
-        className="fixed bottom-10 right-10 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(174,50,0,0.3)] hover:scale-110 active:scale-95 transition-all z-[60] group cursor-pointer border-none"
+        onClick={() => navigate(APP_ROUTES.ADMIN_ONBOARDING)}
+        className="fixed bottom-10 right-10 w-14 h-14 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(174,50,0,0.3)] hover:scale-110 active:scale-95 transition-all z-[60] group cursor-pointer border-none"
       >
-        <span className="material-symbols-outlined">add</span>
-        <span className="absolute right-full mr-4 bg-inverse-surface text-white px-4 py-2 rounded-lg font-label text-label opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-md">
+        <Icon name="add" />
+        <span className="absolute right-full mr-4 bg-inverse-surface text-inverse-on-surface px-4 py-2 rounded-lg font-label text-label opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-md">
           Create New
         </span>
       </button>
       )}
 
       {/* Footer */}
-      <footer className="py-stack_lg px-margin_desktop bg-inverse-surface mt-stack_lg w-full">
+      <footer className="py-stack_lg px-margin_mobile md:px-margin_desktop bg-inverse-surface mt-stack_lg w-full">
         <div className="max-w-container_max mx-auto grid grid-cols-1 md:grid-cols-4 gap-gutter">
           <div className="flex flex-col gap-2">
             <span className="font-h3 text-h3 text-primary-fixed font-bold">Foodora</span>
-            <p className="font-small text-small text-white/60">
+            <p className="font-small text-small text-inverse-on-surface/60">
               Admin Management Suite v4.2.0
             </p>
           </div>
@@ -469,13 +477,13 @@ const AdminDashboardPage = () => {
               QUICK LINKS
             </p>
             <a
-              className="font-small text-small text-white/80 hover:text-primary-fixed hover:underline transition-all"
+              className="font-small text-small text-inverse-on-surface/80 hover:text-primary-fixed hover:underline transition-all"
               href="#"
             >
               Support Center
             </a>
             <a
-              className="font-small text-small text-white/80 hover:text-primary-fixed hover:underline transition-all"
+              className="font-small text-small text-inverse-on-surface/80 hover:text-primary-fixed hover:underline transition-all"
               href="#"
             >
               Documentation
@@ -486,29 +494,25 @@ const AdminDashboardPage = () => {
               LEGAL
             </p>
             <a
-              className="font-small text-small text-white/80 hover:text-primary-fixed hover:underline transition-all"
+              className="font-small text-small text-inverse-on-surface/80 hover:text-primary-fixed hover:underline transition-all"
               href="#"
             >
               Privacy Policy
             </a>
             <a
-              className="font-small text-small text-white/80 hover:text-primary-fixed hover:underline transition-all"
+              className="font-small text-small text-inverse-on-surface/80 hover:text-primary-fixed hover:underline transition-all"
               href="#"
             >
               Terms of Service
             </a>
           </div>
           <div className="flex flex-col gap-4 items-end justify-between h-full">
-            <p className="font-small text-small text-white/80">
+            <p className="font-small text-small text-inverse-on-surface/80">
               © 2024 Foodora. All rights reserved.
             </p>
             <div className="flex gap-4">
-              <span className="material-symbols-outlined text-white/80 cursor-pointer hover:text-primary-fixed">
-                language
-              </span>
-              <span className="material-symbols-outlined text-white/80 cursor-pointer hover:text-primary-fixed">
-                settings
-              </span>
+              <Icon name="language" className="text-inverse-on-surface/80 cursor-pointer hover:text-primary-fixed" />
+              <Icon name="settings" className="text-inverse-on-surface/80 cursor-pointer hover:text-primary-fixed" />
             </div>
           </div>
         </div>

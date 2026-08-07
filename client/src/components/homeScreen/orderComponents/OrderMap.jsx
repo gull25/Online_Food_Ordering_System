@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
+import { iconMarkup } from '../../../helper/mapIconMarkup';
+import Icon from '../../common/Icon';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -48,7 +50,7 @@ const OrderMap = ({ restaurantLocation, customerLocation, riderLocation, restaur
   const restaurantIcon = useMemo(() => new L.DivIcon({
     className: '',
     html: `<div style="width:32px;height:32px;background:#1c1b1f;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
-             <span class="material-symbols-outlined" style="font-size:16px;color:white">restaurant</span>
+             ${iconMarkup('restaurant', { size: 16, color: 'white' })}
            </div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
@@ -57,7 +59,7 @@ const OrderMap = ({ restaurantLocation, customerLocation, riderLocation, restaur
   const customerIcon = useMemo(() => new L.DivIcon({
     className: '',
     html: `<div style="width:32px;height:32px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #ae3200;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
-             <span class="material-symbols-outlined" style="font-size:16px;color:#ae3200">home</span>
+             ${iconMarkup('home', { size: 16, color: '#ae3200' })}
            </div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
@@ -66,7 +68,7 @@ const OrderMap = ({ restaurantLocation, customerLocation, riderLocation, restaur
   const riderIcon = useMemo(() => new L.DivIcon({
     className: '',
     html: `<div style="width:40px;height:40px;background:#ae3200;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 12px rgba(174,50,0,0.4)">
-             <span class="material-symbols-outlined fill" style="font-size:20px;color:white">two_wheeler</span>
+             ${iconMarkup('two_wheeler_filled', { size: 20, color: 'white' })}
            </div>`,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
@@ -154,7 +156,7 @@ const OrderMap = ({ restaurantLocation, customerLocation, riderLocation, restaur
       {!restaurantLoc && !customerLoc && !riderLoc && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
           <div className="bg-surface-container-lowest/90 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-2 shadow-md">
-            <span className="material-symbols-outlined text-secondary">location_off</span>
+            <Icon name="location_off" className="text-secondary" />
             <span className="font-label text-label text-on-surface-variant">Location data unavailable</span>
           </div>
         </div>

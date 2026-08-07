@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../../common/Icon';
 const RatingStars = ({ rating = 5, maxStars = 5 }) => {
   const stars = [];
   const fullStars = Math.floor(rating);
@@ -8,21 +9,15 @@ const RatingStars = ({ rating = 5, maxStars = 5 }) => {
   for (let i = 1; i <= maxStars; i++) {
     if (i <= fullStars) {
       stars.push(
-        <span key={i} className="material-symbols-outlined text-[16px] fill text-primary-container">
-          star
-        </span>
+        <Icon name="star" className="text-[16px] text-primary-container" filled key={i} />
       );
     } else if (i === fullStars + 1 && hasHalfStar) {
       stars.push(
-        <span key={i} className="material-symbols-outlined text-[16px] text-primary-container">
-          star_half
-        </span>
+        <Icon name="star_half" className="text-[16px] text-primary-container" key={i} />
       );
     } else {
       stars.push(
-        <span key={i} className="material-symbols-outlined text-[16px] text-surface-container-high">
-          star
-        </span>
+        <Icon name="star" className="text-[16px] text-surface-container-high" key={i} />
       );
     }
   }

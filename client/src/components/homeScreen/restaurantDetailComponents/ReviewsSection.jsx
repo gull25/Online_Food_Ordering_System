@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Icon from '../../common/Icon';
 import api from '../../../api/axios';
 
 const ReviewsSection = ({ restaurantId }) => {
@@ -37,7 +38,7 @@ const ReviewsSection = ({ restaurantId }) => {
   return (
     <div className="mt-12 mb-24">
       <h2 className="font-h2 text-h2 font-bold text-on-surface mb-6 flex items-center gap-2">
-        <span className="material-symbols-outlined text-primary text-[28px]">star_rate</span>
+        <Icon name="star_rate" className="text-primary text-[28px]" />
         Customer Reviews ({reviews.length})
       </h2>
 
@@ -60,15 +61,14 @@ const ReviewsSection = ({ restaurantId }) => {
               </div>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <span
+                  <Icon
                     key={star}
-                    className={`material-symbols-outlined text-[18px] ${
-                      star <= review.rating ? 'text-[#F59E0B] fill-current' : 'text-outline-variant'
+                    name="star"
+                    filled={star <= review.rating}
+                    className={`text-[18px] ${
+                      star <= review.rating ? 'text-warning' : 'text-outline-variant'
                     }`}
-                    style={star <= review.rating ? { fontVariationSettings: "'FILL' 1" } : {}}
-                  >
-                    star
-                  </span>
+                  />
                 ))}
               </div>
             </div>

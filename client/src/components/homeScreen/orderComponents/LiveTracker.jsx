@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import Icon from '../../common/Icon';
 import { GoogleMap, useJsApiLoader, DirectionsRenderer, Marker } from '@react-google-maps/api';
 import { socket } from '../../../helper/socket';
 
@@ -114,7 +115,7 @@ const LiveTracker = ({ orderId, restaurantLocation, customerLocation, initialRid
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-full bg-surface-dim">
-        <span className="material-symbols-outlined animate-spin text-primary text-4xl">sync</span>
+        <Icon name="sync" className="animate-spin text-primary text-4xl" />
       </div>
     );
   }

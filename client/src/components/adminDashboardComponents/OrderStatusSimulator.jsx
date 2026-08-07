@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../common/Icon';
 const STATUS_STEPS = [
   { status: 'PLACED', icon: 'receipt_long', label: 'Order Placed' },
   { status: 'ACCEPTED', icon: 'thumb_up', label: 'Order Accepted' },
@@ -15,7 +16,7 @@ const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {
   if (!activeOrder) {
     return (
       <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] h-full flex flex-col items-center justify-center text-center min-h-[500px]">
-        <span className="material-symbols-outlined text-4xl text-surface-variant mb-4">inbox</span>
+        <Icon name="inbox" className="text-4xl text-surface-variant mb-4" />
         <h3 className="font-h3 text-h3 font-bold text-on-surface mb-2">No Active Orders</h3>
         <p className="font-body text-body text-secondary">You currently have no pending or active orders to manage.</p>
       </div>
@@ -35,14 +36,14 @@ const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {
       <div className="flex justify-between items-start mb-stack_lg relative z-10">
         <div>
           <h3 className="font-h3 text-h3 text-on-surface font-bold flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">motion_photos_on</span>
+            <Icon name="motion_photos_on" className="text-primary" />
             Live Order Simulator
           </h3>
           <p className="font-small text-small text-secondary mt-1">
             Actively managing Order {activeOrder.id}
           </p>
         </div>
-        <div className="bg-primary-container text-on-primary font-label text-label px-3 py-1.5 rounded-full font-semibold shadow-sm">
+        <div className="bg-primary-container text-on-primary-container font-label text-label px-3 py-1.5 rounded-full font-semibold shadow-sm">
           ${activeOrder.amount?.toFixed(2)}
         </div>
       </div>
@@ -51,7 +52,7 @@ const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {
         <img 
           src={activeOrder.avatar} 
           alt={activeOrder.customer} 
-          className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
+          className="w-12 h-12 rounded-full border-2 border-surface-container-lowest shadow-sm object-cover"
         />
         <div className="flex-1">
           <h4 className="font-button text-button font-bold text-on-surface">{activeOrder.customer}</h4>
@@ -61,48 +62,79 @@ const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {
 
       <div className="flex-1 flex flex-col justify-center relative z-10 py-4">
         <div className="relative">
-          {/* Vertical connection line */}
-          <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-surface-variant z-0"></div>
-          
-          {/* Active progress line */}
-          <div 
-            className="absolute left-6 top-6 w-0.5 bg-primary z-0 transition-all duration-700 ease-in-out"
-            style={{ 
-              height: activeIndex > 0 ? `calc(${(activeIndex / (STATUS_STEPS.length - 1)) * 100}% - 12px)` : '0%',
-              minHeight: activeIndex > 0 ? '0' : '0'
-            }}
-          ></div>
+          {/* The connector is drawn per step rather than as one absolutely
+              positioned track.
 
-          <div className="flex flex-col gap-6 relative z-10">
+              The old version pinned a line at `top-6 bottom-6`, assuming each
+              dot's centre sat 24px from the container edge. But rows are sized
+              by their text block (~68px), not the 48px dot, and the dot is
+              vertically centred — so its centre is ~34px in. The track
+              therefore started above the first dot and, more visibly, trailed
+              off below the last one. The progress fill measured against that
+              same wrong reference, so it never landed on the current dot.
+
+              Splitting the line into an above/below pair inside each row makes
+              it meet dot centres exactly, whatever height the text happens to
+              be. `gap` is dropped because a gap cannot be spanned by a
+              connector; row padding provides the same rhythm. */}
+          <div className="flex flex-col relative z-10">
             {STATUS_STEPS.map((step, idx) => {
               const isCompleted = idx < activeIndex;
               const isCurrent = idx === activeIndex;
               const isPending = idx > activeIndex;
+              const isFirst = idx === 0;
+              const isLast = idx === STATUS_STEPS.length - 1;
 
               return (
-                <div 
-                  key={step.status} 
-                  className={`flex items-center gap-4 cursor-pointer group transition-all duration-300 ${isPending ? 'opacity-50 hover:opacity-100' : 'opacity-100'}`}
+                <div
+                  key={step.status}
+                  // No vertical padding on the row: it would sit outside the
+                  // connector's box and break the line between steps. The
+                  // vertical rhythm comes from the card's own padding instead,
+                  // which keeps the connector continuous end to end.
+                  className={`flex items-stretch gap-4 cursor-pointer group transition-opacity duration-300 ${isPending ? 'opacity-50 hover:opacity-100' : 'opacity-100'}`}
                   onClick={() => {
                     // Prevent moving backwards or clicking the same status
                     if (idx <= activeIndex) return;
                     handleUpdateStatus(activeOrder.originalId, step.status);
                   }}
                 >
-                  <div className="relative">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${
-                      isCompleted ? 'bg-primary text-white scale-90' :
-                      isCurrent ? 'bg-primary text-white scale-110 shadow-[0_0_15px_rgba(174,50,0,0.4)] ring-4 ring-primary/20' :
-                      'bg-surface-container-high text-on-surface-variant hover:bg-surface-variant'
-                    }`}>
-                      <span className="material-symbols-outlined text-[20px]">
-                        {isCompleted ? 'check' : step.icon}
-                      </span>
+                  {/* Dot column: [connector above] [dot] [connector below].
+                      The flex-1 segments absorb whatever height the text needs,
+                      so the line always terminates at the dot's edge. */}
+                  <div className="w-12 shrink-0 flex flex-col items-center self-stretch">
+                    <span
+                      aria-hidden="true"
+                      className={`w-0.5 flex-1 rounded-full transition-colors duration-500 ${
+                        isFirst ? 'bg-transparent' : idx <= activeIndex ? 'bg-primary' : 'bg-surface-variant'
+                      }`}
+                    />
+                    {/* Fixed-size well around the dot. `scale-110` on the dot
+                        itself used to change the flex item's footprint, so every
+                        status change nudged the whole row and the labels beside
+                        it — visible as a jolt down the list. The well holds the
+                        layout steady while only the dot scales. */}
+                    <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-300 shadow-sm ${
+                        isCompleted ? 'bg-primary text-on-primary scale-90' :
+                        isCurrent ? 'bg-primary text-on-primary scale-110 ring-4 ring-primary/20' :
+                        'bg-surface-container-high text-on-surface-variant hover:bg-surface-variant'
+                      }`}>
+                        <Icon name={isCompleted ? 'check' : step.icon} className="text-[20px]" />
+                      </div>
                     </div>
+                    <span
+                      aria-hidden="true"
+                      className={`w-0.5 flex-1 rounded-full transition-colors duration-500 ${
+                        isLast ? 'bg-transparent' : idx < activeIndex ? 'bg-primary' : 'bg-surface-variant'
+                      }`}
+                    />
                   </div>
-                  <div className={`flex-1 p-3 rounded-xl transition-all duration-300 ${
-                    isCurrent ? 'bg-primary/10 border border-primary/20 translate-x-2' : 
-                    'hover:bg-surface-container-high border border-transparent'
+                  {/* Border is always present (transparent when inactive) so the
+                      card doesn't grow by 2px when it becomes current. */}
+                  <div className={`flex-1 my-1 p-4 rounded-xl border transition-colors duration-300 self-center ${
+                    isCurrent ? 'bg-primary/10 border-primary/20' :
+                    'hover:bg-surface-container-high border-transparent'
                   }`}>
                     <h5 className={`font-button text-button font-bold ${
                       isCurrent ? 'text-primary' : 'text-on-surface'
@@ -116,7 +148,7 @@ const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {
                   </div>
                   
                   {isPending && idx === activeIndex + 1 && (
-                    <button className="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity -ml-4 whitespace-nowrap shadow-md">
+                    <button className="px-3 py-1.5 bg-primary text-on-primary text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity -ml-4 whitespace-nowrap shadow-md">
                       Update
                     </button>
                   )}

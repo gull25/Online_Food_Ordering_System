@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import Icon from '../../../../components/common/Icon';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import api from '../../../../api/axios';
-import LoadingSkeleton from '../../../../components/common/LoadingSkeleton';
+import { AdminPageSkeleton } from '../../../../components/common/Skeleton';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
 
 const AdminCategoriesPage = () => {
@@ -105,7 +106,7 @@ const AdminCategoriesPage = () => {
     }
   };
 
-  if (loading) return <LoadingSkeleton />;
+  if (loading) return <AdminPageSkeleton rows={6} columns={5} />;
 
   return (
     <div className="bg-surface text-on-surface min-h-screen relative flex">
@@ -119,9 +120,9 @@ const AdminCategoriesPage = () => {
           <div className="flex justify-end mb-6">
             <button
               onClick={() => openModal()}
-              className="px-4 py-2 bg-primary text-white font-button text-button rounded-xl flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
+              className="px-4 py-2 bg-primary text-on-primary font-button text-button rounded-xl flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
             >
-              <span className="material-symbols-outlined text-[20px]">add</span>
+              <Icon name="add" className="text-[20px]" />
               Add Category
             </button>
           </div>
@@ -129,7 +130,7 @@ const AdminCategoriesPage = () => {
           <div className="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl shadow-sm overflow-hidden">
             {categories.length === 0 ? (
               <div className="p-12 text-center text-secondary">
-                <span className="material-symbols-outlined text-[48px] mb-4">category</span>
+                <Icon name="category" className="text-[48px] mb-4" />
                 <p>No categories found. Create one to get started.</p>
               </div>
             ) : (
@@ -148,16 +149,16 @@ const AdminCategoriesPage = () => {
                       <td className="px-6 py-4 font-bold text-primary">{cat.order}</td>
                       <td className="px-6 py-4 font-bold text-on-surface">{cat.name}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${cat.isActive ? 'bg-primary-container text-on-primary-container' : 'bg-surface-variant text-on-surface-variant'}`}>
+                        <span className={`px-2 py-1 rounded-full text-[12px] font-bold uppercase tracking-wider ${cat.isActive ? 'bg-primary-container text-on-primary-container' : 'bg-surface-variant text-on-surface-variant'}`}>
                           {cat.isActive ? 'Active' : 'Hidden'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right flex justify-end gap-2">
                         <button onClick={() => openModal(cat)} className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors">
-                          <span className="material-symbols-outlined text-[20px]">edit</span>
+                          <Icon name="edit" className="text-[20px]" />
                         </button>
                         <button onClick={() => handleDelete(cat._id)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors">
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                          <Icon name="delete" className="text-[20px]" />
                         </button>
                       </td>
                     </tr>
@@ -178,7 +179,7 @@ const AdminCategoriesPage = () => {
                 {editingCategory ? 'Edit Category' : 'New Category'}
               </h3>
               <button onClick={closeModal} className="text-secondary hover:text-on-surface transition-colors">
-                <span className="material-symbols-outlined">close</span>
+                <Icon name="close" />
               </button>
             </div>
             
@@ -253,7 +254,7 @@ const AdminCategoriesPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-12 rounded-xl bg-primary text-white font-button text-button hover:opacity-90 transition-opacity shadow-md"
+                  className="flex-1 h-12 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-opacity shadow-md"
                 >
                   Save Category
                 </button>

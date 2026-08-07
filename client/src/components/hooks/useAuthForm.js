@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginStart, loginSuccess, loginFailure } from '../../redux/authSlice';
 import authService from '../../api/authApi';
+import { LOCAL_STORAGE_KEYS } from '../../constants/localStorageKeys';
+import { APP_ROUTES } from '../../constants/appRoutes';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
@@ -26,7 +28,12 @@ export const useAuthForm = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const isRegister = mode === 'register';
+
+  // Route guards redirect here with the page the user was actually after.
+  // Honouring it means logging in resumes the journey instead of restarting it.
+  const redirectTo = location.state?.from?.pathname || APP_ROUTES.HOME;
 
   const {
     register,
@@ -55,33 +62,39 @@ export const useAuthForm = () => {
       if (isRegister) {
         const response = await authService.register(data);
         dispatch(loginFailure(null)); // just to stop loading
-        setSuccessMsg(response?.message || 'User is registered successfully!');
+        setSuccessMsg(response?.message || 'Account created! You can log in now.');
         reset();
+        // Drop the user straight onto the login tab — registering and then
+        // hunting for the login toggle is a needless extra step.
+        setTimeout(() => {
+          setMode('login');
+          setSuccessMsg('Account created! Please log in.');
+        }, 1200);
       } else {
         // ── Real API login — role comes from the database ──────────────
         const response = await authService.login({ email: data.email, password: data.password });
 
         // Persist session
-        localStorage.setItem('foodoraToken', response.token);
-        localStorage.setItem('userInfo', JSON.stringify(response.user));
+        localStorage.setItem(LOCAL_STORAGE_KEYS.TOKEN, response.token);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.USER_INFO, JSON.stringify(response.user));
 
         // Update Redux — user.role is exactly what the DB returned
         dispatch(loginSuccess(response.user));
         setIsSuccess(true);
 
-        // Admins go straight to their dashboard.
-        // Customers land on the first restaurant.
-        setTimeout(async () => {
+        // Short beat so the success state registers visually, then route by
+        // role. 1.5s read as the app hanging, so this is deliberately brief.
+        setTimeout(() => {
           if (response.user.role === 'restaurant_admin' || response.user.role === 'admin') {
-            navigate('/admin');
+            navigate(APP_ROUTES.ADMIN_DASHBOARD, { replace: true });
           } else if (response.user.role === 'rider') {
-            navigate('/rider/dashboard');
+            navigate(APP_ROUTES.RIDER_DASHBOARD, { replace: true });
           } else {
-            navigate('/');
+            navigate(redirectTo, { replace: true });
           }
-        }, 1500);
+        }, 650);
       }
-      
+
     } catch (error) {
       dispatch(loginFailure(error.response?.data?.message || 'Something went wrong'));
     }

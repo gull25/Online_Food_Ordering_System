@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../../common/Icon';
 const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
   return (
     <div className="mb-8">
@@ -13,10 +14,10 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
             }`}
         >
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-secondary">credit_card</span>
+            <Icon name="credit_card" className="text-secondary" />
             <div>
               <p className="font-bold text-small text-on-surface">Credit / Debit Card</p>
-              <p className="text-secondary text-[10px]">Powered by Stripe</p>
+              <p className="text-secondary text-[12px]">Powered by Stripe</p>
             </div>
           </div>
           <input
@@ -36,7 +37,7 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
             }`}
         >
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-secondary">phone_iphone</span>
+            <Icon name="phone_iphone" className="text-secondary" />
             <span className="font-bold text-small text-on-surface">Easypaisa</span>
           </div>
           <input
@@ -56,7 +57,7 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
             }`}
         >
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-secondary">phone_iphone</span>
+            <Icon name="phone_iphone" className="text-secondary" />
             <span className="font-bold text-small text-on-surface">JazzCash</span>
           </div>
           <input
@@ -76,7 +77,7 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
             }`}
         >
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-secondary">payments</span>
+            <Icon name="payments" className="text-secondary" />
             <span className="font-bold text-small text-on-surface">Cash on Delivery</span>
           </div>
           <input
@@ -93,7 +94,7 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
           onClick={() => alert('Adding new payment methods is coming soon!')}
           className="w-full flex items-center justify-center gap-2 p-3 border border-dashed border-outline-variant rounded-xl text-secondary hover:text-primary hover:border-primary transition-all group"
         >
-          <span className="material-symbols-outlined text-sm">add_circle</span>
+          <Icon name="add_circle" className="text-sm" />
           <span className="font-button text-small">Add New Method</span>
         </button>
       </div>

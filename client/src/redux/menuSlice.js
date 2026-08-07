@@ -1,12 +1,20 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../api/axios';
 
-// Async thunk
+/**
+ * Uses the shared `api` client rather than bare axios against a relative
+ * `/api/...` path.
+ *
+ * The relative URL only resolved because Vite's dev server proxies /api to the
+ * backend; in a production build served from any other origin the request would
+ * 404. It also skipped the auth interceptor, so the menu request went out
+ * without an Authorization header.
+ */
 export const fetchRestaurantMenu = createAsyncThunk(
     'menu/fetchByRestaurant',
     async (restaurantId, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`/api/restaurants/${restaurantId}/menu`);
+            const response = await api.get(`/restaurants/${restaurantId}/menu`);
             return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch menu');

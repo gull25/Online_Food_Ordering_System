@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import Icon from '../../../../components/common/Icon';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import api from '../../../../api/axios';
-import LoadingSkeleton from '../../../../components/common/LoadingSkeleton';
+import { AdminPageSkeleton } from '../../../../components/common/Skeleton';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
 
 const AdminProductsPage = () => {
@@ -129,7 +130,7 @@ const AdminProductsPage = () => {
     }
   };
 
-  if (loading) return <LoadingSkeleton />;
+  if (loading) return <AdminPageSkeleton rows={7} columns={6} />;
 
   return (
     <div className="bg-surface text-on-surface min-h-screen relative flex">
@@ -143,9 +144,9 @@ const AdminProductsPage = () => {
           <div className="flex justify-end mb-6">
             <button
               onClick={() => openModal()}
-              className="px-4 py-2 bg-primary text-white font-button text-button rounded-xl flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
+              className="px-4 py-2 bg-primary text-on-primary font-button text-button rounded-xl flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
             >
-              <span className="material-symbols-outlined text-[20px]">add</span>
+              <Icon name="add" className="text-[20px]" />
               Add Product
             </button>
           </div>
@@ -153,7 +154,7 @@ const AdminProductsPage = () => {
           <div className="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl shadow-sm overflow-hidden">
             {products.length === 0 ? (
               <div className="p-12 text-center text-secondary">
-                <span className="material-symbols-outlined text-[48px] mb-4">fastfood</span>
+                <Icon name="fastfood" className="text-[48px] mb-4" />
                 <p>No products found. Add your first menu item to get started!</p>
               </div>
             ) : (
@@ -181,17 +182,17 @@ const AdminProductsPage = () => {
                       <td className="px-6 py-4 font-bold text-primary">${prod.price?.toFixed(2)}</td>
                       <td className="px-6 py-4 text-secondary">{prod.vegNonVeg}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${prod.isAvailable ? 'bg-primary-container text-on-primary-container' : 'bg-surface-variant text-on-surface-variant'}`}>
+                        <span className={`px-2 py-1 rounded-full text-[12px] font-bold uppercase tracking-wider ${prod.isAvailable ? 'bg-primary-container text-on-primary-container' : 'bg-surface-variant text-on-surface-variant'}`}>
                           {prod.isAvailable ? 'Available' : 'Hidden'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button onClick={() => openModal(prod)} className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors">
-                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                            <Icon name="edit" className="text-[20px]" />
                           </button>
                           <button onClick={() => handleDelete(prod._id)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors">
-                            <span className="material-symbols-outlined text-[20px]">delete</span>
+                            <Icon name="delete" className="text-[20px]" />
                           </button>
                         </div>
                       </td>
@@ -213,7 +214,7 @@ const AdminProductsPage = () => {
                 {editingProduct ? 'Edit Product' : 'New Product'}
               </h3>
               <button onClick={closeModal} className="text-secondary hover:text-on-surface transition-colors">
-                <span className="material-symbols-outlined">close</span>
+                <Icon name="close" />
               </button>
             </div>
             
@@ -305,13 +306,13 @@ const AdminProductsPage = () => {
               <div className="space-y-2 border-t border-outline-variant/30 pt-4">
                 <div className="flex justify-between items-center">
                   <label className="font-label text-label text-on-surface-variant uppercase">Sizes (Optional)</label>
-                  <button type="button" onClick={() => setSizes([...sizes, {name: '', additionalPrice: 0}])} className="text-primary text-sm font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">add</span> Add Size</button>
+                  <button type="button" onClick={() => setSizes([...sizes, {name: '', additionalPrice: 0}])} className="text-primary text-sm font-bold flex items-center gap-1"><Icon name="add" className="text-[16px]" /> Add Size</button>
                 </div>
                 {sizes.map((size, idx) => (
                   <div key={idx} className="flex gap-2 items-center">
                     <input type="text" placeholder="Size Name" value={size.name} onChange={(e) => { const newSizes = [...sizes]; newSizes[idx].name = e.target.value; setSizes(newSizes); }} className="flex-1 h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" required />
                     <input type="number" step="0.01" min="0" placeholder="+ Price" value={size.additionalPrice} onChange={(e) => { const newSizes = [...sizes]; newSizes[idx].additionalPrice = parseFloat(e.target.value) || 0; setSizes(newSizes); }} className="w-24 h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" required />
-                    <button type="button" onClick={() => setSizes(sizes.filter((_, i) => i !== idx))} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
+                    <button type="button" onClick={() => setSizes(sizes.filter((_, i) => i !== idx))} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"><Icon name="delete" /></button>
                   </div>
                 ))}
               </div>
@@ -319,13 +320,13 @@ const AdminProductsPage = () => {
               <div className="space-y-2 border-t border-outline-variant/30 pt-4">
                 <div className="flex justify-between items-center">
                   <label className="font-label text-label text-on-surface-variant uppercase">Add-ons (Optional)</label>
-                  <button type="button" onClick={() => setAddOns([...addOns, {name: '', price: 0}])} className="text-primary text-sm font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">add</span> Add Item</button>
+                  <button type="button" onClick={() => setAddOns([...addOns, {name: '', price: 0}])} className="text-primary text-sm font-bold flex items-center gap-1"><Icon name="add" className="text-[16px]" /> Add Item</button>
                 </div>
                 {addOns.map((addon, idx) => (
                   <div key={idx} className="flex gap-2 items-center">
                     <input type="text" placeholder="Add-on Name" value={addon.name} onChange={(e) => { const newAddOns = [...addOns]; newAddOns[idx].name = e.target.value; setAddOns(newAddOns); }} className="flex-1 h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" required />
                     <input type="number" step="0.01" min="0" placeholder="+ Price" value={addon.price} onChange={(e) => { const newAddOns = [...addOns]; newAddOns[idx].price = parseFloat(e.target.value) || 0; setAddOns(newAddOns); }} className="w-24 h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" required />
-                    <button type="button" onClick={() => setAddOns(addOns.filter((_, i) => i !== idx))} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
+                    <button type="button" onClick={() => setAddOns(addOns.filter((_, i) => i !== idx))} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"><Icon name="delete" /></button>
                   </div>
                 ))}
               </div>
@@ -350,7 +351,7 @@ const AdminProductsPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-12 rounded-xl bg-primary text-white font-button text-button hover:opacity-90 transition-opacity shadow-md"
+                  className="flex-1 h-12 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-opacity shadow-md"
                 >
                   Save Product
                 </button>

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../../common/Icon';
 const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, restaurant, loading }) => {
   return (
     <header className="relative w-full h-[300px] md:h-[400px]">
@@ -36,23 +37,18 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, r
             )}
             <div className="flex items-center gap-3 flex-wrap text-white/90 font-body text-body opacity-90">
               <span className="flex items-center gap-1">
-                <span
-                  className="material-symbols-outlined text-lg text-[#FFB59E]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  star
-                </span>{' '}
+                <Icon name="star" filled className="text-lg text-primary-fixed" />{' '}
                 {restaurant?.rating || 'New'} {restaurant?.numReviews > 0 ? `(${restaurant.numReviews} rating${restaurant.numReviews > 1 ? 's' : ''})` : ''}
               </span>
               <span className="w-1 h-1 rounded-full bg-white/50"></span>
               <span>{restaurant?.priceRange || '$$'}</span>
               <span className="w-1 h-1 rounded-full bg-white/50"></span>
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-lg">location_on</span> {restaurant?.address || 'Location unavailable'}
+                <Icon name="location_on" className="text-lg" /> {restaurant?.address || 'Location unavailable'}
               </span>
               <span className="w-1 h-1 rounded-full bg-white/50"></span>
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-lg">schedule</span> {restaurant?.estimatedDeliveryTime || '30-45 min'}
+                <Icon name="schedule" className="text-lg" /> {restaurant?.estimatedDeliveryTime || '30-45 min'}
               </span>
             </div>
           </div>
@@ -62,21 +58,16 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, r
               onClick={handleShare}
               className="h-12 px-4 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center gap-2 hover:bg-white/30 transition-colors text-white text-sm font-semibold"
             >
-              <span className="material-symbols-outlined text-white">share</span>
+              <Icon name="share" className="text-white" />
               {shareText}
             </button>
             <button
               onClick={() => setIsFavorite(!isFavorite)}
               className={`h-12 w-12 rounded-full backdrop-blur-md flex items-center justify-center transition-colors ${
-                isFavorite ? 'bg-primary-container text-white' : 'bg-white/20 hover:bg-white/30 text-white'
+                isFavorite ? 'bg-primary text-on-primary' : 'bg-white/20 hover:bg-white/30 text-white'
               }`}
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}
-              >
-                favorite
-              </span>
+              <Icon name="favorite" filled />
             </button>
           </div>
         </div>

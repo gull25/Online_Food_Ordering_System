@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Icon from '../common/Icon';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../redux/authSlice';
 import { clearCart } from '../../redux/cartSlice';
+import { APP_ROUTES } from '../../constants';
 
 const RiderProfileDropdown = () => {
     const { user } = useSelector((state) => state.auth);
@@ -24,7 +26,7 @@ const RiderProfileDropdown = () => {
     const handleLogout = () => {
         dispatch(clearCart());
         dispatch(logout());
-        navigate('/auth');
+        navigate(APP_ROUTES.HOME);
     };
 
     return (
@@ -49,7 +51,7 @@ const RiderProfileDropdown = () => {
                         }}
                         className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-on-surface transition-colors cursor-pointer flex items-center gap-3 w-full"
                     >
-                        <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
+                        <Icon name="manage_accounts" className="text-[18px]" />
                         Profile Setting
                     </button>
                     <div className="h-px bg-outline-variant/30 mx-3" />
@@ -57,7 +59,7 @@ const RiderProfileDropdown = () => {
                         onClick={handleLogout}
                         className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-error transition-colors cursor-pointer flex items-center gap-3 w-full"
                     >
-                        <span className="material-symbols-outlined text-[18px]">logout</span>
+                        <Icon name="logout" className="text-[18px]" />
                         Logout
                     </button>
                 </div>

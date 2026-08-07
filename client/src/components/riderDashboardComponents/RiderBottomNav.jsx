@@ -1,27 +1,46 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Icon from '../common/Icon';
+import { NavLink } from 'react-router-dom';
+import { RIDER_SIDEBAR_LINKS } from '../../data';
 
-const RiderBottomNav = ({ activeTab }) => {
-    return (
-        <nav className="fixed bottom-0 left-0 w-full z-50 bg-surface border-t border-outline-variant flex justify-around items-center px-2 pb-4 pt-2 lg:hidden shadow-lg">
-            <Link to="/rider/dashboard" className={`flex flex-col items-center justify-center rounded-full px-4 py-1 transition-transform scale-95 duration-150 ${activeTab === 'dashboard' ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant active:bg-surface-container-highest'}`}>
-                <span className="material-symbols-outlined" style={activeTab === 'dashboard' ? { fontVariationSettings: "'FILL' 1" } : {}}>home</span>
-                <span className="font-inter text-[11px] font-medium leading-[14px] mt-1">Home</span>
-            </Link>
-            <Link to="/rider/active-deliveries" className={`flex flex-col items-center justify-center rounded-full px-4 py-1 transition-transform scale-95 duration-150 ${activeTab === 'active-deliveries' ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant active:bg-surface-container-highest'}`}>
-                <span className="material-symbols-outlined" style={activeTab === 'active-deliveries' ? { fontVariationSettings: "'FILL' 1" } : {}}>list_alt</span>
-                <span className="font-inter text-[11px] font-medium leading-[14px] mt-1">Tasks</span>
-            </Link>
-            <Link to="/rider/earnings" className={`flex flex-col items-center justify-center rounded-full px-4 py-1 transition-transform scale-95 duration-150 ${activeTab === 'earnings' ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant active:bg-surface-container-highest'}`}>
-                <span className="material-symbols-outlined" style={activeTab === 'earnings' ? { fontVariationSettings: "'FILL' 1" } : {}}>payments</span>
-                <span className="font-inter text-[11px] font-medium leading-[14px] mt-1">Earnings</span>
-            </Link>
-            <Link to="/rider/ratings" className={`flex flex-col items-center justify-center rounded-full px-4 py-1 transition-transform scale-95 duration-150 ${activeTab === 'ratings' ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant active:bg-surface-container-highest'}`}>
-                <span className="material-symbols-outlined" style={activeTab === 'ratings' ? { fontVariationSettings: "'FILL' 1" } : {}}>star</span>
-                <span className="font-inter text-[11px] font-medium leading-[14px] mt-1">Ratings</span>
-            </Link>
-        </nav>
-    );
+/**
+ * Mobile navigation for the rider dashboard.
+ *
+ * This used to hardcode four links, one of which pointed at `/rider/ratings` —
+ * a route that does not exist. Tapping "Ratings" dropped the rider onto the
+ * 404 page, outside the rider layout, with no bottom nav to get back.
+ *
+ * It now renders from `RIDER_SIDEBAR_LINKS`, the same source the desktop
+ * sidebar uses, so the two can't drift apart and every destination is a real
+ * registered route.
+ */
+const RiderBottomNav = () => {
+  const linkClass = ({ isActive }) =>
+    `flex flex-col items-center justify-center rounded-xl px-4 py-1.5 min-w-[72px] transition-colors ${
+      isActive
+        ? 'bg-primary-container/15 text-primary'
+        : 'text-on-surface-variant hover:bg-surface-container-high'
+    }`;
+
+  return (
+    <nav
+      aria-label="Rider navigation"
+      className="fixed bottom-0 left-0 w-full z-50 bg-surface-container-lowest/95 backdrop-blur-md border-t border-outline-variant flex justify-around items-center px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 lg:hidden shadow-lg"
+    >
+      {RIDER_SIDEBAR_LINKS.map((link) => (
+        <NavLink key={link.id} to={link.path} className={linkClass} end>
+          {({ isActive }) => (
+            <>
+              <Icon name={link.icon} filled={isActive} className="text-[22px]" />
+              <span className="font-body text-[12px] font-semibold leading-3.5 mt-1 whitespace-nowrap">
+                {link.shortLabel || link.label}
+              </span>
+            </>
+          )}
+        </NavLink>
+      ))}
+    </nav>
+  );
 };
 
 export default RiderBottomNav;

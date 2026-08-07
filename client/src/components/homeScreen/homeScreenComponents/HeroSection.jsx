@@ -3,7 +3,7 @@ import React from 'react';
 const HeroSection = () => {
 
   return (
-    <section className="relative w-full min-h-[600px] flex items-center overflow-hidden animate-section">
+    <section className="relative w-full min-h-[600px] flex items-center overflow-hidden">
       <div className="absolute inset-0 z-0">
         <div
           className="w-full h-full bg-cover bg-center"

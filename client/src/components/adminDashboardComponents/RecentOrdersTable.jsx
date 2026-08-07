@@ -1,12 +1,13 @@
 import React from 'react';
 
+import Icon from '../common/Icon';
 const RecentOrdersTable = ({ filteredOrders, activeDropdownId, setActiveDropdownId, handleUpdateStatus }) => {
   return (
     <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden">
       <div className="p-gutter border-b border-outline-variant/30 flex items-center justify-between">
         <h3 className="font-h3 text-h3 text-on-surface font-bold">Recent Orders</h3>
         <button className="font-button text-button text-primary hover:text-on-primary-fixed-variant transition-colors flex items-center gap-1">
-          View All <span className="material-symbols-outlined !text-sm">arrow_forward</span>
+          View All <Icon name="arrow_forward" className="!text-sm" />
         </button>
       </div>
 
@@ -63,7 +64,7 @@ const RecentOrdersTable = ({ filteredOrders, activeDropdownId, setActiveDropdown
                 </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`px-3 py-1 rounded-full font-label text-[10px] uppercase font-bold ${
+                    className={`px-3 py-1 rounded-full font-label text-[12px] uppercase font-bold ${
                       order.status === 'DELIVERED'
                         ? 'bg-tertiary/10 text-tertiary'
                         : order.status === 'PREPARING'
@@ -84,7 +85,7 @@ const RecentOrdersTable = ({ filteredOrders, activeDropdownId, setActiveDropdown
                     aria-label="Order actions"
                     className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant transition-colors text-secondary cursor-pointer"
                   >
-                    <span className="material-symbols-outlined">more_vert</span>
+                    <Icon name="more_vert" />
                   </button>
 
                   {/* Status Change Dropdown Menu */}
@@ -118,9 +119,7 @@ const RecentOrdersTable = ({ filteredOrders, activeDropdownId, setActiveDropdown
 
         {filteredOrders.length === 0 && (
           <div className="py-8 text-center bg-surface-container-lowest">
-            <span className="material-symbols-outlined text-4xl text-on-secondary-container mb-2">
-              search_off
-            </span>
+            <Icon name="search_off" className="text-4xl text-on-secondary-container mb-2" />
             <p className="text-secondary font-body">No matching orders found.</p>
           </div>
         )}

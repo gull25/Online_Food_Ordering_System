@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../../common/Icon';
 import { useNavigate } from 'react-router-dom';
 
 const FloatingCartSummary = ({ totalCartCount, cartDescription, totalCartPrice }) => {
@@ -24,8 +25,8 @@ const FloatingCartSummary = ({ totalCartCount, cartDescription, totalCartPrice }
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="font-h3 text-h3 font-bold">€{totalCartPrice.toFixed(2)}</span>
-              <span className="material-symbols-outlined">chevron_right</span>
+              <span className="font-h3 text-h3 font-bold">${totalCartPrice.toFixed(2)}</span>
+              <Icon name="chevron_right" />
             </div>
           </div>
         </div>

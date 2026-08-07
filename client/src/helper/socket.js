@@ -1,11 +1,16 @@
 import { io } from 'socket.io-client';
 
-const URL = import.meta.env.VITE_API_URL.replace('/api', '');
+// VITE_API_URL is optional; reading `.replace` off an undefined value here used
+// to throw at module load and take down every screen that imports the socket.
+const URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
 
 // Initialize socket instance (autoConnect: false so we connect manually after auth)
 export const socket = io(URL, {
   autoConnect: false,
   withCredentials: true,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
 });
 
 // ── Connect and register user ─────────────────────────────────────────────────

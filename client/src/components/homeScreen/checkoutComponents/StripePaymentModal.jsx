@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '../../common/Icon';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
@@ -50,7 +51,7 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
             disabled={isProcessing}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-xl">close</span>
+            <Icon name="close" className="text-xl" />
           </button>
         </div>
 
@@ -61,7 +62,7 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
 
         {error && (
           <div className="bg-error-container text-on-error-container text-small font-label p-3 rounded-lg mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm">error</span>
+            <Icon name="error" className="text-sm" />
             {error}
           </div>
         )}
@@ -72,23 +73,23 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
           <button
             type="submit"
             disabled={!stripe || isProcessing}
-            className="w-full h-14 bg-primary text-white font-button text-button rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full h-14 bg-primary text-on-primary font-button text-button rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isProcessing ? (
               <>
-                <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                <Icon name="progress_activity" className="animate-spin" />
                 <span>Processing Payment...</span>
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined">lock</span>
+                <Icon name="lock" />
                 <span>Pay ${amount.toFixed(2)}</span>
               </>
             )}
           </button>
 
-          <p className="text-center font-small text-[10px] text-secondary mt-4 flex items-center justify-center gap-1">
-            <span className="material-symbols-outlined text-[12px]">verified_user</span>
+          <p className="text-center font-small text-[12px] text-secondary mt-4 flex items-center justify-center gap-1">
+            <Icon name="verified_user" className="text-[12px]" />
             Secured by Stripe
           </p>
         </form>

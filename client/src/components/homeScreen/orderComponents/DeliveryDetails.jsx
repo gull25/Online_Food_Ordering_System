@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../../common/Icon';
 const DeliveryDetails = ({ handleDriverAction, setIsLocationUpdatesActive, isLocationUpdatesActive, rider }) => {
   return (
     <div className="bg-surface-container-lowest p-stack_md border-t border-surface-variant relative z-20">
@@ -7,9 +8,9 @@ const DeliveryDetails = ({ handleDriverAction, setIsLocationUpdatesActive, isLoc
         <div className="flex items-center gap-stack_md">
           <div className="w-12 h-12 rounded-full overflow-hidden border border-surface-variant shrink-0 bg-surface-variant flex justify-center items-center">
             {rider ? (
-              <span className="material-symbols-outlined text-secondary text-2xl">account_circle</span>
+              <Icon name="account_circle" className="text-secondary text-2xl" />
             ) : (
-              <span className="material-symbols-outlined text-secondary animate-pulse text-2xl">two_wheeler</span>
+              <Icon name="two_wheeler" className="text-secondary animate-pulse text-2xl" />
             )}
           </div>
           <div>
@@ -34,14 +35,14 @@ const DeliveryDetails = ({ handleDriverAction, setIsLocationUpdatesActive, isLoc
               aria-label="Chat with driver"
               className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-variant transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined">chat</span>
+              <Icon name="chat" />
             </button>
             <button
               onClick={() => handleDriverAction('Calling')}
               aria-label="Call driver"
               className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-variant transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined">call</span>
+              <Icon name="call" />
             </button>
           </div>
         )}
@@ -56,13 +57,9 @@ const DeliveryDetails = ({ handleDriverAction, setIsLocationUpdatesActive, isLoc
               : 'bg-surface-container text-on-surface-variant hover:bg-surface-variant'
           }`}
         >
-          <span
-            className={`material-symbols-outlined ${
+          <Icon name="my_location" className={`${
               isLocationUpdatesActive ? 'animate-spin' : ''
-            }`}
-          >
-            my_location
-          </span>
+            }`} />
           {isLocationUpdatesActive
             ? 'Live Location Updates Active'
             : 'Location Updates Paused'}

@@ -11,7 +11,7 @@ const MobileCategoryNav = ({ MENU_CATEGORIES, activeCategory, scrollToCategory }
             onClick={() => scrollToCategory(category.id)}
             className={`whitespace-nowrap px-4 py-2 rounded-full font-button text-button border transition-all ${
               isActive
-                ? 'bg-primary text-white border-primary shadow-sm'
+                ? 'bg-primary text-on-primary border-primary shadow-sm'
                 : 'bg-surface-container-lowest border-surface-variant text-on-surface'
             }`}
           >

@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { iconMarkup } from '../../helper/mapIconMarkup';
+import Icon from '../common/Icon';
 import { useSelector } from 'react-redux';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { socket, joinOrderRoom, leaveOrderRoom } from '../../helper/socket';
+import { ORDER_STATUS } from '../../constants/orderStatus';
 
 // Fix Leaflet default marker icon path issue with Vite bundler
 delete L.Icon.Default.prototype._getIconUrl;
@@ -25,8 +28,19 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-const FitBounds = ({ activeOrder, riderPos }) => {
+/**
+ * Frames the map on the selected delivery.
+ *
+ * Keyed on the order id, not on the rider's position. It previously re-ran
+ * whenever a GPS ping arrived — every few seconds — so `fitBounds` re-zoomed
+ * and re-centred the map continuously, yanking it out from under anyone trying
+ * to pan or read it. Now it frames once per selected order; the rider marker
+ * moves within that frame.
+ */
+const FitBounds = ({ activeOrder }) => {
   const map = useMap();
+  const orderId = activeOrder?._id;
+
   useEffect(() => {
     const bounds = [];
     if (activeOrder?.restaurant?.location?.coordinates) {
@@ -35,11 +49,12 @@ const FitBounds = ({ activeOrder, riderPos }) => {
     if (activeOrder?.deliveryAddress?.lat && activeOrder?.deliveryAddress?.lng) {
       bounds.push([activeOrder.deliveryAddress.lat, activeOrder.deliveryAddress.lng]);
     }
-    if (riderPos) bounds.push([riderPos.lat, riderPos.lng]);
     if (bounds.length > 0) {
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
     }
-  }, [map, activeOrder, riderPos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, orderId]);
+
   return null;
 };
 
@@ -65,7 +80,7 @@ const AdminLiveDeliveries = () => {
   const restaurantIcon = useMemo(() => new L.DivIcon({
     className: '',
     html: `<div style="width:24px;height:24px;background:#1c1b1f;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)">
-             <span class="material-symbols-outlined" style="font-size:12px;color:white">restaurant</span>
+             ${iconMarkup('restaurant', { size: 12, color: 'white' })}
            </div>`,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
@@ -74,7 +89,7 @@ const AdminLiveDeliveries = () => {
   const customerIcon = useMemo(() => new L.DivIcon({
     className: '',
     html: `<div style="width:24px;height:24px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #ae3200;box-shadow:0 2px 6px rgba(0,0,0,0.3)">
-             <span class="material-symbols-outlined" style="font-size:12px;color:#ae3200">home</span>
+             ${iconMarkup('home', { size: 12, color: '#ae3200' })}
            </div>`,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
@@ -83,14 +98,28 @@ const AdminLiveDeliveries = () => {
   const riderIcon = useMemo(() => new L.DivIcon({
     className: '',
     html: `<div style="width:32px;height:32px;background:#ae3200;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 10px rgba(174,50,0,0.4)">
-             <span class="material-symbols-outlined fill" style="font-size:16px;color:white">two_wheeler</span>
+             ${iconMarkup('two_wheeler_filled', { size: 16, color: 'white' })}
            </div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
   }), []);
 
-  // Filter orders that are currently out for delivery with a rider assigned
-  const liveOrders = orders.filter(o => o.status === 'Out For Delivery' && o.rider);
+  /**
+   * Orders currently on the road.
+   *
+   * The status was compared against the string 'Out For Delivery', which the
+   * API never returns — its enum value is 'OUT_FOR_DELIVERY'. The filter
+   * therefore always produced an empty array and this entire Live Deliveries
+   * panel silently never rendered, no matter how many deliveries were active.
+   */
+  const liveOrders = useMemo(
+    () => orders.filter((o) => o.status === ORDER_STATUS.OUT_FOR_DELIVERY && o.rider),
+    [orders]
+  );
+
+  // Stable key for the socket-subscription effect below, so it re-subscribes
+  // only when the set of live orders actually changes.
+  const liveOrderIdsKey = liveOrders.map((o) => o._id).join(',');
 
   // Automatically select the first live order if none is selected
   useEffect(() => {
@@ -105,22 +134,28 @@ const AdminLiveDeliveries = () => {
   useEffect(() => {
     if (!user?._id || liveOrders.length === 0) return;
 
-    liveOrders.forEach(order => {
-      joinOrderRoom(order._id);
-      // Seed with last-known DB location
-      if (order.rider?.currentLocation?.coordinates && !riderPositions[order._id]) {
-        setRiderPositions(prev => ({
-          ...prev,
-          [order._id]: {
-            lat: order.rider.currentLocation.coordinates[1],
-            lng: order.rider.currentLocation.coordinates[0],
-          },
-        }));
-      }
+    const joinedIds = liveOrders.map((o) => o._id);
+    joinedIds.forEach((id) => joinOrderRoom(id));
+
+    // Seed from the last-known DB location in one update. The previous version
+    // read `riderPositions` inside the effect without listing it as a
+    // dependency, so it worked off a stale snapshot and could re-seed a
+    // position that had already been superseded by a live ping.
+    setRiderPositions((prev) => {
+      const seeded = { ...prev };
+      let changed = false;
+      liveOrders.forEach((order) => {
+        const coords = order.rider?.currentLocation?.coordinates;
+        if (coords && !seeded[order._id]) {
+          seeded[order._id] = { lat: coords[1], lng: coords[0] };
+          changed = true;
+        }
+      });
+      return changed ? seeded : prev;
     });
 
     const handleLocation = (data) => {
-      setRiderPositions(prev => ({
+      setRiderPositions((prev) => ({
         ...prev,
         [data.orderId]: { lat: data.lat, lng: data.lng },
       }));
@@ -129,10 +164,11 @@ const AdminLiveDeliveries = () => {
     socket.on('rider:location', handleLocation);
 
     return () => {
-      liveOrders.forEach(order => leaveOrderRoom(order._id));
+      joinedIds.forEach((id) => leaveOrderRoom(id));
       socket.off('rider:location', handleLocation);
     };
-  }, [liveOrders.map(o => o._id).join(','), user?._id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveOrderIdsKey, user?._id]);
 
   // Don't render the section at all if no live deliveries
   if (liveOrders.length === 0) return null;
@@ -174,7 +210,7 @@ const AdminLiveDeliveries = () => {
     <section className="mb-stack_lg">
       <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
         <h3 className="font-h3 text-h3 text-on-surface font-bold mb-stack_md flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary animate-pulse">explore</span>
+          <Icon name="explore" className="text-primary animate-pulse" />
           Live Deliveries
           <span className="ml-auto text-xs font-label bg-primary/10 text-primary px-3 py-1 rounded-full">
             {liveOrders.length} active
@@ -197,21 +233,21 @@ const AdminLiveDeliveries = () => {
                   <span className="font-button text-button font-bold">
                     #{order._id.slice(-6).toUpperCase()}
                   </span>
-                  <span className="text-xs bg-primary text-white px-2 py-1 rounded-full flex items-center gap-1 font-bold">
-                    <span className="w-1.5 h-1.5 bg-white rounded-full inline-block animate-pulse" /> LIVE
+                  <span className="text-xs bg-primary text-on-primary px-2 py-1 rounded-full flex items-center gap-1 font-bold">
+                    <span className="w-1.5 h-1.5 bg-current rounded-full inline-block animate-pulse" /> LIVE
                   </span>
                 </div>
                 <div className="text-small text-on-surface-variant flex items-center gap-2">
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>person</span>
+                  <Icon name="person" style={{ fontSize: '16px' }} />
                   {order.deliveryAddress?.firstName || order.user?.name || 'Customer'}
                 </div>
                 <div className="text-small text-on-surface-variant flex items-center gap-2">
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>two_wheeler</span>
+                  <Icon name="two_wheeler" style={{ fontSize: '16px' }} />
                   {order.rider?.name || 'Rider'}
                 </div>
                 {riderPositions[order._id] && (
                   <div className="text-xs text-primary flex items-center gap-1 mt-1 font-bold">
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>my_location</span>
+                    <Icon name="my_location" style={{ fontSize: '14px' }} />
                     GPS ACTIVE
                   </div>
                 )}
@@ -235,7 +271,7 @@ const AdminLiveDeliveries = () => {
               />
 
               <MapUpdater />
-              <FitBounds activeOrder={activeOrder} riderPos={activeRiderPos} />
+              <FitBounds activeOrder={activeOrder} />
 
               {restaurantLoc && (
                 <Marker position={restaurantLoc} icon={restaurantIcon}>
@@ -262,8 +298,8 @@ const AdminLiveDeliveries = () => {
 
             {/* ETA Overlay */}
             {riderLoc && customerLoc && (
-              <div className="absolute top-3 right-3 z-[400] bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-surface-variant flex flex-col gap-0.5 pointer-events-none">
-                <span className="font-label text-[10px] text-secondary uppercase tracking-wider">Est. Arrival</span>
+              <div className="absolute top-3 right-3 z-[400] bg-surface-container-lowest/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-surface-variant flex flex-col gap-0.5 pointer-events-none">
+                <span className="font-label text-[12px] text-secondary uppercase tracking-wider">Est. Arrival</span>
                 <span className="font-h3 text-h3 font-bold text-primary">
                   {etaMin > 0 ? `~${etaMin} min` : 'Arriving now'}
                 </span>
@@ -274,7 +310,7 @@ const AdminLiveDeliveries = () => {
             {/* No location placeholder */}
             {!riderLoc && (
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[400] bg-surface-container-lowest/95 backdrop-blur-md px-5 py-2.5 rounded-full shadow-lg border border-outline-variant/30 flex items-center gap-2 pointer-events-none">
-                <span className="material-symbols-outlined text-primary animate-pulse" style={{ fontSize: '20px' }}>location_searching</span>
+                <Icon name="location_searching" className="text-primary animate-pulse" style={{ fontSize: '20px' }} />
                 <span className="font-inter text-sm font-bold text-on-surface tracking-wide">Waiting for rider GPS...</span>
               </div>
             )}

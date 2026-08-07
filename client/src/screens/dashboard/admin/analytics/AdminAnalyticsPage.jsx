@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import Icon from '../../../../components/common/Icon';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAdminAnalytics } from '../../../../redux/adminSlice';
@@ -18,7 +19,7 @@ const AdminAnalyticsPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { analytics, loading } = useSelector((state) => state.admin);
+  const { analytics } = useSelector((state) => state.admin);
 
   useEffect(() => {
     dispatch(fetchAdminAnalytics());
@@ -81,11 +82,17 @@ const AdminAnalyticsPage = () => {
       if(labels.length < 6) labels.push(data[i].label);
     }
     
+    // Optional chaining throughout: a payload missing any sub-object (a fresh
+    // restaurant with no orders yet) previously threw here and took the whole
+    // analytics page down to a blank screen.
+    const totalOrders = analytics.orders?.total || 0;
+    const totalRevenue = analytics.orders?.revenue || 0;
+
     return {
-      revenue: `$${(analytics.orders.revenue || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`,
-      orders: (analytics.orders.total || 0).toLocaleString(),
-      growth: `${(analytics.restaurants.total || 0) * 2}%`,
-      aov: `$${analytics.orders.total > 0 ? (analytics.orders.revenue / analytics.orders.total).toFixed(2) : '0.00'}`,
+      revenue: `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+      orders: totalOrders.toLocaleString(),
+      growth: `${(analytics.restaurants?.total || 0) * 2}%`,
+      aov: `$${totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : '0.00'}`,
       linePath: chart.linePath,
       prevLinePath: chart.linePath ? chart.linePath.replace(/cy="(\d+)"/g, 'cy="$1"') : '', // mock previous
       xLabels: labels
@@ -107,27 +114,11 @@ const AdminAnalyticsPage = () => {
   return (
     <div className="bg-background text-on-background min-h-screen">
       {/* Styles inject support */}
-      <style>{`
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-          display: inline-block;
-          line-height: 1;
-        }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
-        .glass-card {
-          background: rgba(255, 255, 255, 0.8);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          border: 1px solid rgba(229, 231, 235, 0.5);
-        }
-      `}</style>
 
       {/* Toast Alert overlay */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-[70] bg-inverse-surface text-white px-6 py-4 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
-          <span className="material-symbols-outlined text-primary-fixed">info</span>
+          <Icon name="info" className="text-primary-fixed" />
           <span className="font-button text-button text-sm">{toastMessage}</span>
         </div>
       )}
@@ -142,7 +133,7 @@ const AdminAnalyticsPage = () => {
                 onClick={() => setIsModalOpen(false)}
                 className="w-8 h-8 rounded-full hover:bg-surface-container-high flex items-center justify-center text-secondary"
               >
-                <span className="material-symbols-outlined">close</span>
+                <Icon name="close" />
               </button>
             </div>
             <form onSubmit={handleAddRestaurant} className="space-y-4">
@@ -180,7 +171,7 @@ const AdminAnalyticsPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-12 rounded-xl bg-primary text-white font-button text-button hover:opacity-90 transition-colors shadow-md"
+                  className="flex-1 h-12 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-colors shadow-md"
                 >
                   Add Restaurant
                 </button>
@@ -254,7 +245,7 @@ const AdminAnalyticsPage = () => {
                       style={{ opacity: 0.3 }}
                     ></path>
                   </svg>
-                  <div className="h-full border-l border-outline-variant flex flex-col justify-between text-[10px] text-secondary absolute left-0 top-0 pl-2">
+                  <div className="h-full border-l border-outline-variant flex flex-col justify-between text-[12px] text-secondary absolute left-0 top-0 pl-2">
                     <span>$250k</span>
                     <span>$150k</span>
                     <span>$50k</span>
@@ -345,7 +336,7 @@ const AdminAnalyticsPage = () => {
                                 {rest.image ? (
                                   <img src={rest.image} alt={rest.name} className="w-full h-full object-cover" />
                                 ) : (
-                                  <span className="material-symbols-outlined text-[20px]">restaurant</span>
+                                  <Icon name="restaurant" className="text-[20px]" />
                                 )}
                               </div>
                               <span className="font-body text-body font-semibold">{rest.name}</span>
@@ -381,12 +372,14 @@ const AdminAnalyticsPage = () => {
                   <h4 className="font-h3 text-h3 text-on-surface font-bold">Delivery Hotspots</h4>
                   <p className="font-small text-small text-secondary">Geographical density of active orders</p>
                 </div>
-                <span
+                <button
+                  type="button"
                   onClick={() => showToast('Filters applied to hotspots density map')}
-                  className="material-symbols-outlined text-secondary hover:text-primary cursor-pointer"
+                  aria-label="Filter hotspots"
+                  className="text-secondary hover:text-primary cursor-pointer"
                 >
-                  filter_list
-                </span>
+                  <Icon name="filter_list" />
+                </button>
               </div>
               <div className="flex-1 relative rounded-xl overflow-hidden bg-surface-container min-h-[300px]">
                 <div
@@ -422,11 +415,11 @@ const AdminAnalyticsPage = () => {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-tertiary-container"></span>
-                        <span className="text-[10px] text-secondary font-bold">
+                        <span className="text-[12px] text-secondary font-bold">
                           Efficiency: {selectedHotspot.efficiency}
                         </span>
                       </div>
-                      <p className="text-[10px] text-secondary font-semibold pl-4">
+                      <p className="text-[12px] text-secondary font-semibold pl-4">
                         Orders Today: {selectedHotspot.activeOrders}
                       </p>
                     </div>
@@ -444,8 +437,8 @@ const AdminAnalyticsPage = () => {
               onClick={() => showToast('Opening Sustainability metrics portfolio')}
               className="bg-surface-container-low p-8 rounded-xl border border-tertiary-container/20 flex items-center gap-6 group hover:bg-tertiary-container/5 transition-colors cursor-pointer"
             >
-              <div className="w-16 h-16 bg-tertiary-container text-white rounded-2xl flex items-center justify-center transform group-hover:rotate-6 transition-transform flex-shrink-0">
-                <span className="material-symbols-outlined text-[32px]">eco</span>
+              <div className="w-16 h-16 bg-tertiary-container text-on-tertiary-container rounded-2xl flex items-center justify-center transform group-hover:rotate-6 transition-transform flex-shrink-0">
+                <Icon name="eco" className="text-[32px]" />
               </div>
               <div>
                 <h5 className="font-label text-label text-tertiary mb-1 uppercase tracking-wider font-bold">
@@ -463,8 +456,8 @@ const AdminAnalyticsPage = () => {
               onClick={() => showToast('Opening loyalty program retention stats')}
               className="bg-surface-container-low p-8 rounded-xl border border-primary-container/20 flex items-center gap-6 group hover:bg-primary-container/5 transition-colors cursor-pointer"
             >
-              <div className="w-16 h-16 bg-primary-container text-white rounded-2xl flex items-center justify-center transform group-hover:-rotate-6 transition-transform flex-shrink-0">
-                <span className="material-symbols-outlined text-[32px]">group</span>
+              <div className="w-16 h-16 bg-primary text-on-primary rounded-2xl flex items-center justify-center transform group-hover:-rotate-6 transition-transform flex-shrink-0">
+                <Icon name="group" className="text-[32px]" />
               </div>
               <div>
                 <h5 className="font-label text-label text-primary mb-1 uppercase tracking-wider font-bold">
@@ -481,18 +474,18 @@ const AdminAnalyticsPage = () => {
         </div>
 
         {/* Footer Anchor */}
-        <footer className="w-full py-stack_lg px-margin_desktop bg-inverse-surface dark:bg-surface-container-lowest mt-stack_lg">
+        <footer className="w-full py-stack_lg px-margin_mobile md:px-margin_desktop bg-inverse-surface text-inverse-on-surface mt-stack_lg">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-gutter max-w-container_max mx-auto">
             <div className="col-span-1">
-              <h3 className="font-h3 text-h3 text-primary-fixed mb-4 font-bold text-primary-fixed">Foodora</h3>
-              <p className="text-surface-variant/80 font-small text-small leading-relaxed">
+              <h3 className="font-h3 text-h3 text-primary-fixed mb-4 font-bold">Foodora</h3>
+              <p className="text-inverse-on-surface/75 font-small text-small leading-relaxed">
                 The ultimate management suite for the future of gourmet delivery. Powering thousands of kitchens
                 worldwide.
               </p>
             </div>
             <div className="col-span-1">
-              <h4 className="font-button text-white mb-4">Company</h4>
-              <ul className="space-y-2 text-small text-surface-variant/80 font-semibold">
+              <h4 className="font-button text-inverse-on-surface mb-4">Company</h4>
+              <ul className="space-y-2 text-small text-inverse-on-surface/75 font-semibold">
                 <li>
                   <a className="hover:text-primary-fixed hover:underline transition-all" href="#">
                     About Us
@@ -511,8 +504,8 @@ const AdminAnalyticsPage = () => {
               </ul>
             </div>
             <div className="col-span-1">
-              <h4 className="font-button text-white mb-4">Legal</h4>
-              <ul className="space-y-2 text-small text-surface-variant/80 font-semibold">
+              <h4 className="font-button text-inverse-on-surface mb-4">Legal</h4>
+              <ul className="space-y-2 text-small text-inverse-on-surface/75 font-semibold">
                 <li>
                   <a className="hover:text-primary-fixed hover:underline transition-all" href="#">
                     Legal Notice
@@ -531,8 +524,8 @@ const AdminAnalyticsPage = () => {
               </ul>
             </div>
             <div className="col-span-1">
-              <h4 className="font-button text-white mb-4">Support</h4>
-              <ul className="space-y-2 text-small text-surface-variant/80 font-semibold">
+              <h4 className="font-button text-inverse-on-surface mb-4">Support</h4>
+              <ul className="space-y-2 text-small text-inverse-on-surface/75 font-semibold">
                 <li>
                   <a className="hover:text-primary-fixed hover:underline transition-all" href="#">
                     Help Center
@@ -552,16 +545,16 @@ const AdminAnalyticsPage = () => {
             </div>
           </div>
           <div className="max-w-container_max mx-auto border-t border-surface-variant/20 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="font-small text-small text-surface-variant/80">© 2024 Foodora. All rights reserved.</p>
+            <p className="font-small text-small text-inverse-on-surface/75">© 2024 Foodora. All rights reserved.</p>
             <div className="flex items-center gap-6">
-              <a className="text-surface-variant/80 hover:text-primary-fixed" href="#">
-                <span className="material-symbols-outlined">public</span>
+              <a className="text-inverse-on-surface/75 hover:text-primary-fixed" href="#">
+                <Icon name="public" />
               </a>
-              <a className="text-surface-variant/80 hover:text-primary-fixed" href="#">
-                <span className="material-symbols-outlined">language</span>
+              <a className="text-inverse-on-surface/75 hover:text-primary-fixed" href="#">
+                <Icon name="language" />
               </a>
-              <a className="text-surface-variant/80 hover:text-primary-fixed" href="#">
-                <span className="material-symbols-outlined">alternate_email</span>
+              <a className="text-inverse-on-surface/75 hover:text-primary-fixed" href="#">
+                <Icon name="alternate_email" />
               </a>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../../components/common/Icon';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthForm from './AuthForm';
 
@@ -25,7 +26,7 @@ const AuthPage = () => {
           onClick={() => navigate('/')}
           className="absolute top-margin_mobile left-margin_mobile md:top-margin_desktop md:left-margin_desktop z-20 flex items-center gap-2 px-4 py-2 bg-white/90 rounded-full shadow-md text-primary font-button text-button hover:bg-white transition-all transform active:scale-95"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <Icon name="arrow_back" />
           <span>Back to Home</span>
         </button>
 
@@ -42,7 +43,7 @@ const AuthPage = () => {
       <section className="w-full h-2/3 md:w-1/2 md:h-full bg-surface-container-lowest overflow-y-auto px-margin_mobile py-stack_lg flex flex-col items-center justify-center">
         {message && (
           <div className="max-w-md w-full mb-6 p-4 bg-tertiary-container text-on-tertiary-container rounded-xl flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4">
-            <span className="material-symbols-outlined">info</span>
+            <Icon name="info" />
             <p className="font-body text-body font-medium">{message}</p>
           </div>
         )}

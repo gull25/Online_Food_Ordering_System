@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '../../common/Icon';
 import FoodCard from '../../ui/FoodCard/FoodCard';
 import MenuItemModal from '../../ui/MenuItemModal/MenuItemModal';
 
@@ -69,9 +70,7 @@ const MenuSection = ({ MENU_CATEGORIES, itemsByCategory, searchQuery, cart, addT
       {/* Empty search state */}
       {filteredItems.length === 0 && (
         <div className="bg-surface-container-lowest rounded-16 p-12 text-center border border-surface-variant mt-8">
-          <span className="material-symbols-outlined text-4xl text-on-secondary-container mb-2">
-            search_off
-          </span>
+          <Icon name="search_off" className="text-4xl text-on-secondary-container mb-2" />
           <h3 className="font-h3 text-h3 text-on-surface mb-2">No matching dishes found</h3>
           <p className="text-secondary max-w-md mx-auto">
             We couldn't find any dishes matching "{searchQuery}". Try checking the spelling or

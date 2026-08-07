@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../common/Icon';
 const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
@@ -12,7 +13,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             onClick={onClose}
             className="w-8 h-8 rounded-full hover:bg-surface-variant transition-colors flex items-center justify-center text-on-surface-variant"
           >
-            <span className="material-symbols-outlined">close</span>
+            <Icon name="close" />
           </button>
         </div>
         <div>{children}</div>

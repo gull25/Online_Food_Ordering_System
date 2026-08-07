@@ -1,14 +1,13 @@
 import React from 'react';
 
+import Icon from '../../common/Icon';
 const NewsletterSignup = ({ newsletterSubscribed, handleNewsletterSubmit, newsletterEmail, setNewsletterEmail }) => {
   return (
     <section className="bg-inverse-surface rounded-[24px] p-8 md:p-16 text-center relative overflow-hidden shadow-lg">
       <div className="absolute top-0 left-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 right-0 w-64 h-64 bg-tertiary/20 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
       <div className="relative z-10 max-w-2xl mx-auto">
-        <span className="material-symbols-outlined text-primary-fixed text-[48px] mb-4">
-          mail
-        </span>
+        <Icon name="mail" className="text-primary-fixed text-[48px] mb-4" />
         <h2 className="font-h2 text-h2-mobile md:text-h2 text-white mb-4">
           Never miss a tasty deal
         </h2>
@@ -18,9 +17,7 @@ const NewsletterSignup = ({ newsletterSubscribed, handleNewsletterSubmit, newsle
 
         {newsletterSubscribed ? (
           <div className="bg-white/10 text-white p-6 rounded-xl border border-white/20 backdrop-blur-sm max-w-lg mx-auto flex items-center justify-center gap-3 animate-in fade-in zoom-in-95">
-            <span className="material-symbols-outlined text-[32px] text-tertiary-fixed">
-              check_circle
-            </span>
+            <Icon name="check_circle" className="text-[32px] text-tertiary-fixed" />
             <div className="text-left">
               <h4 className="font-button text-button">Successfully Subscribed!</h4>
               <p className="text-small text-white/80">

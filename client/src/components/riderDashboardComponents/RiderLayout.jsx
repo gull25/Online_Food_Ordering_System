@@ -23,18 +23,19 @@ const RiderLayout = () => {
     let activeTab = 'dashboard';
     if (path.includes('active-deliveries')) activeTab = 'active-deliveries';
     else if (path.includes('earnings')) activeTab = 'earnings';
-    else if (path.includes('ratings')) activeTab = 'ratings';
 
     return (
         <div className="font-inter min-h-screen bg-background text-on-background overflow-x-hidden">
             <RiderSidebar activeTab={activeTab} />
             <RiderHeader profile={profile} showStatusToggle={true} />
-            
-            <main className="pt-[72px] lg:pl-64 pb-20 lg:pb-0 min-h-screen flex flex-col">
+
+            {/* Bottom padding clears the mobile nav bar; lg drops it since the
+                sidebar takes over there. */}
+            <main className="pt-[72px] lg:pl-64 pb-24 lg:pb-0 min-h-screen flex flex-col">
                 <Outlet />
             </main>
 
-            <RiderBottomNav activeTab={activeTab} />
+            <RiderBottomNav />
         </div>
     );
 };

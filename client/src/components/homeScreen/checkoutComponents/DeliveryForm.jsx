@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Icon from '../../common/Icon';
 const DeliveryForm = ({ formData, handleInputChange, handleSubmitOrder, deliveryPreference, setDeliveryPreference }) => {
   return (
     <section className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant">
@@ -90,7 +91,7 @@ const DeliveryForm = ({ formData, handleInputChange, handleSubmitOrder, delivery
                 : 'border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low'
             }`}
           >
-            <span className="material-symbols-outlined">door_front</span>
+            <Icon name="door_front" />
             <span className="font-button text-sm font-semibold">Meet at door</span>
           </button>
           <button
@@ -101,7 +102,7 @@ const DeliveryForm = ({ formData, handleInputChange, handleSubmitOrder, delivery
                 : 'border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low'
             }`}
           >
-            <span className="material-symbols-outlined">package_2</span>
+            <Icon name="package_2" />
             <span className="font-button text-sm font-semibold">Leave at door</span>
           </button>
         </div>

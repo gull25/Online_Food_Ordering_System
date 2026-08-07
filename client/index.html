@@ -1,15 +1,51 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ae3200" />
+    <meta name="description" content="Foodora — order from the best local restaurants with fast delivery, live order tracking and exclusive offers." />
     <title>Foodora - Delicious food delivered</title>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <!--
+      Resolve the theme before first paint.
+
+      The <html> element used to ship with class="light" and was corrected by a
+      React effect, so dark-mode users saw a white flash on every load. Doing it
+      here, synchronously in <head>, means the first painted frame is already the
+      right theme.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          var theme =
+            stored ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.classList.add(theme);
+          document.documentElement.style.colorScheme = theme;
+        } catch (e) {
+          document.documentElement.classList.add('light');
+        }
+      })();
+    </script>
+
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <!--
+      Poppins is the only webfont the app loads now.
+
+      The Material Symbols icon font (1.1MB) has been removed entirely — icons
+      are React SVG components via react-icons. That deletes a render-blocking
+      CDN request and, with it, the failure mode where unloaded ligatures were
+      painted as literal words ("dashboard", "receipt_long") on first load.
+
+      `display=swap` is right for prose: readable fallback text beats invisible
+      text while the face downloads.
+    -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   </head>
-  <body class="bg-surface text-on-surface font-body text-body antialiased selection:bg-primary-container selection:text-on-primary-container">
+  <body class="bg-background text-on-surface font-body text-body antialiased selection:bg-primary-container selection:text-on-primary-container">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

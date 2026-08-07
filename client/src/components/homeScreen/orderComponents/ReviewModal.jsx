@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '../../common/Icon';
 import { toast } from 'react-hot-toast';
 import api from '../../../api/axios';
 
@@ -40,12 +41,12 @@ const ReviewModal = ({ order, onClose, onSuccess }) => {
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-variant text-on-surface-variant hover:bg-surface-container-high transition-colors"
         >
-          <span className="material-symbols-outlined text-[20px]">close</span>
+          <Icon name="close" className="text-[20px]" />
         </button>
 
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-primary-container text-on-primary-container rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="material-symbols-outlined text-[32px]">star</span>
+            <Icon name="star" className="text-[32px]" />
           </div>
           <h2 className="font-h3 text-h3 font-bold text-on-surface mb-2">Rate your experience</h2>
           <p className="font-body text-body text-secondary">
@@ -65,16 +66,15 @@ const ReviewModal = ({ order, onClose, onSuccess }) => {
                 onClick={() => setRating(star)}
                 className="transition-transform hover:scale-110 focus:outline-none"
               >
-                <span
-                  className={`material-symbols-outlined text-[40px] ${
-                    star <= (hoverRating || rating)
-                      ? 'text-[#F59E0B] fill-current'
-                      : 'text-surface-variant'
+                {/* Filled only up to the selected/hovered star — the whole row
+                    was rendering solid regardless of rating. */}
+                <Icon
+                  name="star"
+                  filled={star <= (hoverRating || rating)}
+                  className={`text-[40px] ${
+                    star <= (hoverRating || rating) ? 'text-warning' : 'text-surface-variant'
                   }`}
-                  style={star <= (hoverRating || rating) ? { fontVariationSettings: "'FILL' 1" } : {}}
-                >
-                  star
-                </span>
+                />
               </button>
             ))}
           </div>
@@ -97,7 +97,7 @@ const ReviewModal = ({ order, onClose, onSuccess }) => {
             className="w-full h-12 rounded-xl bg-primary text-on-primary font-button text-button font-bold hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
-              <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+              <Icon name="progress_activity" className="animate-spin text-[20px]" />
             ) : (
               'Submit Review'
             )}

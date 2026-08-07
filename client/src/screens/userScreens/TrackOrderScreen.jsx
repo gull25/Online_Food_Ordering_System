@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import Icon from '../../components/common/Icon';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchOrderByIdThunk, cancelOrderThunk, orderStatusUpdated } from '../../redux/orderSlice';
+import {
+  fetchOrderByIdThunk,
+  cancelOrderThunk,
+  orderStatusUpdated,
+  fetchMyOrdersThunk,
+} from '../../redux/orderSlice';
 import TopNavBar from '../../components/layout/Navbar';
 import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
 import OrderStatusSteps from '../../components/homeScreen/orderComponents/OrderStatusSteps';
@@ -12,6 +18,15 @@ import ReviewModal from '../../components/homeScreen/orderComponents/ReviewModal
 import { socket, connectSocket, joinOrderRoom, leaveOrderRoom } from '../../helper/socket';
 import { setCurrentOrder } from '../../redux/orderSlice';
 import { toast } from 'react-hot-toast';
+import {
+  ORDER_STATUS,
+  ORDER_TIMELINE_SEQUENCE,
+  getOrderStatusBadgeClass,
+  getOrderStatusLabel,
+  isActiveOrder,
+} from '../../constants/orderStatus';
+import { APP_ROUTES } from '../../constants';
+import { OrderListSkeleton } from '../../components/common/Skeleton';
 
 const BASE_TIMELINE_STEPS = [
   {
@@ -68,8 +83,9 @@ const TrackOrderPage = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('orderId');
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const { currentOrder: order, loading, error } = useSelector((state) => state.orders);
+  const { currentOrder: order, orders, loading, mutating, error } = useSelector((state) => state.orders);
   const { user } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -83,6 +99,31 @@ const TrackOrderPage = () => {
       dispatch(setCurrentOrder(null));
     };
   }, [dispatch, orderId]);
+
+  /**
+   * Reaching this page without an `orderId` is the normal case — the "Track
+   * Order" link in the navbar has no order to point at.
+   *
+   * Previously that path rendered a bare "Order not found. Please check your
+   * order ID." on an otherwise empty screen: no navbar, no footer, no way back.
+   * Instead, load the user's orders and either jump straight to the one live
+   * order or let them pick from the list below.
+   */
+  useEffect(() => {
+    if (!orderId) dispatch(fetchMyOrdersThunk());
+  }, [dispatch, orderId]);
+
+  const trackableOrders = useMemo(
+    () => (orders || []).filter((o) => isActiveOrder(o.status)),
+    [orders]
+  );
+
+  useEffect(() => {
+    // Exactly one order in flight — skip the picker, it has only one answer.
+    if (!orderId && trackableOrders.length === 1) {
+      navigate(`${APP_ROUTES.TRACK_ORDER}?orderId=${trackableOrders[0]._id}`, { replace: true });
+    }
+  }, [orderId, trackableOrders, navigate]);
 
   // WebSocket Integration for Real-Time Updates
   useEffect(() => {
@@ -141,22 +182,12 @@ const TrackOrderPage = () => {
     };
   }, [user, orderId, dispatch]);
 
-  // Derived state for timeline step based on actual order status
+  // Timeline position derived from the shared status sequence, so adding a
+  // status to the pipeline can't leave this mapping silently out of date.
   const getStepFromStatus = (status) => {
-    switch (status) {
-      case 'PLACED': return 0;
-      case 'ACCEPTED': return 1;
-      case 'PREPARING': return 2;
-      case 'READY_FOR_PICKUP': return 3;
-      case 'RIDER_ASSIGNED': return 4;
-      case 'PICKED_UP': return 5;
-      case 'OUT_FOR_DELIVERY': return 6;
-      case 'DELIVERED': return 7;
-      case 'CANCELLED': return 0; // Or handle differently
-      case 'REJECTED': return 0;
-      case 'REFUNDED': return 7;
-      default: return 0;
-    }
+    if (status === ORDER_STATUS.REFUNDED) return ORDER_TIMELINE_SEQUENCE.length - 1;
+    const index = ORDER_TIMELINE_SEQUENCE.indexOf(status);
+    return index === -1 ? 0 : index;
   };
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -214,19 +245,116 @@ const TrackOrderPage = () => {
   // Review Modal State
   const [showReviewModal, setShowReviewModal] = useState(false);
 
-  if (loading || (!order && orderId && !error)) {
+  // ── No specific order requested: show a picker ──────────────────────────
+  // Every branch below keeps the navbar and footer, so the user is never
+  // stranded on a bare screen with no navigation.
+  if (!orderId) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center flex-col gap-4">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-on-surface-variant font-body">Loading order details...</p>
+      <div className="bg-background text-on-background min-h-screen flex flex-col">
+        <TopNavBar />
+        <main className="grow w-full max-w-3xl mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg">
+          <h1 className="font-h2-mobile md:font-h2 text-h2-mobile md:text-h2 text-on-surface mb-2">
+            Track an order
+          </h1>
+          <p className="font-body text-body text-secondary mb-stack_lg">
+            Pick an order below to follow it live on the map.
+          </p>
+
+          {loading ? (
+            <OrderListSkeleton count={3} />
+          ) : trackableOrders.length > 0 ? (
+            <div className="grid gap-stack_md stagger-children">
+              {trackableOrders.map((o) => (
+                <Link
+                  key={o._id}
+                  to={`${APP_ROUTES.TRACK_ORDER}?orderId=${o._id}`}
+                  className="bg-surface-container-lowest p-6 rounded-xl border border-surface-variant shadow-sm flex items-center justify-between gap-4 hover:shadow-md hover:border-outline-variant transition-all"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-3 mb-1 flex-wrap">
+                      <span className="font-h3 text-h3 text-on-surface font-bold">
+                        Order #{o._id.slice(-6).toUpperCase()}
+                      </span>
+                      <span className={`font-label text-label px-3 py-1 rounded-full font-bold ${getOrderStatusBadgeClass(o.status)}`}>
+                        {getOrderStatusLabel(o.status)}
+                      </span>
+                    </div>
+                    <p className="font-body text-small text-secondary truncate">
+                      {(o.items || []).map((i) => `${i.quantity}x ${i.name || 'Item'}`).join(', ')}
+                    </p>
+                  </div>
+                  <Icon name="chevron_right" className="text-secondary shrink-0" />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center p-12 bg-surface-container-lowest rounded-xl border border-surface-variant animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <Icon name="local_shipping" className="text-6xl text-secondary mb-4" />
+              <h2 className="font-h3 text-h3 text-on-surface mb-2">No orders in progress</h2>
+              <p className="font-body text-body text-secondary mb-6 max-w-sm mx-auto">
+                When you place an order you'll be able to follow the rider here in real time.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to={APP_ROUTES.HOME}
+                  className="inline-flex items-center justify-center gap-2 px-6 h-12 bg-primary text-on-primary rounded-xl font-button text-button hover:opacity-90 transition-opacity"
+                >
+                  Browse restaurants
+                </Link>
+                <Link
+                  to={APP_ROUTES.ORDERS}
+                  className="inline-flex items-center justify-center gap-2 px-6 h-12 border border-outline text-on-surface rounded-xl font-button text-button hover:bg-surface-container transition-colors"
+                >
+                  View past orders
+                </Link>
+              </div>
+            </div>
+          )}
+        </main>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  if (loading || (!order && !error)) {
+    return (
+      <div className="bg-background text-on-background min-h-screen flex flex-col">
+        <TopNavBar />
+        <main className="grow flex items-center justify-center flex-col gap-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-on-surface-variant font-body">Loading order details…</p>
+        </main>
+        <HomeFooter />
       </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center">
-        <p className="text-error">{error || 'Order not found. Please check your order ID.'}</p>
+      <div className="bg-background text-on-background min-h-screen flex flex-col">
+        <TopNavBar />
+        <main className="grow flex flex-col items-center justify-center text-center px-margin_mobile py-stack_lg">
+          <Icon name="receipt_long" className="text-6xl text-surface-variant mb-4" />
+          <h1 className="font-h2 text-h2-mobile md:text-h2 text-on-surface mb-2">Order not found</h1>
+          <p className="font-body text-body text-secondary max-w-md mb-6">
+            {error || "We couldn't find that order. It may have been removed, or the link may be incorrect."}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              to={APP_ROUTES.TRACK_ORDER}
+              className="inline-flex items-center justify-center px-6 h-12 bg-primary text-on-primary rounded-xl font-button text-button hover:opacity-90 transition-opacity"
+            >
+              Choose another order
+            </Link>
+            <Link
+              to={APP_ROUTES.ORDERS}
+              className="inline-flex items-center justify-center px-6 h-12 border border-outline text-on-surface rounded-xl font-button text-button hover:bg-surface-container transition-colors"
+            >
+              My orders
+            </Link>
+          </div>
+        </main>
+        <HomeFooter />
       </div>
     );
   }
@@ -239,9 +367,7 @@ const TrackOrderPage = () => {
       {/* Driver action notification banner */}
       {driverNotification && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-inverse-surface text-on-primary-container px-6 py-3 rounded-full shadow-lg font-button text-button flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
-          <span className="material-symbols-outlined fill text-primary-container animate-pulse">
-            phone_in_talk
-          </span>
+          <Icon name="phone_in_talk" className="text-primary-container animate-pulse" filled />
           <span>{driverNotification}</span>
         </div>
       )}
@@ -266,35 +392,43 @@ const TrackOrderPage = () => {
                 </p>
               </div>
               <div className="flex gap-2 items-center">
-                {(order.status === 'PLACED' || order.status === 'ACCEPTED') && (
-                  <button 
-                    onClick={() => dispatch(cancelOrderThunk(order._id))}
-                    className="text-error border border-error px-3 py-1.5 rounded-full font-label text-label hover:bg-error/10 transition-colors"
+                {(order.status === ORDER_STATUS.PLACED || order.status === ORDER_STATUS.ACCEPTED) && (
+                  <button
+                    onClick={() => {
+                      // Cancelling is irreversible and money may already be
+                      // captured — confirm before firing it.
+                      if (window.confirm('Cancel this order? This cannot be undone.')) {
+                        dispatch(cancelOrderThunk(order._id));
+                      }
+                    }}
+                    disabled={mutating}
+                    // Feedback lives on the button rather than blanking the page.
+                    className="text-error border border-error px-3 py-1.5 rounded-full font-label text-label hover:bg-error/10 transition-colors disabled:opacity-50"
                   >
-                    Cancel Order
+                    {mutating ? 'Cancelling…' : 'Cancel Order'}
                   </button>
                 )}
-                <div className="bg-primary-container text-on-primary font-label text-label px-3 py-1.5 rounded-full inline-block font-semibold shadow-sm">
-                  {order.status}
+                <div className={`font-label text-label px-3 py-1.5 rounded-full inline-block font-semibold ${getOrderStatusBadgeClass(order.status)}`}>
+                  {getOrderStatusLabel(order.status)}
                 </div>
               </div>
             </div>
 
-            {order.status === 'REJECTED' && (
+            {order.status === ORDER_STATUS.REJECTED && (
               <div className="bg-error/10 text-error p-3 rounded-lg mb-stack_md border border-error/20 flex gap-2 items-center">
-                <span className="material-symbols-outlined">error</span>
+                <Icon name="error" />
                 <span><strong>Order Rejected:</strong> {order.rejectionReason || 'No reason provided.'}</span>
               </div>
             )}
-            {order.status === 'CANCELLED' && (
+            {order.status === ORDER_STATUS.CANCELLED && (
               <div className="bg-error/10 text-error p-3 rounded-lg mb-stack_md border border-error/20 flex gap-2 items-center">
-                <span className="material-symbols-outlined">cancel</span>
+                <Icon name="cancel" />
                 <span><strong>Order Cancelled:</strong> Cancelled by {order.cancelledBy || 'user'}.</span>
               </div>
             )}
             {order.estimatedDeliveryTime && (
               <div className="bg-primary/10 text-primary p-3 rounded-lg mb-stack_md border border-primary/20 flex gap-2 items-center">
-                <span className="material-symbols-outlined">schedule</span>
+                <Icon name="schedule" />
                 <span><strong>Estimated Delivery:</strong> {new Date(order.estimatedDeliveryTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
               </div>
             )}
@@ -335,15 +469,18 @@ const TrackOrderPage = () => {
               </span>
             </div>
 
-            {/* Review Call to Action */}
-            {order.status === 'Delivered' && !order.isReviewed && (
+            {/* Review Call to Action.
+                This compared against 'Delivered' while the API returns
+                'DELIVERED', so the prompt could never render and no customer was
+                ever asked to review an order. */}
+            {order.status === ORDER_STATUS.DELIVERED && !order.isReviewed && (
               <div className="mt-stack_lg p-4 bg-primary/10 rounded-xl border border-primary/20 flex flex-col items-center text-center">
-                <span className="material-symbols-outlined text-primary text-[32px] mb-2">star</span>
+                <Icon name="star" className="text-primary text-[32px] mb-2" />
                 <h4 className="font-button text-button font-bold text-on-surface mb-1">How was your food?</h4>
                 <p className="font-body text-small text-secondary mb-4">Rate your order to help others!</p>
                 <button
                   onClick={() => setShowReviewModal(true)}
-                  className="px-6 py-2 bg-primary text-white font-button text-button rounded-full shadow-sm hover:opacity-90 transition-opacity w-full"
+                  className="px-6 py-2 bg-primary text-on-primary font-button text-button rounded-full shadow-sm hover:opacity-90 transition-opacity w-full"
                 >
                   Leave a Review
                 </button>
@@ -352,7 +489,7 @@ const TrackOrderPage = () => {
             
             {order.isReviewed && (
               <div className="mt-stack_lg p-4 bg-surface-variant rounded-xl flex items-center gap-3 text-center justify-center text-on-surface-variant">
-                <span className="material-symbols-outlined text-[#F59E0B]">stars</span>
+                <Icon name="stars" className="text-[#F59E0B]" />
                 <span className="font-label text-label font-bold">You reviewed this order</span>
               </div>
             )}
@@ -364,7 +501,7 @@ const TrackOrderPage = () => {
           {/* Map Container */}
           <div className="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col h-[500px] lg:h-full relative">
             {/* Map Area */}
-            {order?.status === 'OUT_FOR_DELIVERY' ? (
+            {order?.status === ORDER_STATUS.OUT_FOR_DELIVERY ? (
               <LiveTracker
                 orderId={order._id}
                 restaurantLocation={order?.restaurant?.location}

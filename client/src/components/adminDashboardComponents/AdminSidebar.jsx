@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Icon from '../common/Icon';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/authSlice';
@@ -6,7 +7,7 @@ import { clearCart } from '../../redux/cartSlice';
 import { ADMIN_SIDEBAR_LINKS } from '../../data';
 import { LOCAL_STORAGE_KEYS, APP_ROUTES } from '../../constants';
 
-const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
+const AdminSidebar = ({ activeTab, isOpen = false, onClose }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -14,16 +15,31 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
 
-  // Close popup when clicking outside
+  // Close the popup on outside click or Escape. Escape was missing, so the menu
+  // could only be dismissed with the mouse — inconsistent with the customer
+  // navbar, which honours it.
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setIsProfileOpen(false);
       }
     };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setIsProfileOpen(false);
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
+
+  // Dismiss the popup on navigation so it can't linger over the new page.
+  useEffect(() => {
+    setIsProfileOpen(false);
+  }, [activeTab]);
 
   const handleLogout = () => {
     localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN);
@@ -33,40 +49,94 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
     navigate(APP_ROUTES.HOME);
   };
 
+  /**
+   * Nav item styling.
+   *
+   * The active state used to add `border-r-4` — a border that sits in the
+   * layout flow, so activating a tab shrank its content box by 4px and pushed
+   * the label sideways. `transition-all` then animated that shift over 200ms,
+   * which is what read as the sidebar "glitching" on every navigation.
+   *
+   * The indicator is now absolutely positioned (out of flow) and only colours
+   * transition, so nothing moves. Padding is `px-4` inside a `px-2` nav, which
+   * lines the labels up with the `px-6` header instead of sitting 8px right of
+   * it.
+   */
   const getTabClass = (tabName) => {
-    if (activeTab === tabName) {
-      return 'flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-primary font-bold border-r-4 border-primary bg-surface-container-high/50 font-label text-label cursor-pointer';
-    }
-    return 'flex items-center gap-4 px-6 py-4 transition-all duration-200 w-full text-left text-on-surface-variant hover:bg-surface-variant/40 font-label text-label cursor-pointer';
+    // `text-label` (12px, 0.05em tracking) is overline styling meant for badges
+    // and eyebrow text. Applied to primary navigation it read far smaller than
+    // the section heading above it, and the icons — which size from font-size —
+    // shrank with it. `text-body` puts the labels on the app's 14→16px reading
+    // scale and drops the wide tracking.
+    const base =
+      'relative flex items-center gap-3.5 px-4 py-3.5 rounded-xl w-full text-left font-body text-body cursor-pointer transition-colors duration-200 active:scale-100';
+
+    return activeTab === tabName
+      ? `${base} text-primary font-semibold bg-primary/10`
+      : `${base} text-on-surface-variant font-medium hover:bg-surface-variant/40 hover:text-on-surface`;
   };
 
   return (
-    <aside className="h-screen w-64 bg-surface-container-low border-r border-outline-variant/30 flex flex-col z-40 shrink-0">
-      <div className="px-6 py-10 flex flex-col gap-2">
-        <h1 className="font-h3 text-h3 text-primary font-bold">Foodora Admin</h1>
-        <p className="font-label text-label text-on-surface-variant uppercase tracking-wider">
-          Management Suite
-        </p>
+    <aside
+      // Off-canvas drawer below lg, static rail from lg up. `transform` is the
+      // only animated property so the slide never reflows the page behind it.
+      className={`fixed inset-y-0 left-0 z-50 h-screen w-64 bg-surface-container-low border-r border-outline-variant/30 flex flex-col shrink-0 transition-transform duration-300 ease-out lg:static lg:translate-x-0 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}
+    >
+      <div className="px-6 py-10 lg:py-10 flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-2">
+          <h1 className="font-h3 text-h3 text-primary font-bold">Foodora Admin</h1>
+          <p className="font-label text-label text-on-surface-variant uppercase tracking-wider">
+            Management Suite
+          </p>
+        </div>
+        {/* Dismiss control for the drawer; the rail doesn't need one. */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close navigation menu"
+          className="lg:hidden w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors shrink-0"
+        >
+          <Icon name="close" className="text-[20px]" />
+        </button>
       </div>
-      <nav className="flex-1 flex flex-col gap-1 overflow-y-auto px-2">
-        {ADMIN_SIDEBAR_LINKS.filter(link => link.roles.length === 0 || link.roles.includes(user?.role)).map(link => (
-          <button
-            key={link.id}
-            onClick={() => navigate(link.path)}
-            className={getTabClass(link.id)}
-          >
-            <span className="material-symbols-outlined">{link.icon}</span>
-            <span>{link.label}</span>
-          </button>
-        ))}
+      <nav className="flex-1 flex flex-col gap-1 overflow-y-auto px-2" aria-label="Admin navigation">
+        {ADMIN_SIDEBAR_LINKS.filter(link => link.roles.length === 0 || link.roles.includes(user?.role)).map(link => {
+          const isActive = activeTab === link.id;
+          return (
+            <button
+              key={link.id}
+              onClick={() => navigate(link.path)}
+              aria-current={isActive ? 'page' : undefined}
+              className={getTabClass(link.id)}
+            >
+              {/* Out-of-flow accent bar — matches the rider sidebar's left
+                  indicator so both dashboards read the same way. */}
+              {isActive && (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-r-full bg-primary"
+                />
+              )}
+              {/* Sized explicitly so the icon stays proportionate to the label
+                  rather than inheriting whatever the text scale happens to be. */}
+              <Icon name={link.icon} filled={isActive} className="text-[22px]" />
+              <span>{link.label}</span>
+            </button>
+          );
+        })}
       </nav>
       {!user?.restaurantId && user?.role === 'restaurant_admin' && (
         <div className="p-6">
           <button
             onClick={() => navigate(APP_ROUTES.ADMIN_ONBOARDING)}
-            className="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-button text-button hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+            // `hover:scale-[1.02]` grew a full-width button inside a fixed
+            // 256px column, so it pushed past its container on hover. Colour
+            // feedback only keeps it inside the rail.
+            className="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-button text-button hover:brightness-105 transition-[filter,box-shadow] flex items-center justify-center gap-2 shadow-sm"
           >
-            <span className="material-symbols-outlined">add_circle</span>
+            <Icon name="add_circle" />
             Add New Restaurant
           </button>
         </div>
@@ -82,28 +152,33 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
                 setIsProfileOpen(false);
                 navigate(APP_ROUTES.PROFILE);
               }}
-              className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-on-surface transition-colors cursor-pointer flex items-center gap-3"
+              className="text-left px-4 py-3 hover:bg-surface-variant font-body text-body font-medium text-on-surface transition-colors cursor-pointer flex items-center gap-3"
             >
-              <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
+              <Icon name="manage_accounts" className="text-[20px]" />
               Profile Setting
             </button>
             <div className="h-px bg-outline-variant/30 mx-3" />
             <button
               onClick={handleLogout}
-              className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-error transition-colors cursor-pointer flex items-center gap-3"
+              className="text-left px-4 py-3 hover:bg-surface-variant font-body text-body font-medium text-error transition-colors cursor-pointer flex items-center gap-3"
             >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
+              <Icon name="logout" className="text-[20px]" />
               Logout
             </button>
           </div>
         )}
 
-        {/* Clickable profile row */}
-        <div
+        {/* Clickable profile row.
+            Was a bare <div onClick>, so it couldn't be reached or activated by
+            keyboard and announced nothing to assistive tech. */}
+        <button
+          type="button"
           onClick={() => setIsProfileOpen((prev) => !prev)}
-          className="px-6 py-8 border-t border-outline-variant/30 flex items-center gap-3 cursor-pointer hover:bg-surface-variant/30 transition-colors"
+          aria-expanded={isProfileOpen}
+          aria-haspopup="menu"
+          className="w-full text-left px-6 py-6 border-t border-outline-variant/30 flex items-center gap-3 cursor-pointer hover:bg-surface-variant/30 transition-colors active:scale-100"
         >
-          <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden shrink-0">
             <img
               className="w-full h-full object-cover"
               alt="Admin avatar"
@@ -111,13 +186,11 @@ const AdminSidebar = ({ setIsModalOpen, activeTab }) => {
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-label text-label text-on-surface truncate">{user?.name || 'Admin'}</p>
-            <p className="text-[10px] text-secondary font-semibold uppercase">Restaurant Admin</p>
+            <p className="font-body text-body font-semibold text-on-surface truncate">{user?.name || 'Admin'}</p>
+            <p className="text-[12px] text-secondary font-semibold uppercase tracking-wide truncate">Restaurant Admin</p>
           </div>
-          <span className={`material-symbols-outlined text-[16px] text-secondary transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`}>
-            expand_less
-          </span>
-        </div>
+          <Icon name="expand_less" className={`text-[16px] text-secondary transition-transform duration-200 shrink-0 ${isProfileOpen ? 'rotate-180' : ''}`} />
+        </button>
       </div>
     </aside>
   );
