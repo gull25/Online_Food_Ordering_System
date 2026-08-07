@@ -111,7 +111,7 @@ class OrderService {
         data.paymentGateway = data.paymentMethod === 'cash' ? 'cod' : data.paymentMethod;
 
         if (data.paymentGateway === 'stripe') {
-            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+            const stripe = require('../config/stripe');
             const amountInCents = Math.round(data.totalAmount * 100);
 
             const restaurant = await Restaurant.findById(data.restaurant);
@@ -189,7 +189,7 @@ class OrderService {
 
         // Update Stripe Payment Intent metadata with the real MongoDB Order ID
         if (data.stripePaymentIntentId) {
-            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+            const stripe = require('../config/stripe');
             await stripe.paymentIntents.update(data.stripePaymentIntentId, {
                 metadata: { orderId: newOrder._id.toString() }
             });
@@ -335,7 +335,5 @@ class OrderService {
 
 module.exports = new OrderService();
 
-}
 
-module.exports = new OrderService();
 

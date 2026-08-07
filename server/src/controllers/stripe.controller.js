@@ -1,7 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
 const Restaurant = require('../models/restaurant.model');
 const ApiError = require('../utils/ApiError');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('../config/stripe');
 
 // @desc    Create Stripe Express account and get onboarding link
 // @route   POST /api/stripe/onboard

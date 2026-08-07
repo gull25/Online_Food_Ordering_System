@@ -6,7 +6,7 @@ const Restaurant = require('../models/restaurant.model');
 const socketManager = require('../socket');
 const sendEmail = require('../utils/sendEmail');
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('../config/stripe');
 
 // Helper to confirm order, save transaction, update counts, and notify restaurant
 const confirmOrderPayment = async (order, gateway, transactionId, rawResponse) => {
@@ -143,6 +143,4 @@ exports.jazzcashCallback = asyncHandler(async (req, res, next) => {
     }
 
     res.status(400).json({ success: false, message: 'Invalid or failed transaction' });
-});
-res.status(400).json({ success: false, message: 'Invalid or failed transaction' });
 });
