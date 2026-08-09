@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Icon from '../../../../components/common/Icon';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -6,6 +6,12 @@ import { fetchActiveOrderThunk, confirmPickupThunk, confirmDeliveryThunk, accept
 import { RiderPageSkeleton } from '../../../../components/common/Skeleton';
 import { socket } from '../../../../helper/socket';
 import LiveTracker from '../../../../components/homeScreen/orderComponents/LiveTracker';
+import { haversineMetres } from '../../../../helper/osrm';
+
+// Minimum movement (metres) before re-emitting GPS to socket
+const GPS_EMIT_DISTANCE_M = 10;
+// Minimum time (ms) between socket emissions
+const GPS_EMIT_INTERVAL_MS = 3000;
 
 const ActiveDeliveries = () => {
     const dispatch = useDispatch();
@@ -13,6 +19,8 @@ const ActiveDeliveries = () => {
     const { activeOrder, loading, error } = useSelector((state) => state.rider);
     const [gpsActive, setGpsActive] = useState(false);
     const [currentPos, setCurrentPos] = useState(null);
+    const lastEmittedPos = useRef(null);
+    const lastEmitTime = useRef(0);
 
     useEffect(() => {
         dispatch(fetchActiveOrderThunk());
@@ -34,30 +42,46 @@ const ActiveDeliveries = () => {
     }, [dispatch]);
 
     // Live GPS Sharing when OUT_FOR_DELIVERY
+    // Throttled: only emits to socket when rider moves >GPS_EMIT_DISTANCE_M metres
+    // OR GPS_EMIT_INTERVAL_MS have passed since the last emission — whichever
+    // comes first. This prevents flooding the socket and the OSRM route API.
     useEffect(() => {
         let watchId;
         if (activeOrder && activeOrder.status === 'OUT_FOR_DELIVERY') {
             if (navigator.geolocation) {
                 setGpsActive(true);
+                lastEmittedPos.current = null;
+                lastEmitTime.current = 0;
+
                 watchId = navigator.geolocation.watchPosition(
                     (position) => {
                         const { latitude, longitude } = position.coords;
-                        setCurrentPos({ lat: latitude, lng: longitude });
-                        
-                        if (socket) {
-                            socket.emit('rider:location_update', {
-                                orderId: activeOrder._id,
-                                riderId: user?._id,
-                                lat: latitude,
-                                lng: longitude
-                            });
+                        const newPos = { lat: latitude, lng: longitude };
+                        setCurrentPos(newPos);
+
+                        const now = Date.now();
+                        const movedM = haversineMetres(lastEmittedPos.current, newPos);
+                        const timeSinceLast = now - lastEmitTime.current;
+
+                        // Only emit if moved enough OR enough time passed
+                        if (movedM >= GPS_EMIT_DISTANCE_M || timeSinceLast >= GPS_EMIT_INTERVAL_MS) {
+                            if (socket) {
+                                socket.emit('rider:location_update', {
+                                    orderId: activeOrder._id,
+                                    riderId: user?._id,
+                                    lat: latitude,
+                                    lng: longitude,
+                                });
+                            }
+                            lastEmittedPos.current = newPos;
+                            lastEmitTime.current = now;
                         }
                     },
                     (error) => {
                         console.error('GPS tracking error:', error);
                         setGpsActive(false);
                     },
-                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
             }
         }
@@ -120,16 +144,16 @@ const ActiveDeliveries = () => {
                                 isRiderView={true}
                             />
                         ) : (
-                            <div className="w-full h-full grayscale opacity-40 mix-blend-screen" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAk_NcAG8nNeDphk4IyLivG799dFcwW08rfVNuQwdFJsVj9Lbg43fqkhkxv-WOmcjTwkZC3XkFhtLpbxcDNo6xpiEwiMqjdjeKNjDs79RmD7o3jntMuTSPCbFhrryNIpLydoN9_cDuSek_3ohI_hFBWl_d1OX_9dORC4U9C65zY3GdQ9LHRB0U_-Ytk2VzestbmLKZhN8HRWxOl1W0S1UdmbXIelsZpeukoTCSdPTIqLOSbeEAn9OjmSg')" }}></div>
+                            <div className="w-full h-full grayscale opacity-30" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAk_NcAG8nNeDphk4IyLivG799dFcwW08rfVNuQwdFJsVj9Lbg43fqkhkxv-WOmcjTwkZC3XkFhtLpbxcDNo6xpiEwiMqjdjeKNjDs79RmD7o3jntMuTSPCbFhrryNIpLydoN9_cDuSek_3ohI_hFBWl_d1OX_9dORC4U9C65zY3GdQ9LHRB0U_-Ytk2VzestbmLKZhN8HRWxOl1W0S1UdmbXIelsZpeukoTCSdPTIqLOSbeEAn9OjmSg')", backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
                         )}
                         {/* UI Overlays for the Map */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#f8f9ff] to-transparent from-0% to-40% pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent from-0% to-40% pointer-events-none"></div>
                         {/* Floating Map Controls */}
                         <div className="absolute top-4 right-4 flex-col gap-2 z-10 hidden lg:flex">
-                            <button className="bg-surface-container-high p-3 rounded-lg border border-outline-variant shadow-lg text-on-surface hover:bg-surface-bright">
+                            <button className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant shadow-lg text-on-surface hover:bg-surface-container-low">
                                 <Icon name="my_location" />
                             </button>
-                            <button className="bg-surface-container-high p-3 rounded-lg border border-outline-variant shadow-lg text-on-surface hover:bg-surface-bright">
+                            <button className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant shadow-lg text-on-surface hover:bg-surface-container-low">
                                 <Icon name="layers" />
                             </button>
                         </div>
@@ -161,14 +185,14 @@ const ActiveDeliveries = () => {
                                 <p className="font-inter text-sm font-normal leading-5 text-on-surface-variant">{activeOrder.restaurant?.name || 'Restaurant'}</p>
                             </div>
                         ) : (
-                            <div className="p-container-margin border-b border-outline-variant bg-surface-container-high">
+                            <div className="p-container-margin border-b border-outline-variant bg-surface-container-low">
                                 <h3 className="font-inter text-xl font-semibold leading-7 text-on-background">No Active Delivery</h3>
                                 <p className="font-inter text-sm font-normal leading-5 text-on-surface-variant">You are currently waiting for an assignment.</p>
                             </div>
                         )}
 
                         {/* Scrollable Content */}
-                        <div className="flex-grow overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#eef4ff] [&::-webkit-scrollbar-thumb]:bg-[#dce3f0] [&::-webkit-scrollbar-thumb]:rounded-sm p-container-margin space-y-6">
+                        <div className="flex-grow overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-surface-container-low [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-sm p-container-margin space-y-6">
                             {activeOrder ? (
                                 <>
                                     {/* Progress Tracker */}
@@ -240,15 +264,15 @@ const ActiveDeliveries = () => {
                                     </div>
                                 </>
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-4 pt-10">
-                                    <Icon name="inbox" className="text-6xl text-on-surface-variant" />
-                                    <p className="text-on-surface-variant font-body-md text-center">No active deliveries at this moment.</p>
+                                <div className="flex flex-col items-center justify-center h-full space-y-4 pt-10">
+                                    <Icon name="inbox" className="text-6xl text-on-surface-variant opacity-60" />
+                                    <p className="text-on-surface font-body-md text-center">No active deliveries at this moment.</p>
                                 </div>
                             )}
                         </div>
 
                         {/* Emergency Contact Footer */}
-                        <div className="p-4 border-t border-outline-variant bg-surface-dim">
+                        <div className="p-4 border-t border-outline-variant bg-surface-container-low">
                             <button className="w-full flex items-center justify-center gap-2 text-error font-inter text-xs font-bold leading-4 py-2 hover:bg-error/10 transition-colors rounded-lg">
                                 <Icon name="emergency" />
                                 REPORT AN ISSUE

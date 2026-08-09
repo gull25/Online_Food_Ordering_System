@@ -1,4 +1,5 @@
-const asyncHandler = require('../utils/asyncHandler');
+const asyncHandler = require('../utils/asyncHandler');
+const ApiError = require('../utils/ApiError');
 const Order = require('../models/order.model');
 const Transaction = require('../models/transaction.model');
 const MenuItem = require('../models/menuItem.model');
@@ -143,4 +144,31 @@ exports.jazzcashCallback = asyncHandler(async (req, res, next) => {
     }
 
     res.status(400).json({ success: false, message: 'Invalid or failed transaction' });
+});
+
+exports.verifyStripePayment = asyncHandler(async (req, res, next) => {
+    const { orderId } = req.body;
+    
+    if (!orderId) return next(new ApiError(400, 'Order ID is required'));
+
+    const order = await Order.findById(orderId).populate('user', 'email name');
+    if (!order) return next(new ApiError(404, 'Order not found'));
+
+    if (order.status !== 'PENDING_PAYMENT') {
+        return res.json({ success: true, message: 'Order already processed', status: order.status });
+    }
+
+    if (!order.stripePaymentIntentId) {
+        return next(new ApiError(400, 'Order is not associated with a Stripe Payment Intent'));
+    }
+
+    // Verify payment intent status with Stripe
+    const paymentIntent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+
+    if (paymentIntent.status === 'succeeded') {
+        await confirmOrderPayment(order, 'stripe', paymentIntent.id, paymentIntent);
+        return res.json({ success: true, message: 'Payment verified and order confirmed', status: order.status });
+    } else {
+        return res.status(400).json({ success: false, message: 'Payment is not successful yet', status: paymentIntent.status });
+    }
 });

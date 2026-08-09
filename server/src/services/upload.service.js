@@ -11,7 +11,11 @@ const uploadImage = async (fileBuffer, folder = 'foodora') => {
         const uploadStream = cloudinary.uploader.upload_stream(
             {
                 folder,
-                resource_type: 'image'
+                resource_type: 'image',
+                transformation: [
+                    { width: 800, height: 800, crop: 'pad' }, // Pad to square (no cropping)
+                    { fetch_format: 'auto', quality: 'auto' }  // Optimize size & quality
+                ]
             },
             (error, result) => {
                 if (error) return reject(error);
@@ -30,7 +34,7 @@ const deleteImage = async (imageUrl) => {
         const fileWithExtension = parts[parts.length - 1];
         const publicId = fileWithExtension.split('.')[0];
         const folder = parts[parts.length - 2];
-        
+
         await cloudinary.uploader.destroy(`${folder}/${publicId}`);
     } catch (error) {
         console.error('Error deleting image from Cloudinary:', error);

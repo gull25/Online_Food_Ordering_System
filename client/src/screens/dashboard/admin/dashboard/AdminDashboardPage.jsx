@@ -414,36 +414,36 @@ const AdminDashboardPage = () => {
 
             {/* Top Performing */}
 
-              <div className="bg-inverse-surface p-gutter rounded-2xl text-on-primary shadow-xl">
-                <h3 className="font-h3 text-h3 text-primary-fixed mb-stack_md font-bold">
+              <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+                <h3 className="font-h3 text-h3 text-on-surface mb-stack_md font-bold">
                   Top Selling Item
                 </h3>
                 {analytics?.topItems?.length > 0 ? (
                   <>
                     <div className="flex items-center gap-4 mb-4">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-surface-variant flex-shrink-0 flex items-center justify-center">
                         <Icon name="local_pizza" className="text-primary text-3xl" />
                       </div>
                       <div>
-                        <h4 className="font-button text-button text-inverse-on-surface font-semibold line-clamp-1">
+                        <h4 className="font-button text-button text-on-surface font-semibold line-clamp-1">
                           {analytics.topItems[0].name}
                         </h4>
-                        <p className="font-label text-label text-inverse-on-surface/80">
+                        <p className="font-label text-label text-secondary">
                           {analytics.topItems[0].quantity} orders
                         </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                        <p className="font-label text-[12px] text-inverse-on-surface/60 uppercase">
+                      <div className="bg-surface-container p-3 rounded-lg">
+                        <p className="font-label text-[12px] text-secondary uppercase">
                           Revenue Generated
                         </p>
-                        <p className="font-button text-button text-inverse-on-surface">${analytics.topItems[0].revenue.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                        <p className="font-button text-button text-on-surface">${analytics.topItems[0].revenue.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
                       </div>
                     </div>
                   </>
                 ) : (
-                  <p className="text-inverse-on-surface">No data yet.</p>
+                  <p className="text-secondary">No data yet.</p>
                 )}
               </div>
           </div>
