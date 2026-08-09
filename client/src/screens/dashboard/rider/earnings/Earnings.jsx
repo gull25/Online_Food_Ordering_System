@@ -56,10 +56,10 @@ const Earnings = () => {
                             <section className="bg-surface-container-high border border-outline-variant rounded-xl p-6 flex flex-col relative overflow-hidden">
                                 <div className="relative z-10">
                                     <h2 className="font-inter text-xs font-bold leading-4 text-on-surface-variant mb-unit opacity-80">AVAILABLE BALANCE</h2>
-                                    <div className="flex items-baseline gap-unit text-primary">
-                                        <span className="font-inter text-[40px] font-bold leading-[48px] tracking-tight">$</span>
+                                    <div className="flex items-baseline gap-unit">
+                                        <span className="font-inter text-[40px] font-bold leading-[48px] tracking-tight text-primary">$</span>
                                         <div className="font-inter text-[40px] font-bold leading-[48px] tracking-tight text-on-surface mt-2 mb-1">
-                                            ${earnings?.availableBalance?.toFixed(2) || '0.00'}
+                                            {earnings?.availableBalance?.toFixed(2) || '0.00'}
                                         </div>
                                     </div>
                                     <p className="text-label-sm font-label-sm text-secondary mt-stack-sm flex items-center gap-1">

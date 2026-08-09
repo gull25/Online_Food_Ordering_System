@@ -239,6 +239,7 @@
     --color-surface-container: #201f1f;
     --color-surface-container-low: #1c1b1b;
     --color-surface-container-lowest: #0e0e0e;
+    --color-surface-dim: #1a1a1a;
 
     /* Error/status colours need dark-mode counterparts too — #ba1a1a on a
        #131313 surface is only ~3:1 and reads as muddy rather than urgent. */

@@ -15,6 +15,7 @@ import { createOrderThunk } from '../../redux/orderSlice';
 import StripePaymentModal from '../../components/homeScreen/checkoutComponents/StripePaymentModal';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
+import api from '../../api/axios';
 
 // Initialize Stripe outside component to avoid recreating the object on every render
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -207,7 +208,12 @@ const CheckoutPage = () => {
     }
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
+    try {
+      await api.post('/payments/verify-stripe', { orderId: pendingOrderId });
+    } catch (err) {
+      console.error('Failed to verify payment with backend:', err);
+    }
     setPaymentModalOpen(false);
     dispatch(clearCart());
     navigate(`/track-order?orderId=${pendingOrderId}`);

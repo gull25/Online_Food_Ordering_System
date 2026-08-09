@@ -6,6 +6,10 @@ let io;
 const userSocketMap = new Map();
 // Throttle DB updates map
 const lastDbUpdate = new Map();
+// Stale GPS detection: track last location ping time per orderId
+const lastLocationTime = new Map();
+const staleTimers = new Map();
+const STALE_THRESHOLD_MS = 30_000; // 30 seconds
 
 module.exports = {
     init: (httpServer) => {
@@ -62,6 +66,28 @@ module.exports = {
 
                 // Broadcast real-time location to everyone in the order room immediately
                 io.to(`order_${orderId}`).emit("rider:location", { lat, lng, orderId });
+
+                // ── Stale detection ────────────────────────────────────────────
+                // Reset the stale timer every time a fresh ping arrives.
+                // If no new ping arrives within STALE_THRESHOLD_MS, emit
+                // rider:location_stale so the customer UI can show "Signal Lost".
+                lastLocationTime.set(orderId, Date.now());
+
+                if (staleTimers.has(orderId)) {
+                    clearTimeout(staleTimers.get(orderId));
+                }
+
+                const staleTimer = setTimeout(() => {
+                    const last = lastLocationTime.get(orderId) || 0;
+                    if (Date.now() - last >= STALE_THRESHOLD_MS) {
+                        io.to(`order_${orderId}`).emit("rider:location_stale", { orderId });
+                        console.log(`[Socket.io] Rider location stale for order ${orderId}`);
+                    }
+                    staleTimers.delete(orderId);
+                }, STALE_THRESHOLD_MS);
+
+                staleTimers.set(orderId, staleTimer);
+                // ──────────────────────────────────────────────────────────────
 
                 // Persist to MongoDB occasionally to prevent DB overload (every 30s)
                 const now = Date.now();
