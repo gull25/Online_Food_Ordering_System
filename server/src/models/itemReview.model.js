@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
-const reviewSchema = new mongoose.Schema({
+const itemReviewSchema = new mongoose.Schema({
+    menuItemId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'MenuItem',
+        required: true,
+        index: true
+    },
     restaurantId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Restaurant',
@@ -30,11 +36,45 @@ const reviewSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Prevent multiple reviews from the same user on the same order item
+itemReviewSchema.index({ orderId: 1, menuItemId: 1, user: 1 }, { unique: true });
+
 // Static method to get avg rating and save
-reviewSchema.statics.getAverageRating = async function (restaurantId) {
+itemReviewSchema.statics.getAverageRating = async function (menuItemId, restaurantId) {
+    // 1. Calculate and update MenuItem rating
+    const itemObj = await this.aggregate([
+        {
+            $match: { menuItemId: menuItemId }
+        },
+        {
+            $group: {
+                _id: '$menuItemId',
+                averageRating: { $avg: '$rating' },
+                numReviews: { $sum: 1 }
+            }
+        }
+    ]);
+
+    try {
+        if (itemObj[0]) {
+            await this.model('MenuItem').findByIdAndUpdate(menuItemId, {
+                rating: Math.round(itemObj[0].averageRating * 10) / 10,
+                numReviews: itemObj[0].numReviews
+            });
+        } else {
+            await this.model('MenuItem').findByIdAndUpdate(menuItemId, {
+                rating: 0,
+                numReviews: 0
+            });
+        }
+    } catch (err) {
+        console.error('Error updating MenuItem rating:', err);
+    }
+
+    // 2. Calculate and update overall Restaurant rating
     try {
         // Aggregate all general restaurant reviews
-        const generalReviewsObj = await this.aggregate([
+        const generalReviewsObj = await this.model('Review').aggregate([
             { $match: { restaurantId: restaurantId } },
             {
                 $group: {
@@ -46,21 +86,16 @@ reviewSchema.statics.getAverageRating = async function (restaurantId) {
         ]);
 
         // Aggregate all item reviews for this restaurant
-        // Use mongoose.model to dynamically get ItemReview if it exists, to avoid circular dependencies
-        const ItemReviewModel = this.model('ItemReview');
-        let itemReviewsObj = [];
-        if (ItemReviewModel) {
-            itemReviewsObj = await ItemReviewModel.aggregate([
-                { $match: { restaurantId: restaurantId } },
-                {
-                    $group: {
-                        _id: '$restaurantId',
-                        totalPoints: { $sum: '$rating' },
-                        numReviews: { $sum: 1 }
-                    }
+        const itemReviewsObj = await this.aggregate([
+            { $match: { restaurantId: restaurantId } },
+            {
+                $group: {
+                    _id: '$restaurantId',
+                    totalPoints: { $sum: '$rating' },
+                    numReviews: { $sum: 1 }
                 }
-            ]);
-        }
+            }
+        ]);
 
         const generalPoints = generalReviewsObj[0] ? generalReviewsObj[0].totalPoints : 0;
         const generalCount = generalReviewsObj[0] ? generalReviewsObj[0].numReviews : 0;
@@ -89,13 +124,13 @@ reviewSchema.statics.getAverageRating = async function (restaurantId) {
 };
 
 // Call getAverageRating after save
-reviewSchema.post('save', async function () {
-    await this.constructor.getAverageRating(this.restaurantId);
+itemReviewSchema.post('save', async function () {
+    await this.constructor.getAverageRating(this.menuItemId, this.restaurantId);
 });
 
 // Call getAverageRating after remove
-reviewSchema.post('remove', async function () {
-    await this.constructor.getAverageRating(this.restaurantId);
+itemReviewSchema.post('remove', async function () {
+    await this.constructor.getAverageRating(this.menuItemId, this.restaurantId);
 });
 
-module.exports = mongoose.model('Review', reviewSchema);
+module.exports = mongoose.model('ItemReview', itemReviewSchema);

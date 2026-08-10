@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import Icon from '../../common/Icon';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
+import { useApiAction } from '../../../hooks/useApiAction';
+
 const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
   const stripe = useStripe();
   const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
+  const { execute: handleSubmit, isSubmitting: isProcessing } = useApiAction(async (e) => {
     e.preventDefault();
 
     if (!stripe || !elements) {
@@ -16,7 +17,6 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
       return;
     }
 
-    setIsProcessing(true);
     setError('');
 
     // Confirm the payment
@@ -27,13 +27,11 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
 
     if (submitError) {
       setError(submitError.message);
-      setIsProcessing(false);
     } else {
       // Payment succeeded!
-      setIsProcessing(false);
       onSuccess();
     }
-  };
+  });
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">

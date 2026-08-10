@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import Icon from '../../components/common/Icon';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -39,14 +40,17 @@ const OffersPage = () => {
   // If nothing is available → show ALL offers (global /offers route).
   const activeRestaurantId = urlRestaurantId || cartRestaurantId || currentRestaurant?._id;
 
+  // Subscribe modal only appears on restaurant-specific pages, never on global
+  const showSubscribeModal = !!activeRestaurantId;
+
   // ── State ─────────────────────────────────────────────────────────────────
-  const [offersData, setOffersData]   = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [restaurant, setRestaurant]   = useState(null);   // only set in restaurant mode
+  const [offersData, setOffersData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [restaurant, setRestaurant] = useState(null);   // only set in restaurant mode
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const [copiedCode, setCopiedCode]   = useState('');
-  const [newsletterEmail, setNewsletterEmail]           = useState('');
+  const [copiedCode, setCopiedCode] = useState('');
+  const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
 
   // ── Countdown timer — starts at 0, synced to flashOffer.validUntil ─────────
@@ -107,11 +111,11 @@ const OffersPage = () => {
 
   // ── Derived display values ────────────────────────────────────────────────
   const formattedTime = useMemo(() => {
-    const hours   = Math.floor(timeLeft / 3600);
+    const hours = Math.floor(timeLeft / 3600);
     const minutes = Math.floor((timeLeft % 3600) / 60);
     const seconds = timeLeft % 60;
     return {
-      hours:   hours.toString().padStart(2, '0'),
+      hours: hours.toString().padStart(2, '0'),
       minutes: minutes.toString().padStart(2, '0'),
       seconds: seconds.toString().padStart(2, '0'),
     };
@@ -120,18 +124,18 @@ const OffersPage = () => {
   const filteredOffers = useMemo(() => {
     if (!offersData || !Array.isArray(offersData)) return [];
     if (!debouncedSearchQuery.trim()) return offersData;
-    
-    return offersData.filter(offer => 
-        offer.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        (offer.restaurantId?.name || '').toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        (offer.description || '').toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+
+    return offersData.filter(offer =>
+      offer.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      (offer.restaurantId?.name || '').toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      (offer.description || '').toLowerCase().includes(debouncedSearchQuery.toLowerCase())
     );
   }, [debouncedSearchQuery, offersData]);
 
   const newOffers = useMemo(() => {
     const filtered = offersData.filter(o => o._id !== flashOffer?._id);
     return {
-      welcome:  filtered[0] || null,
+      welcome: filtered[0] || null,
       delivery: filtered[1] || null
     };
   }, [offersData, flashOffer]);
@@ -143,12 +147,22 @@ const OffersPage = () => {
     setTimeout(() => setCopiedCode(''), 2000);
   };
 
-  const handleNewsletterSubmit = (e) => {
+  const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
-    if (newsletterEmail.trim()) {
+    if (!newsletterEmail.trim()) return;
+
+    try {
+      await api.post('/subscribers', {
+        email: newsletterEmail.trim(),
+        // If activeRestaurantId is undefined, it becomes a global subscription
+        ...(activeRestaurantId && { restaurantId: activeRestaurantId })
+      });
       setNewsletterSubscribed(true);
       setNewsletterEmail('');
       setTimeout(() => setNewsletterSubscribed(false), 5000);
+      toast.success('Successfully subscribed to the newsletter!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to subscribe to newsletter');
     }
   };
 
@@ -249,9 +263,8 @@ const OffersPage = () => {
                     </div>
                   )}
                   <div
-                    className={`absolute top-3 left-3 font-bold px-3 py-1 rounded-lg text-small shadow-sm ${
-                      offer.type === 'EXCLUSIVE' ? 'bg-primary-container text-on-primary-container' : 'bg-primary text-on-primary'
-                    }`}
+                    className={`absolute top-3 left-3 font-bold px-3 py-1 rounded-lg text-small shadow-sm ${offer.type === 'EXCLUSIVE' ? 'bg-primary-container text-on-primary-container' : 'bg-primary text-on-primary'
+                      }`}
                   >
                     {offer.type}
                   </div>
@@ -300,11 +313,10 @@ const OffersPage = () => {
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={() => copyPromoCode(offer.code)}
-                      className={`flex-1 py-3.5 rounded-xl border text-small font-button text-button transition-all text-center ${
-                        copiedCode === offer.code
-                          ? 'bg-tertiary-container text-on-tertiary-container border-tertiary-container'
-                          : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
-                      }`}
+                      className={`flex-1 py-3.5 rounded-xl border text-small font-button text-button transition-all text-center ${copiedCode === offer.code
+                        ? 'bg-tertiary-container text-on-tertiary-container border-tertiary-container'
+                        : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
+                        }`}
                     >
                       {copiedCode === offer.code ? 'Copied!' : 'Copy Code'}
                     </button>

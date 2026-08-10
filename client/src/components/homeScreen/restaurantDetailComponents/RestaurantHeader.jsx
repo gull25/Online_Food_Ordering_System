@@ -3,15 +3,13 @@ import React from 'react';
 import Icon from '../../common/Icon';
 const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, restaurant, loading }) => {
   return (
-    <header className="relative w-full h-[300px] md:h-[400px]">
-      <div
-        className="absolute inset-0 w-full h-full bg-cover bg-center"
-        style={{
-          backgroundImage: `url('${restaurant?.images?.banner || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80'}')`,
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-      </div>
+    <header className="relative w-full min-h-[200px] bg-background">
+      <img
+        src={restaurant?.images?.banner || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80'}
+        alt="Restaurant Banner"
+        className="w-full h-auto max-h-[500px] object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-full px-margin_mobile md:px-margin_desktop pb-stack_lg max-w-container_max mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-end gap-stack_md md:gap-gutter text-white relative z-10">
           {/* Logo */}
@@ -63,9 +61,8 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, r
             </button>
             <button
               onClick={() => setIsFavorite(!isFavorite)}
-              className={`h-12 w-12 rounded-full backdrop-blur-md flex items-center justify-center transition-colors ${
-                isFavorite ? 'bg-primary text-on-primary' : 'bg-white/20 hover:bg-white/30 text-white'
-              }`}
+              className={`h-12 w-12 rounded-full backdrop-blur-md flex items-center justify-center transition-colors ${isFavorite ? 'bg-primary text-on-primary' : 'bg-white/20 hover:bg-white/30 text-white'
+                }`}
             >
               <Icon name="favorite" filled />
             </button>

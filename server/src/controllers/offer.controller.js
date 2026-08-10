@@ -54,7 +54,8 @@ exports.createOffer = asyncHandler(async (req, res, next) => {
     }
 
     if (req.file) {
-        req.body.image = req.file.path || req.file.filename;
+        const { uploadImage } = require('../services/upload.service');
+        req.body.image = await uploadImage(req.file.buffer, 'foodora/offers');
     }
 
     const offer = await Offer.create(req.body);
@@ -81,7 +82,8 @@ exports.updateOffer = asyncHandler(async (req, res, next) => {
     }
 
     if (req.file) {
-        req.body.image = req.file.path || req.file.filename;
+        const { uploadImage } = require('../services/upload.service');
+        req.body.image = await uploadImage(req.file.buffer, 'foodora/offers');
     }
 
     offer = await Offer.findByIdAndUpdate(req.params.id, req.body, {

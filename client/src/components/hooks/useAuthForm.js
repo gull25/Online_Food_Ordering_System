@@ -8,6 +8,7 @@ import { loginStart, loginSuccess, loginFailure } from '../../redux/authSlice';
 import authService from '../../api/authApi';
 import { LOCAL_STORAGE_KEYS } from '../../constants/localStorageKeys';
 import { APP_ROUTES } from '../../constants/appRoutes';
+import { useApiAction } from '../../hooks/useApiAction';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
@@ -24,7 +25,7 @@ export const useAuthForm = () => {
   const [mode, setMode] = useState('login');
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-  const { loading: isSubmitting, error: errorMsg } = useSelector((state) => state.auth);
+  const { error: errorMsg } = useSelector((state) => state.auth);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ export const useAuthForm = () => {
     clearErrors();
   };
 
-  const onSubmit = async (data) => {
+  const { execute: onSubmit, isSubmitting } = useApiAction(async (data) => {
     dispatch(loginStart());
     setSuccessMsg('');
     
@@ -98,7 +99,7 @@ export const useAuthForm = () => {
     } catch (error) {
       dispatch(loginFailure(error.response?.data?.message || 'Something went wrong'));
     }
-  };
+  });
 
   return {
     mode,

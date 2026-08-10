@@ -6,6 +6,7 @@ const Button = ({
   variant = 'primary',
   onClick,
   disabled = false,
+  isLoading = false,
   className = '',
   ...props
 }) => {
@@ -16,15 +17,24 @@ const Button = ({
     danger: 'bg-error text-on-error hover:opacity-90 active:scale-95',
   };
 
+  const isDisabled = disabled || isLoading;
+
   return (
     <button
       type={type}
       onClick={onClick}
-      disabled={disabled}
-      className={`${baseStyle} ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''} ${className}`}
+      disabled={isDisabled}
+      className={`${baseStyle} ${variants[variant]} ${isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''} ${className}`}
       {...props}
     >
-      {children}
+      {isLoading ? (
+        <>
+          <span className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+          <span className="opacity-90">{children}</span>
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 };

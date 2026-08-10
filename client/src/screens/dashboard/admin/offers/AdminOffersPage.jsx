@@ -5,6 +5,8 @@ import { toast } from 'react-hot-toast';
 import api from '../../../../api/axios';
 import { AdminPageSkeleton } from '../../../../components/common/Skeleton';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
+import { useApiAction } from '../../../../hooks/useApiAction';
+import { useItemApiAction } from '../../../../hooks/useItemApiAction';
 
 const AdminOffersPage = () => {
   const { user } = useSelector((state) => state.auth);
@@ -78,7 +80,7 @@ const AdminOffersPage = () => {
     setEditingOffer(null);
   };
 
-  const handleSubmit = async (e) => {
+  const { execute: handleSubmit, isSubmitting } = useApiAction(async (e) => {
     e.preventDefault();
     try {
       const data = new FormData();
@@ -101,9 +103,9 @@ const AdminOffersPage = () => {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save offer');
     }
-  };
+  });
 
-  const handleDelete = async (id) => {
+  const { execute: handleDelete, isSubmitting: isDeleting } = useItemApiAction(async (id) => {
     if (window.confirm('Are you sure you want to delete this offer?')) {
       try {
         await api.delete(`/offers/${id}`);
@@ -113,7 +115,7 @@ const AdminOffersPage = () => {
         toast.error(err.response?.data?.message || 'Failed to delete offer');
       }
     }
-  };
+  });
 
   if (loading) return <AdminPageSkeleton rows={5} columns={6} />;
 
@@ -176,8 +178,8 @@ const AdminOffersPage = () => {
                         <button onClick={() => openModal(offer)} className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors mt-2">
                           <Icon name="edit" className="text-[20px]" />
                         </button>
-                        <button onClick={() => handleDelete(offer._id)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors mt-2">
-                          <Icon name="delete" className="text-[20px]" />
+                        <button disabled={isDeleting(offer._id)} onClick={() => handleDelete(offer._id)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors mt-2 disabled:opacity-50">
+                          {isDeleting(offer._id) ? <Icon name="sync" className="text-[20px] animate-spin" /> : <Icon name="delete" className="text-[20px]" />}
                         </button>
                       </td>
                     </tr>
@@ -315,9 +317,11 @@ const AdminOffersPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-12 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-opacity shadow-md"
+                  disabled={isSubmitting}
+                  className="flex-1 h-12 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-opacity shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Save Offer
+                  {isSubmitting && <Icon name="sync" className="animate-spin" />}
+                  {isSubmitting ? 'Saving...' : 'Save Offer'}
                 </button>
               </div>
             </form>

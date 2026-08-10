@@ -25,6 +25,16 @@ const AdminDashboardPage = () => {
     dispatch(fetchAdminOrders());
   }, [dispatch]);
 
+  const [recentSubscribers, setRecentSubscribers] = useState([]);
+
+  useEffect(() => {
+    if (user?.role === USER_ROLES.RESTAURANT_ADMIN) {
+      axiosInstance.get('/subscribers/recent')
+        .then(res => setRecentSubscribers(res.data.data))
+        .catch(err => console.error("Error fetching subscribers:", err));
+    }
+  }, [user]);
+
   // True only for the very first load, so a background refresh doesn't blank
   // out a dashboard the user is already reading.
   const isInitialLoad = analyticsLoading && !analytics;
@@ -37,7 +47,7 @@ const AdminDashboardPage = () => {
     if (!analytics?.timeSeriesData) {
       return { linePath: '', areaPath: '', points: [], xLabels: [] };
     }
-    
+
     // Convert timeSeriesData for the selected range
     let data = [];
     if (chartRange === '30') {
@@ -49,14 +59,14 @@ const AdminDashboardPage = () => {
     }
 
     const chart = generateChartPaths(data, 1000, 300, 40);
-    
+
     // Pick 5 even indices for x-axis labels
     const step = Math.max(1, Math.floor(data.length / 4));
     const labels = [];
-    for(let i=0; i<data.length; i+=step) {
-      if(labels.length < 5) labels.push(data[i].label);
+    for (let i = 0; i < data.length; i += step) {
+      if (labels.length < 5) labels.push(data[i].label);
     }
-    if (labels.length < 5 && data.length > 0) labels.push(data[data.length-1].label);
+    if (labels.length < 5 && data.length > 0) labels.push(data[data.length - 1].label);
 
     return {
       ...chart,
@@ -87,7 +97,7 @@ const AdminDashboardPage = () => {
 
   // Find the most recent active order to simulate
   const activeOrderRaw = orders.find((o) => !isTerminalOrder(o.status)) || orders[0];
-  
+
   const activeOrder = activeOrderRaw ? {
     id: `#${activeOrderRaw._id.substring(activeOrderRaw._id.length - 6).toUpperCase()}`,
     originalId: activeOrderRaw._id,
@@ -116,7 +126,7 @@ const AdminDashboardPage = () => {
         const response = await axiosInstance.get('/admin/reports/sales', {
           responseType: 'blob', // Important to handle the file download
         });
-        
+
         // Create a URL for the blob
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
@@ -124,7 +134,7 @@ const AdminDashboardPage = () => {
         link.setAttribute('download', 'sales_report.csv');
         document.body.appendChild(link);
         link.click();
-        
+
         // Clean up
         link.parentNode.removeChild(link);
         window.URL.revokeObjectURL(url);
@@ -153,7 +163,7 @@ const AdminDashboardPage = () => {
           dashboard hard against the left edge on wide screens. */}
       <main className="p-margin_mobile md:p-margin_desktop max-w-container_max mx-auto">
         {/* Header */}
-        <AdminHeader 
+        <AdminHeader
           title={`Welcome back, ${user?.name?.split(' ')[0] || 'Admin'}`}
           subtitle="Here's what's happening with your restaurant today."
           searchQuery={searchQuery}
@@ -168,187 +178,184 @@ const AdminDashboardPage = () => {
             // placeholders, which made finished cards jump as the text resized.
             Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           ) : (
-          <>
-          <StatCard
-            icon="shopping_bag"
-            colorClass="bg-primary/5"
-            iconColorClass="text-primary"
-            trendText={analytics?.trends?.orders}
-            trendUp={analytics?.trends?.orders?.includes('+')}
-            title="Total Orders"
-            // Optional chaining throughout: a partial analytics payload (any
-            // missing sub-object) previously threw and blanked the dashboard.
-            value={(analytics?.orders?.total ?? 0).toLocaleString()}
-          />
-          <StatCard
-            icon="payments"
-            colorClass="bg-tertiary/5"
-            iconColorClass="text-tertiary"
-            trendText={analytics?.trends?.revenue}
-            trendUp={analytics?.trends?.revenue?.includes('+')}
-            title="Total Revenue"
-            value={`$${(analytics?.orders?.revenue ?? 0).toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}`}
-          />
-          <StatCard
-            icon="group"
-            colorClass="bg-on-secondary-fixed-variant/5"
-            iconColorClass="text-secondary"
-            trendText={analytics?.trends?.customers}
-            trendUp={analytics?.trends?.customers?.includes('+')}
-            title="Active Customers"
-            value={(analytics?.users?.totalCustomers ?? 0).toLocaleString()}
-          />
-          <StatCard
-            icon="restaurant"
-            colorClass="bg-outline/5"
-            iconColorClass="text-on-surface-variant"
-            trendText={analytics?.trends?.restaurants}
-            trendUp={undefined}
-            title="Active Restaurants"
-            value={(analytics?.restaurants?.active ?? 0).toLocaleString()}
-          />
-          </>
+            <>
+              <StatCard
+                icon="shopping_bag"
+                colorClass="bg-primary/5"
+                iconColorClass="text-primary"
+                trendText={analytics?.trends?.orders}
+                trendUp={analytics?.trends?.orders?.includes('+')}
+                title="Total Orders"
+                // Optional chaining throughout: a partial analytics payload (any
+                // missing sub-object) previously threw and blanked the dashboard.
+                value={(analytics?.orders?.total ?? 0).toLocaleString()}
+              />
+              <StatCard
+                icon="payments"
+                colorClass="bg-tertiary/5"
+                iconColorClass="text-tertiary"
+                trendText={analytics?.trends?.revenue}
+                trendUp={analytics?.trends?.revenue?.includes('+')}
+                title="Total Revenue"
+                value={`$${(analytics?.orders?.revenue ?? 0).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`}
+              />
+              <StatCard
+                icon="group"
+                colorClass="bg-on-secondary-fixed-variant/5"
+                iconColorClass="text-secondary"
+                trendText={analytics?.trends?.customers}
+                trendUp={analytics?.trends?.customers?.includes('+')}
+                title="Active Customers"
+                value={(analytics?.users?.totalCustomers ?? 0).toLocaleString()}
+              />
+              <StatCard
+                icon="restaurant"
+                colorClass="bg-outline/5"
+                iconColorClass="text-on-surface-variant"
+                trendText={analytics?.trends?.restaurants}
+                trendUp={undefined}
+                title="Active Restaurants"
+                value={(analytics?.restaurants?.active ?? 0).toLocaleString()}
+              />
+            </>
           )}
         </section>
 
         {/* Main Chart Section */}
         <section className="mb-stack_lg">
           {isInitialLoad ? <ChartSkeleton height={360} /> : (
-          <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-stack_lg">
-              <div>
-                <h3 className="font-h3 text-h3 text-on-surface font-bold">Performance Overview</h3>
-                <p className="font-small text-small text-secondary">
-                  Revenue and orders for the last 30 days
-                </p>
-              </div>
-              <div className="flex items-center gap-2 bg-surface-container-low p-1 rounded-lg">
-                <button
-                  onClick={() => setChartRange('30')}
-                  className={`px-4 py-2 font-label text-label rounded-md transition-all ${
-                    chartRange === '30'
+            <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+              <div className="flex items-center justify-between mb-stack_lg">
+                <div>
+                  <h3 className="font-h3 text-h3 text-on-surface font-bold">Performance Overview</h3>
+                  <p className="font-small text-small text-secondary">
+                    Revenue and orders for the last 30 days
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 bg-surface-container-low p-1 rounded-lg">
+                  <button
+                    onClick={() => setChartRange('30')}
+                    className={`px-4 py-2 font-label text-label rounded-md transition-all ${chartRange === '30'
                       ? 'bg-surface-container-lowest shadow-sm text-on-surface font-semibold'
                       : 'text-secondary hover:text-on-surface'
-                  }`}
-                >
-                  30 Days
-                </button>
-                <button
-                  onClick={() => setChartRange('90')}
-                  className={`px-4 py-2 font-label text-label rounded-md transition-all ${
-                    chartRange === '90'
-                      ? 'bg-surface-container-lowest shadow-sm text-on-surface font-semibold'
-                      : 'text-secondary hover:text-on-surface'
-                  }`}
-                >
-                  90 Days
-                </button>
-                <button
-                  onClick={() => setChartRange('year')}
-                  className={`px-4 py-2 font-label text-label rounded-md transition-all ${
-                    chartRange === 'year'
-                      ? 'bg-surface-container-lowest shadow-sm text-on-surface font-semibold'
-                      : 'text-secondary hover:text-on-surface'
-                  }`}
-                >
-                  1 Year
-                </button>
-              </div>
-            </div>
-
-            <div className="relative h-[360px] w-full flex items-end justify-between gap-2 pt-10">
-              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
-                <div className="border-b border-outline-variant w-full h-px"></div>
-                <div className="border-b border-outline-variant w-full h-px"></div>
-                <div className="border-b border-outline-variant w-full h-px"></div>
-                <div className="border-b border-outline-variant w-full h-px"></div>
-                <div className="border-b border-outline-variant w-full h-px"></div>
-              </div>
-
-              <div className="w-full h-full relative">
-                <svg
-                  className="w-full h-full overflow-visible"
-                  preserveAspectRatio="none"
-                  viewBox="0 0 1000 300"
-                >
-                  <defs>
-                    <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#ae3200" stopOpacity="0.2"></stop>
-                      <stop offset="100%" stopColor="#ae3200" stopOpacity="0"></stop>
-                    </linearGradient>
-                  </defs>
-                  <path
-                    className="transition-all duration-500"
-                    d={dynamicChart.areaPath}
-                    fill="url(#chartGradient)"
-                  ></path>
-                  <path
-                    className="transition-all duration-500"
-                    d={dynamicChart.linePath}
-                    fill="none"
-                    stroke="#ae3200"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="4"
-                    // preserveAspectRatio="none" scales x and y by different
-                    // factors, which was stretching the stroke into an uneven
-                    // ribbon. This keeps it a constant 4px everywhere.
-                    vectorEffect="non-scaling-stroke"
-                  ></path>
-                  {dynamicChart.points.map((pt, idx) => (
-                    <circle
-                      key={idx}
-                      onMouseEnter={() => setHoveredPoint({
-                         ...pt,
-                         index: idx,
-                         value: `$${pt.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                      })}
-                      onMouseLeave={() => setHoveredPoint(null)}
-                      // `hover:r-[10px]` was here — Tailwind has no utility for
-                      // the SVG `r` attribute, so the hover grow never happened.
-                      // Driving r from state actually works.
-                      className="cursor-pointer"
-                      style={{ transition: 'r 150ms var(--ease-out-soft)' }}
-                      cx={pt.cx}
-                      cy={pt.cy}
-                      fill="#ae3200"
-                      r={hoveredPoint?.index === idx ? 9 : 6}
-                    ></circle>
-                  ))}
-                </svg>
-
-                {hoveredPoint && (
-                  <div
-                    className="absolute bg-inverse-surface text-inverse-on-surface px-3 py-2 rounded-lg shadow-xl -translate-x-1/2 -translate-y-full flex flex-col z-20 pointer-events-none whitespace-nowrap"
-                    style={{
-                      left: `${(hoveredPoint.cx / 1000) * 100}%`,
-                      // `cy` is in viewBox units (0–300), not pixels. Using it
-                      // directly as px placed the tooltip well away from its
-                      // point on a 360px-tall chart; a percentage tracks the
-                      // stretched SVG correctly at any height.
-                      top: `calc(${(hoveredPoint.cy / 300) * 100}% - 10px)`,
-                    }}
+                      }`}
                   >
-                    <span className="font-label text-[12px] text-inverse-on-surface/70">
-                      {hoveredPoint.date}
-                    </span>
-                    <span className="font-button text-button text-inverse-on-surface">
-                      {hoveredPoint.value}
-                    </span>
-                  </div>
-                )}
+                    30 Days
+                  </button>
+                  <button
+                    onClick={() => setChartRange('90')}
+                    className={`px-4 py-2 font-label text-label rounded-md transition-all ${chartRange === '90'
+                      ? 'bg-surface-container-lowest shadow-sm text-on-surface font-semibold'
+                      : 'text-secondary hover:text-on-surface'
+                      }`}
+                  >
+                    90 Days
+                  </button>
+                  <button
+                    onClick={() => setChartRange('year')}
+                    className={`px-4 py-2 font-label text-label rounded-md transition-all ${chartRange === 'year'
+                      ? 'bg-surface-container-lowest shadow-sm text-on-surface font-semibold'
+                      : 'text-secondary hover:text-on-surface'
+                      }`}
+                  >
+                    1 Year
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative h-[360px] w-full flex items-end justify-between gap-2 pt-10">
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+                  <div className="border-b border-outline-variant w-full h-px"></div>
+                  <div className="border-b border-outline-variant w-full h-px"></div>
+                  <div className="border-b border-outline-variant w-full h-px"></div>
+                  <div className="border-b border-outline-variant w-full h-px"></div>
+                  <div className="border-b border-outline-variant w-full h-px"></div>
+                </div>
+
+                <div className="w-full h-full relative">
+                  <svg
+                    className="w-full h-full overflow-visible"
+                    preserveAspectRatio="none"
+                    viewBox="0 0 1000 300"
+                  >
+                    <defs>
+                      <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#ae3200" stopOpacity="0.2"></stop>
+                        <stop offset="100%" stopColor="#ae3200" stopOpacity="0"></stop>
+                      </linearGradient>
+                    </defs>
+                    <path
+                      className="transition-all duration-500"
+                      d={dynamicChart.areaPath}
+                      fill="url(#chartGradient)"
+                    ></path>
+                    <path
+                      className="transition-all duration-500"
+                      d={dynamicChart.linePath}
+                      fill="none"
+                      stroke="#ae3200"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="4"
+                      // preserveAspectRatio="none" scales x and y by different
+                      // factors, which was stretching the stroke into an uneven
+                      // ribbon. This keeps it a constant 4px everywhere.
+                      vectorEffect="non-scaling-stroke"
+                    ></path>
+                    {dynamicChart.points.map((pt, idx) => (
+                      <circle
+                        key={idx}
+                        onMouseEnter={() => setHoveredPoint({
+                          ...pt,
+                          index: idx,
+                          value: `$${pt.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        })}
+                        onMouseLeave={() => setHoveredPoint(null)}
+                        // `hover:r-[10px]` was here — Tailwind has no utility for
+                        // the SVG `r` attribute, so the hover grow never happened.
+                        // Driving r from state actually works.
+                        className="cursor-pointer"
+                        style={{ transition: 'r 150ms var(--ease-out-soft)' }}
+                        cx={pt.cx}
+                        cy={pt.cy}
+                        fill="#ae3200"
+                        r={hoveredPoint?.index === idx ? 9 : 6}
+                      ></circle>
+                    ))}
+                  </svg>
+
+                  {hoveredPoint && (
+                    <div
+                      className="absolute bg-inverse-surface text-inverse-on-surface px-3 py-2 rounded-lg shadow-xl -translate-x-1/2 -translate-y-full flex flex-col z-20 pointer-events-none whitespace-nowrap"
+                      style={{
+                        left: `${(hoveredPoint.cx / 1000) * 100}%`,
+                        // `cy` is in viewBox units (0–300), not pixels. Using it
+                        // directly as px placed the tooltip well away from its
+                        // point on a 360px-tall chart; a percentage tracks the
+                        // stretched SVG correctly at any height.
+                        top: `calc(${(hoveredPoint.cy / 300) * 100}% - 10px)`,
+                      }}
+                    >
+                      <span className="font-label text-[12px] text-inverse-on-surface/70">
+                        {hoveredPoint.date}
+                      </span>
+                      <span className="font-button text-button text-inverse-on-surface">
+                        {hoveredPoint.value}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between mt-4 font-label text-label text-secondary">
+                {dynamicChart.xLabels.map((l, i) => (
+                  <span key={i}>{l}</span>
+                ))}
               </div>
             </div>
-
-            <div className="flex justify-between mt-4 font-label text-label text-secondary">
-              {dynamicChart.xLabels.map((l, i) => (
-                <span key={i}>{l}</span>
-              ))}
-            </div>
-          </div>
           )}
         </section>
 
@@ -358,7 +365,7 @@ const AdminDashboardPage = () => {
         {/* Orders Table & Quick Actions Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
           {/* Active Order Simulator */}
-          <OrderStatusSimulator 
+          <OrderStatusSimulator
             activeOrder={activeOrder}
             handleUpdateStatus={handleUpdateStatus}
           />
@@ -414,53 +421,78 @@ const AdminDashboardPage = () => {
 
             {/* Top Performing */}
 
-              <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-                <h3 className="font-h3 text-h3 text-on-surface mb-stack_md font-bold">
-                  Top Selling Item
-                </h3>
-                {analytics?.topItems?.length > 0 ? (
-                  <>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-surface-variant flex-shrink-0 flex items-center justify-center">
-                        <Icon name="local_pizza" className="text-primary text-3xl" />
+            <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+              <h3 className="font-h3 text-h3 text-on-surface mb-stack_md font-bold">
+                Top Selling Item
+              </h3>
+              {analytics?.topItems?.length > 0 ? (
+                <>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-surface-variant flex-shrink-0 flex items-center justify-center">
+                      <Icon name="local_pizza" className="text-primary text-3xl" />
+                    </div>
+                    <div>
+                      <h4 className="font-button text-button text-on-surface font-semibold line-clamp-1">
+                        {analytics.topItems[0].name}
+                      </h4>
+                      <p className="font-label text-label text-secondary">
+                        {analytics.topItems[0].quantity} orders
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-surface-container p-3 rounded-lg">
+                      <p className="font-label text-[12px] text-secondary uppercase">
+                        Revenue Generated
+                      </p>
+                      <p className="font-button text-button text-on-surface">${analytics.topItems[0].revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-secondary">No data yet.</p>
+              )}
+            </div>
+
+            <div className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+              <h3 className="font-h3 text-h3 text-on-surface mb-stack_md font-bold">
+                Recent Subscribers
+              </h3>
+              {recentSubscribers?.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {recentSubscribers.map(sub => (
+                    <div key={sub._id} className="flex items-center gap-3 p-3 bg-surface-container rounded-xl">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Icon name="mail" className="text-primary text-xl" />
                       </div>
-                      <div>
-                        <h4 className="font-button text-button text-on-surface font-semibold line-clamp-1">
-                          {analytics.topItems[0].name}
-                        </h4>
-                        <p className="font-label text-label text-secondary">
-                          {analytics.topItems[0].quantity} orders
+                      <div className="overflow-hidden">
+                        <p className="font-button text-[14px] text-on-surface truncate">{sub.email}</p>
+                        <p className="font-label text-[12px] text-secondary">
+                          {new Date(sub.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-surface-container p-3 rounded-lg">
-                        <p className="font-label text-[12px] text-secondary uppercase">
-                          Revenue Generated
-                        </p>
-                        <p className="font-button text-button text-on-surface">${analytics.topItems[0].revenue.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-secondary">No data yet.</p>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-secondary text-sm">No recent subscribers.</p>
+              )}
+            </div>
           </div>
         </section>
       </main>
 
       {/* Floating Action Button (FAB) - For Global Add */}
       {!user?.restaurantId && user?.role === USER_ROLES.RESTAURANT_ADMIN && (
-      <button
-        onClick={() => navigate(APP_ROUTES.ADMIN_ONBOARDING)}
-        className="fixed bottom-10 right-10 w-14 h-14 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(174,50,0,0.3)] hover:scale-110 active:scale-95 transition-all z-[60] group cursor-pointer border-none"
-      >
-        <Icon name="add" />
-        <span className="absolute right-full mr-4 bg-inverse-surface text-inverse-on-surface px-4 py-2 rounded-lg font-label text-label opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-md">
-          Create New
-        </span>
-      </button>
+        <button
+          onClick={() => navigate(APP_ROUTES.ADMIN_ONBOARDING)}
+          className="fixed bottom-10 right-10 w-14 h-14 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(174,50,0,0.3)] hover:scale-110 active:scale-95 transition-all z-[60] group cursor-pointer border-none"
+        >
+          <Icon name="add" />
+          <span className="absolute right-full mr-4 bg-inverse-surface text-inverse-on-surface px-4 py-2 rounded-lg font-label text-label opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-md">
+            Create New
+          </span>
+        </button>
       )}
 
       {/* Footer */}

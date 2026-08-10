@@ -146,19 +146,26 @@ const TrendingSection = () => {
                   style={{ animationDelay: `${Math.min(index, 6) * 60}ms` }}
                 >
                   <div className="h-48 rounded-t-2xl overflow-hidden relative">
-                    <div
-                      className="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
-                      style={{ backgroundImage: `url('${image}')` }}
+                    <img
+                      src={image}
+                      alt={item.name}
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                     />
-                    {item.restaurant?.rating > 0 && (
-                      <div className="absolute top-3 right-3 bg-surface-container-lowest/85 backdrop-blur-md px-2 py-1 rounded-lg text-primary font-bold text-label flex items-center gap-1 shadow-sm">
-                        <Icon name="star" className="text-[16px]" filled />
-                        {item.restaurant.rating}
-                      </div>
-                    )}
+
                   </div>
                   <div className="p-stack_md flex flex-col grow">
                     <h3 className="font-h3 text-body font-bold text-on-background line-clamp-1">{item.name}</h3>
+                    <div className="mt-1 mb-2 flex items-center">
+                      {item.numReviews > 0 ? (
+                        <div className="flex items-center gap-1">
+                          <Icon name="star" className="text-[14px] text-warning" />
+                          <span className="font-button text-[14px] text-on-surface font-bold">{item.rating?.toFixed(1)}</span>
+                          <span className="font-label text-[12px] text-secondary">({item.numReviews})</span>
+                        </div>
+                      ) : (
+                        <span className="font-label text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded text-center">New</span>
+                      )}
+                    </div>
                     <p className="text-small font-small text-secondary mb-3 line-clamp-1">
                       {item.restaurant?.name || 'Local Restaurant'} • ${Number(item.price || 0).toFixed(2)}
                     </p>

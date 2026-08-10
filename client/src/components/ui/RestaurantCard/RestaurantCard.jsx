@@ -18,11 +18,12 @@ const RestaurantCard = ({ restaurant }) => {
       onClick={() => isAuthenticated ? navigate(`/restaurant/${cardId}`) : navigate('/auth', { state: { message: 'Please login or create an account to continue.' } })}
       className="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden hover:shadow-xl transition-all cursor-pointer"
     >
-      <div className="h-52 relative">
-        <div
-          className="w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url('${cardImage}')` }}
-        ></div>
+      <div className="aspect-[16/9] w-full relative">
+        <img
+          src={cardImage}
+          alt={name}
+          className="w-full h-full object-cover object-center"
+        />
         <div className="absolute top-4 left-4 flex gap-2">
           {freeDelivery && (
             <span className="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-lg text-label font-label">
@@ -39,9 +40,7 @@ const RestaurantCard = ({ restaurant }) => {
       <div className="p-stack_md">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-h3 text-h3 font-bold">{name}</h3>
-          <div className="bg-surface-container px-2 py-1 rounded-lg text-primary font-bold text-label flex items-center gap-1">
-            <Icon name="star" className="text-[16px]" filled /> {rating}
-          </div>
+
         </div>
         <p className="text-body text-secondary mb-4">{cardTags.join(' • ')}</p>
         <div className="flex items-center gap-4 text-small text-secondary border-t border-outline-variant pt-4">

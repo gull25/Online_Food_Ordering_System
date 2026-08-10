@@ -5,6 +5,8 @@ import { toast } from 'react-hot-toast';
 import api from '../../../../api/axios';
 import { AdminPageSkeleton } from '../../../../components/common/Skeleton';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
+import { useApiAction } from '../../../../hooks/useApiAction';
+import { useItemApiAction } from '../../../../hooks/useItemApiAction';
 
 const AdminCategoriesPage = () => {
   const { user } = useSelector((state) => state.auth);
@@ -69,7 +71,7 @@ const AdminCategoriesPage = () => {
     setEditingCategory(null);
   };
 
-  const handleSubmit = async (e) => {
+  const { execute: handleSubmit, isSubmitting } = useApiAction(async (e) => {
     e.preventDefault();
     try {
       const data = new FormData();
@@ -92,9 +94,9 @@ const AdminCategoriesPage = () => {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save category');
     }
-  };
+  });
 
-  const handleDelete = async (id) => {
+  const { execute: handleDelete, isSubmitting: isDeleting } = useItemApiAction(async (id) => {
     if (window.confirm('Are you sure you want to delete this category? Items in this category will not have a category anymore.')) {
       try {
         await api.delete(`/categories/${id}`);
@@ -104,7 +106,7 @@ const AdminCategoriesPage = () => {
         toast.error(err.response?.data?.message || 'Failed to delete category');
       }
     }
-  };
+  });
 
   if (loading) return <AdminPageSkeleton rows={6} columns={5} />;
 
@@ -157,8 +159,8 @@ const AdminCategoriesPage = () => {
                         <button onClick={() => openModal(cat)} className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors">
                           <Icon name="edit" className="text-[20px]" />
                         </button>
-                        <button onClick={() => handleDelete(cat._id)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors">
-                          <Icon name="delete" className="text-[20px]" />
+                        <button disabled={isDeleting(cat._id)} onClick={() => handleDelete(cat._id)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50">
+                          {isDeleting(cat._id) ? <Icon name="sync" className="text-[20px] animate-spin" /> : <Icon name="delete" className="text-[20px]" />}
                         </button>
                       </td>
                     </tr>
@@ -254,9 +256,11 @@ const AdminCategoriesPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-12 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-opacity shadow-md"
+                  disabled={isSubmitting}
+                  className="flex-1 h-12 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-opacity shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Save Category
+                  {isSubmitting && <Icon name="sync" className="animate-spin" />}
+                  {isSubmitting ? 'Saving...' : 'Save Category'}
                 </button>
               </div>
             </form>

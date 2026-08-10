@@ -7,6 +7,8 @@ import { Toaster, toast } from 'react-hot-toast';
 import { useDebounce } from '../../../../helper/useDebounce';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
 import { AdminPageSkeleton } from '../../../../components/common/Skeleton';
+import { useApiAction } from '../../../../hooks/useApiAction';
+import { useItemApiAction } from '../../../../hooks/useItemApiAction';
 
 const AdminMyRestaurantPage = () => {
   const { user } = useSelector((state) => state.auth);
@@ -104,7 +106,7 @@ const AdminMyRestaurantPage = () => {
     setEditingItem(null);
   };
 
-  const handleSubmit = async (e) => {
+  const { execute: handleSubmit, isSubmitting } = useApiAction(async (e) => {
     e.preventDefault();
     try {
       const data = new FormData();
@@ -138,9 +140,9 @@ const AdminMyRestaurantPage = () => {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save menu item');
     }
-  };
+  });
 
-  const handleDelete = async (id) => {
+  const { execute: handleDelete, isSubmitting: isDeleting } = useItemApiAction(async (id) => {
     if (window.confirm('Are you sure you want to delete this menu item?')) {
       try {
         await api.delete(`/restaurants/menu/${id}`);
@@ -150,9 +152,9 @@ const AdminMyRestaurantPage = () => {
         toast.error('Failed to delete item');
       }
     }
-  };
+  });
 
-  const handleToggleFeatured = async () => {
+  const { execute: handleToggleFeatured, isSubmitting: isTogglingFeatured } = useApiAction(async () => {
     try {
       const newStatus = !restaurant.isFeatured;
       await api.put(`/restaurants/${restaurant._id}`, { isFeatured: newStatus });
@@ -161,7 +163,16 @@ const AdminMyRestaurantPage = () => {
     } catch (err) {
       toast.error('Failed to update featured status');
     }
-  };
+  });
+
+  const { execute: handleStripeConnect, isSubmitting: isStripeConnecting } = useApiAction(async () => {
+    try {
+      const res = await api.post('/stripe/onboard');
+      window.location.href = res.data.url;
+    } catch (err) {
+      toast.error('Failed to initiate Stripe onboarding');
+    }
+  });
 
   // Search filter
   const filteredItems = useMemo(() => {
@@ -229,17 +240,12 @@ const AdminMyRestaurantPage = () => {
               </div>
             </div>
             <button 
-              onClick={async () => {
-                try {
-                  const res = await api.post('/stripe/onboard');
-                  window.location.href = res.data.url;
-                } catch (err) {
-                  toast.error('Failed to initiate Stripe onboarding');
-                }
-              }}
-              className="px-6 py-3 bg-error text-white font-button text-button rounded-xl hover:opacity-90 shadow-md font-bold whitespace-nowrap"
+              onClick={handleStripeConnect}
+              disabled={isStripeConnecting}
+              className="px-6 py-3 bg-error text-white font-button text-button rounded-xl hover:opacity-90 shadow-md font-bold whitespace-nowrap disabled:opacity-70 flex items-center justify-center gap-2"
             >
-              Connect Bank Account
+              {isStripeConnecting && <Icon name="sync" className="animate-spin" />}
+              {isStripeConnecting ? 'Connecting...' : 'Connect Bank Account'}
             </button>
           </div>
         )}
@@ -266,7 +272,8 @@ const AdminMyRestaurantPage = () => {
                   type="checkbox"
                   checked={restaurant.isFeatured || false}
                   onChange={handleToggleFeatured}
-                  className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer"
+                  disabled={isTogglingFeatured}
+                  className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer disabled:opacity-50"
                 />
                 <span className="font-label text-label font-bold text-on-surface">Featured</span>
               </label>
@@ -367,10 +374,11 @@ const AdminMyRestaurantPage = () => {
                               <Icon name="edit" />
                             </button>
                             <button
+                              disabled={isDeleting(item._id)}
                               onClick={() => handleDelete(item._id)}
-                              className="p-2 rounded-lg bg-surface-container-highest text-secondary hover:text-error transition-colors border border-outline-variant/30 cursor-pointer"
+                              className="p-2 rounded-lg bg-surface-container-highest text-secondary hover:text-error transition-colors border border-outline-variant/30 cursor-pointer disabled:opacity-50"
                             >
-                              <Icon name="delete" />
+                              {isDeleting(item._id) ? <Icon name="sync" className="animate-spin" /> : <Icon name="delete" />}
                             </button>
                           </div>
                         </div>
@@ -527,9 +535,11 @@ const AdminMyRestaurantPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-primary text-on-primary rounded-xl font-button text-button shadow-md"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-primary text-on-primary rounded-xl font-button text-button shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Save Changes
+                  {isSubmitting && <Icon name="sync" className="animate-spin" />}
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

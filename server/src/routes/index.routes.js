@@ -27,5 +27,6 @@ router.use('/reviews', require('./review.routes'));
 router.use('/categories', categoryRoutes);
 router.use('/offers', require('./offer.routes'));
 router.use('/admin', require('./admin.routes'));
+router.use('/subscribers', require('./subscriber.routes'));
 
 module.exports = router;

@@ -16,6 +16,7 @@ import StripePaymentModal from '../../components/homeScreen/checkoutComponents/S
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import api from '../../api/axios';
+import { useApiAction } from '../../hooks/useApiAction';
 
 // Initialize Stripe outside component to avoid recreating the object on every render
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -44,6 +45,7 @@ const CheckoutPage = () => {
   const [deliveryPreference, setDeliveryPreference] = useState('meet');
   const [formError, setFormError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
+  const [idempotencyKey] = useState(() => self.crypto.randomUUID ? self.crypto.randomUUID() : Date.now().toString());
 
   // Payment Modal State
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -148,9 +150,7 @@ const CheckoutPage = () => {
     }
   };
 
-  const { loading: isSubmitting } = useSelector(state => state.orders);
-
-  const handleSubmitOrder = async (e) => {
+  const { execute: handleSubmitOrder, isSubmitting } = useApiAction(async (e) => {
     e.preventDefault();
 
     // Basic address form validation
@@ -181,7 +181,8 @@ const CheckoutPage = () => {
       totalAmount: total, // Still sent but ignored by backend for security
       deliveryAddress: formData,
       paymentMethod,
-      promoCode: promoInput.trim().toUpperCase()
+      promoCode: promoInput.trim().toUpperCase(),
+      idempotencyKey
     };
 
     try {
@@ -206,7 +207,7 @@ const CheckoutPage = () => {
     } catch (err) {
       setFormError(err || 'Failed to place order.');
     }
-  };
+  });
 
   const handlePaymentSuccess = async () => {
     try {

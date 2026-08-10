@@ -87,9 +87,10 @@ const CuratedCollectionsSection = () => {
                     className="relative h-64 rounded-2xl overflow-hidden group cursor-pointer shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700"
                     style={{ animationDelay: `${index * 90}ms` }}
                   >
-                    <div
-                      className="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-700"
-                      style={{ backgroundImage: `url('${image}')` }}
+                    <img
+                      src={image}
+                      alt={title}
+                      className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
                     <div className="absolute bottom-6 left-6 right-6 text-white">

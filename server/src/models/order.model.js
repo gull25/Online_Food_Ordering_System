@@ -28,7 +28,11 @@ const orderItemSchema = new mongoose.Schema({
             name: String,
             price: Number
         }
-    ]
+    ],
+    isReviewed: {
+        type: Boolean,
+        default: false
+    }
 });
 
 const orderSchema = new mongoose.Schema({
@@ -140,6 +144,11 @@ const orderSchema = new mongoose.Schema({
     cancelledBy: {
         type: String,
         enum: ['customer', 'restaurant', 'system']
+    },
+    idempotencyKey: {
+        type: String,
+        unique: true,
+        sparse: true
     }
 }, {
     timestamps: true

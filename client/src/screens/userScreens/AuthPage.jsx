@@ -13,13 +13,13 @@ const AuthPage = () => {
     <main className="flex h-screen w-full flex-col md:flex-row bg-background text-on-background overflow-hidden">
       {/* Left Side: Visual Experience */}
       <section className="relative w-full h-1/3 md:w-1/2 md:h-full overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center" 
-          style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDHSsSQEVX1ARAbX1SPpxNyr1-DRdX4zu7fgDe5UqxTmkmKqVT4yc63ioD6v-MS8Y7VsinGE7Y4xaeQRfWX2XoG11ipmZQdXcN8K2ybKHxi6YR2xmx_T5T0Y2awvHWTi2ruN_mkv2QkTcBWZIq5FCbEhzcvjSadnJNWPcSJCy9YkwDCBcwViVF1wWwvu-ZO8ebn5pXlHJFexap2DmkituBTqr2hryoCbdUfGTv55lQG-pgHXEZ5WBFT3Q')" }}
-        >
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/30 to-transparent"></div>
-        </div>
+        <img 
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHSsSQEVX1ARAbX1SPpxNyr1-DRdX4zu7fgDe5UqxTmkmKqVT4yc63ioD6v-MS8Y7VsinGE7Y4xaeQRfWX2XoG11ipmZQdXcN8K2ybKHxi6YR2xmx_T5T0Y2awvHWTi2ruN_mkv2QkTcBWZIq5FCbEhzcvjSadnJNWPcSJCy9YkwDCBcwViVF1wWwvu-ZO8ebn5pXlHJFexap2DmkituBTqr2hryoCbdUfGTv55lQG-pgHXEZ5WBFT3Q"
+          alt="Auth Background"
+          className="absolute inset-0 w-full h-full object-cover object-center -z-10" 
+        />
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/30 to-transparent"></div>
         
         {/* Back to Home Floating Button */}
         <button 

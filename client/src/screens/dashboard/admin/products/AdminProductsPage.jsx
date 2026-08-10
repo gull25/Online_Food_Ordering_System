@@ -5,6 +5,8 @@ import { toast } from 'react-hot-toast';
 import api from '../../../../api/axios';
 import { AdminPageSkeleton } from '../../../../components/common/Skeleton';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
+import { useApiAction } from '../../../../hooks/useApiAction';
+import { useItemApiAction } from '../../../../hooks/useItemApiAction';
 
 const AdminProductsPage = () => {
   const { user } = useSelector((state) => state.auth);
@@ -86,7 +88,7 @@ const AdminProductsPage = () => {
     setEditingProduct(null);
   };
 
-  const handleSubmit = async (e) => {
+  const { execute: handleSubmit, isSubmitting } = useApiAction(async (e) => {
     e.preventDefault();
     if (!formData.category) {
       toast.error('Please create a category first!');
@@ -116,9 +118,9 @@ const AdminProductsPage = () => {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save product');
     }
-  };
+  });
 
-  const handleDelete = async (id) => {
+  const { execute: handleDelete, isSubmitting: isDeleting } = useItemApiAction(async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
         await api.delete(`/restaurants/menu/${id}`);
@@ -128,7 +130,7 @@ const AdminProductsPage = () => {
         toast.error(err.response?.data?.message || 'Failed to delete product');
       }
     }
-  };
+  });
 
   if (loading) return <AdminPageSkeleton rows={7} columns={6} />;
 
@@ -191,8 +193,8 @@ const AdminProductsPage = () => {
                           <button onClick={() => openModal(prod)} className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors">
                             <Icon name="edit" className="text-[20px]" />
                           </button>
-                          <button onClick={() => handleDelete(prod._id)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors">
-                            <Icon name="delete" className="text-[20px]" />
+                          <button disabled={isDeleting(prod._id)} onClick={() => handleDelete(prod._id)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50">
+                            {isDeleting(prod._id) ? <Icon name="sync" className="text-[20px] animate-spin" /> : <Icon name="delete" className="text-[20px]" />}
                           </button>
                         </div>
                       </td>
@@ -351,9 +353,11 @@ const AdminProductsPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-12 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-opacity shadow-md"
+                  disabled={isSubmitting}
+                  className="flex-1 h-12 rounded-xl bg-primary text-on-primary font-button text-button hover:opacity-90 transition-opacity shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Save Product
+                  {isSubmitting && <Icon name="sync" className="animate-spin" />}
+                  {isSubmitting ? 'Saving...' : 'Save Product'}
                 </button>
               </div>
             </form>

@@ -19,6 +19,7 @@ import AdminDeliveryReplay from '../../../../components/adminDashboardComponents
 import LiveTracker from '../../../../components/homeScreen/orderComponents/LiveTracker';
 import { socket, connectSocket } from '../../../../helper/socket';
 import api from '../../../../api/axios';
+import { useApiAction } from '../../../../hooks/useApiAction';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -74,7 +75,7 @@ const AdminOrdersPage = () => {
     } catch { /* riders optional */ }
   };
 
-  const handleAssignRider = async (orderId) => {
+  const { execute: handleAssignRider, isSubmitting: isAssigningRider } = useApiAction(async (orderId) => {
     if (!selectedRiderId) return toast.error('Select a rider first');
     try {
       await api.put(`/orders/${orderId}/rider`, { riderId: selectedRiderId });
@@ -85,7 +86,17 @@ const AdminOrdersPage = () => {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to assign rider');
     }
-  };
+  });
+
+  const { execute: handleUpdateStatus, isSubmitting: isUpdatingStatus } = useApiAction(async (orderId, newStatus) => {
+    try {
+      const updatedOrder = await dispatch(updateAdminOrderStatus({ orderId, status: newStatus })).unwrap();
+      setSelectedOrder(updatedOrder);
+      toast.success(`Status updated to ${newStatus}`);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to update status');
+    }
+  });
 
   // A fake rider-GPS simulator lived here (a setInterval emitting random
   // coordinates around Lahore). Nothing rendered a control for it, so it was
@@ -269,9 +280,10 @@ const AdminOrdersPage = () => {
                   </select>
                   <button
                     onClick={() => handleAssignRider(selectedOrder._id)}
-                    disabled={!selectedRiderId}
-                    className="px-4 h-10 rounded-lg bg-primary text-on-primary text-sm font-button hover:opacity-90 disabled:opacity-40 transition-opacity"
+                    disabled={!selectedRiderId || isAssigningRider}
+                    className="px-4 h-10 rounded-lg bg-primary text-on-primary text-sm font-button hover:opacity-90 disabled:opacity-40 transition-opacity flex items-center justify-center gap-1"
                   >
+                    {isAssigningRider && <Icon name="sync" className="animate-spin text-sm" />}
                     Assign
                   </button>
                 </div>
@@ -317,16 +329,9 @@ const AdminOrdersPage = () => {
             <div className="mt-6 flex gap-3">
               <select
                 value={selectedOrder.status}
-                onChange={(e) => {
-                  const newStatus = e.target.value;
-                  dispatch(updateAdminOrderStatus({ orderId: selectedOrder._id, status: newStatus }))
-                    .unwrap()
-                    .then((updatedOrder) => {
-                      setSelectedOrder(updatedOrder);
-                      toast.success(`Status updated to ${newStatus}`);
-                    });
-                }}
+                onChange={(e) => handleUpdateStatus(selectedOrder._id, e.target.value)}
                 aria-label="Update order status"
+                disabled={isUpdatingStatus}
                 className="flex-1 h-12 px-4 rounded-xl border border-outline-variant bg-surface text-on-surface font-button text-small outline-none focus:border-primary cursor-pointer disabled:opacity-50"
               >
                 {/* The delivery half of the pipeline was missing here, so an
