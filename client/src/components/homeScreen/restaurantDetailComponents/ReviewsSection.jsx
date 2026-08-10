@@ -43,7 +43,7 @@ const ReviewsSection = ({ restaurantId }) => {
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {reviews.map((review) => (
+        {reviews.slice(0, 4).map((review) => (
           <div key={review._id} className="bg-surface-container-lowest border border-outline-variant/30 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">

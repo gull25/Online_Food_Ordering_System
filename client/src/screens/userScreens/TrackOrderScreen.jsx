@@ -139,6 +139,30 @@ const TrackOrderPage = () => {
     socket.on('orderStatusUpdate', (updatedOrder) => {
       if (updatedOrder._id === orderId || updatedOrder._id?.toString() === orderId) {
         dispatch(orderStatusUpdated(updatedOrder));
+        if (updatedOrder.status === 'DELIVERED') {
+          toast((t) => (
+            <div className="flex flex-col gap-3 p-1">
+              <span className="font-bold text-on-surface flex items-center gap-2">
+                <Icon name="check_circle" className="text-primary text-[20px]" />
+                Order Delivered!
+              </span>
+              <p className="font-body text-[13px] text-secondary">
+                Your food has arrived. How was it?
+              </p>
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  if (updatedOrder.items && updatedOrder.items.length > 0) {
+                    setReviewItem(updatedOrder.items[0]);
+                  }
+                }}
+                className="mt-1 w-full bg-primary text-on-primary py-2 px-4 rounded-xl font-button text-sm shadow-md hover:bg-primary/90 transition-colors"
+              >
+                Rate & Review Now
+              </button>
+            </div>
+          ), { duration: 10000 });
+        }
       }
     });
 
@@ -216,10 +240,10 @@ const TrackOrderPage = () => {
         location: order.rider.currentLocation // might be null
       });
       if (order.rider.currentLocation?.coordinates) {
-         setRiderGpsPosition({
-            lat: order.rider.currentLocation.coordinates[1],
-            lng: order.rider.currentLocation.coordinates[0]
-         });
+        setRiderGpsPosition({
+          lat: order.rider.currentLocation.coordinates[1],
+          lng: order.rider.currentLocation.coordinates[0]
+        });
       }
     }
   }, [order?.rider]);
@@ -229,7 +253,7 @@ const TrackOrderPage = () => {
     const historyItem = order?.statusHistory?.find((h) => h.status === step.status);
     return {
       ...step,
-      time: historyItem 
+      time: historyItem
         ? new Date(historyItem.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : 'Pending',
     };
@@ -243,7 +267,7 @@ const TrackOrderPage = () => {
   };
 
   // Review Modal State
-  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewItem, setReviewItem] = useState(null);
 
   // ── No specific order requested: show a picker ──────────────────────────
   // Every branch below keeps the navbar and footer, so the user is never
@@ -376,10 +400,10 @@ const TrackOrderPage = () => {
 
       {/* Main Content */}
       <main className="flex-grow w-full max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-        
+
         {/* Order Header & Timeline Column */}
         <div className="lg:col-span-5 flex flex-col gap-stack_lg">
-          
+
           {/* Order Header Info */}
           <div className="bg-surface-container-lowest p-gutter rounded-xl border border-surface-variant shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
             <div className="flex justify-between items-start mb-stack_md">
@@ -388,7 +412,7 @@ const TrackOrderPage = () => {
                   Order #{order._id.substring(order._id.length - 6).toUpperCase()}
                 </h1>
                 <p className="font-body text-body text-on-surface-variant">
-                  Placed At: <strong>{new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</strong>
+                  Placed At: <strong>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
                 </p>
               </div>
               <div className="flex gap-2 items-center">
@@ -429,7 +453,7 @@ const TrackOrderPage = () => {
             {order.estimatedDeliveryTime && (
               <div className="bg-primary/10 text-primary p-3 rounded-lg mb-stack_md border border-primary/20 flex gap-2 items-center">
                 <Icon name="schedule" />
-                <span><strong>Estimated Delivery:</strong> {new Date(order.estimatedDeliveryTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                <span><strong>Estimated Delivery:</strong> {new Date(order.estimatedDeliveryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             )}
 
@@ -446,12 +470,30 @@ const TrackOrderPage = () => {
             </h3>
             <div className="flex flex-col gap-stack_sm">
               {order.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center">
-                  <div className="flex items-center gap-stack_sm">
-                    <span className="font-body text-body text-on-surface-variant">
-                      {item.quantity}x
-                    </span>
-                    <span className="font-body text-body text-on-surface">{item.name}</span>
+                <div key={idx} className="flex justify-between items-center py-2 border-b border-surface-variant last:border-0">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-stack_sm">
+                      <span className="font-body text-body text-on-surface-variant">
+                        {item.quantity}x
+                      </span>
+                      <span className="font-body text-body text-on-surface">{item.name}</span>
+                    </div>
+                    {order.status === ORDER_STATUS.DELIVERED && (
+                      <div className="mt-2">
+                        {item.isReviewed ? (
+                          <span className="text-xs font-bold text-[#F59E0B] flex items-center gap-1">
+                            <Icon name="check_circle" className="text-[14px]" /> Reviewed
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setReviewItem(item)}
+                            className="text-xs px-3 py-1 bg-primary/10 text-primary font-bold rounded-full hover:bg-primary/20 transition-colors"
+                          >
+                            Rate & Review
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <span className="font-body text-body text-on-surface">
                     ${(item.price * item.quantity).toFixed(2)}
@@ -468,31 +510,6 @@ const TrackOrderPage = () => {
                 ${order.totalAmount.toFixed(2)}
               </span>
             </div>
-
-            {/* Review Call to Action.
-                This compared against 'Delivered' while the API returns
-                'DELIVERED', so the prompt could never render and no customer was
-                ever asked to review an order. */}
-            {order.status === ORDER_STATUS.DELIVERED && !order.isReviewed && (
-              <div className="mt-stack_lg p-4 bg-primary/10 rounded-xl border border-primary/20 flex flex-col items-center text-center">
-                <Icon name="star" className="text-primary text-[32px] mb-2" />
-                <h4 className="font-button text-button font-bold text-on-surface mb-1">How was your food?</h4>
-                <p className="font-body text-small text-secondary mb-4">Rate your order to help others!</p>
-                <button
-                  onClick={() => setShowReviewModal(true)}
-                  className="px-6 py-2 bg-primary text-on-primary font-button text-button rounded-full shadow-sm hover:opacity-90 transition-opacity w-full"
-                >
-                  Leave a Review
-                </button>
-              </div>
-            )}
-            
-            {order.isReviewed && (
-              <div className="mt-stack_lg p-4 bg-surface-variant rounded-xl flex items-center gap-3 text-center justify-center text-on-surface-variant">
-                <Icon name="stars" className="text-[#F59E0B]" />
-                <span className="font-label text-label font-bold">You reviewed this order</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -510,7 +527,7 @@ const TrackOrderPage = () => {
                 isRiderView={false}
               />
             ) : (
-              <OrderMap 
+              <OrderMap
                 restaurantLocation={order?.restaurant?.location}
                 customerLocation={order?.deliveryAddress}
                 riderLocation={riderGpsPosition}
@@ -533,13 +550,14 @@ const TrackOrderPage = () => {
       <HomeFooter />
 
       {/* Review Modal */}
-      {showReviewModal && (
+      {reviewItem && (
         <ReviewModal
           order={order}
-          onClose={() => setShowReviewModal(false)}
+          orderItem={reviewItem}
+          onClose={() => setReviewItem(null)}
           onSuccess={() => {
-            // Re-fetch order to get updated isReviewed status
-            dispatch(fetchOrderByIdThunk(orderId));
+            dispatch(fetchOrderByIdThunk(order._id));
+            setReviewItem(null);
           }}
         />
       )}

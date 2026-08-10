@@ -6,7 +6,12 @@ export const updateProfileThunk = createAsyncThunk(
   'user/updateProfile',
   async (profileData, { dispatch, rejectWithValue }) => {
     try {
-      const response = await api.put('/users/profile', profileData);
+      const isFormData = profileData instanceof FormData;
+      
+      // If it's FormData, we must let the browser set the Content-Type so it includes the boundary
+      const headers = isFormData ? { 'Content-Type': undefined } : {};
+      
+      const response = await api.put('/users/profile', profileData, { headers });
       const updatedUser = response.data.data;
       
       // Update local storage so on refresh it stays updated

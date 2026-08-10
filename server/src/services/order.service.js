@@ -9,6 +9,14 @@ const socketManager = require('../socket');
 
 class OrderService {
     async createOrder(data) {
+        if (data.idempotencyKey) {
+            const Order = require('../models/order.model');
+            const existingOrder = await Order.findOne({ idempotencyKey: data.idempotencyKey });
+            if (existingOrder) {
+                throw new ApiError(409, 'An order with this ID has already been created. Please check your active orders.');
+            }
+        }
+
         if (!data.items || data.items.length === 0) {
             throw new ApiError(400, 'Order must contain items');
         }

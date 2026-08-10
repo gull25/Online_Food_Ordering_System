@@ -2,37 +2,46 @@ import React, { useState } from 'react';
 import Icon from '../../common/Icon';
 import { toast } from 'react-hot-toast';
 import api from '../../../api/axios';
+import { useApiAction } from '../../../hooks/useApiAction';
 
-const ReviewModal = ({ order, onClose, onSuccess }) => {
+const ReviewModal = ({ order, orderItem, onClose, onSuccess }) => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e) => {
+  const { execute: handleSubmit, isSubmitting } = useApiAction(async (e) => {
     e.preventDefault();
     if (rating === 0) {
       toast.error('Please select a rating star.');
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      await api.post('/reviews', {
-        restaurantId: typeof order.restaurant === 'object' ? order.restaurant._id : order.restaurant,
-        orderId: order._id,
-        rating,
-        comment
-      });
+      if (orderItem) {
+        // Item review
+        await api.post('/reviews/item', {
+          restaurantId: typeof order.restaurant === 'object' ? order.restaurant._id : order.restaurant,
+          orderId: order._id,
+          menuItemId: typeof orderItem.menuItem === 'object' ? orderItem.menuItem._id : orderItem.menuItem,
+          rating,
+          comment
+        });
+      } else {
+        // Restaurant review
+        await api.post('/reviews', {
+          restaurantId: typeof order.restaurant === 'object' ? order.restaurant._id : order.restaurant,
+          orderId: order._id,
+          rating,
+          comment
+        });
+      }
+      
       toast.success('Thank you for your review!');
       onSuccess(); // Triggers a re-fetch or state update
       onClose();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to submit review.');
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  });
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
@@ -50,7 +59,7 @@ const ReviewModal = ({ order, onClose, onSuccess }) => {
           </div>
           <h2 className="font-h3 text-h3 font-bold text-on-surface mb-2">Rate your experience</h2>
           <p className="font-body text-body text-secondary">
-            How was your order from {order.restaurantName || 'the restaurant'}?
+            How was {orderItem ? orderItem.name : `your order from ${order.restaurantName || 'the restaurant'}`}?
           </p>
         </div>
 
@@ -71,9 +80,8 @@ const ReviewModal = ({ order, onClose, onSuccess }) => {
                 <Icon
                   name="star"
                   filled={star <= (hoverRating || rating)}
-                  className={`text-[40px] ${
-                    star <= (hoverRating || rating) ? 'text-warning' : 'text-surface-variant'
-                  }`}
+                  className={`text-[40px] ${star <= (hoverRating || rating) ? 'text-warning' : 'text-surface-variant'
+                    }`}
                 />
               </button>
             ))}
@@ -94,13 +102,10 @@ const ReviewModal = ({ order, onClose, onSuccess }) => {
           <button
             type="submit"
             disabled={isSubmitting || rating === 0}
-            className="w-full h-12 rounded-xl bg-primary text-on-primary font-button text-button font-bold hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full h-12 rounded-xl bg-primary text-on-primary font-button text-button font-bold hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed gap-2"
           >
-            {isSubmitting ? (
-              <Icon name="progress_activity" className="animate-spin text-[20px]" />
-            ) : (
-              'Submit Review'
-            )}
+            {isSubmitting && <Icon name="sync" className="animate-spin text-[20px]" />}
+            {isSubmitting ? 'Submitting...' : 'Submit Review'}
           </button>
         </form>
       </div>

@@ -5,12 +5,11 @@ const HeroSection = () => {
   return (
     <section className="relative w-full min-h-[600px] flex items-center overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <div
-          className="w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuA2AkxEVzhnfZ6ds67loIzbblNyQrrPF9RA3p3SAEui2dH4Yam1aYhs1Ybz-IgN3cdRJEdu4i8fhAnIblVbhhhMB3e-Z57oLgLtA2dWGNj3_Utmtm9Rq09Pcy-EiiuijMVOntlPPp03KOjtk2EcqYKbL2KEwIyHHi1rVALDddGu_ifUR0K50uZgE58GvrMabvR_HbRzt0FzobT1DysnHCFTI6rF9eOlz82tY9zc6JSpQwRixPQo7xXxwQ')`,
-          }}
-        ></div>
+        <img
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2AkxEVzhnfZ6ds67loIzbblNyQrrPF9RA3p3SAEui2dH4Yam1aYhs1Ybz-IgN3cdRJEdu4i8fhAnIblVbhhhMB3e-Z57oLgLtA2dWGNj3_Utmtm9Rq09Pcy-EiiuijMVOntlPPp03KOjtk2EcqYKbL2KEwIyHHi1rVALDddGu_ifUR0K50uZgE58GvrMabvR_HbRzt0FzobT1DysnHCFTI6rF9eOlz82tY9zc6JSpQwRixPQo7xXxwQ"
+          alt="Hero Background"
+          className="w-full h-full object-cover object-center"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent"></div>
       </div>
       <div className="relative z-10 max-w-container_max mx-auto px-margin_desktop w-full py-stack_lg">
@@ -24,24 +23,21 @@ const HeroSection = () => {
           </p>
           <div className="mt-stack_lg flex items-center gap-stack_md">
             <div className="flex -space-x-3">
-              <div
-                className="w-10 h-10 rounded-full border-2 border-white bg-surface-container bg-cover bg-center"
-                style={{
-                  backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuC5CsuJYjpv13-lhlNJndSKRXGbmjz8GcbnNCH8sGaCwawA_72IeEonmHtedYKWzYa27JN0nDU7DvpL-Ff35Si704T0LnPYxsJxXpOnxPTFwguhk41Q0-D3HXvdxgI3qnsGNypZXrh_utpAaE_TLzQHxJp730HnUQHy-05BqsJFecDfCCgJNpcS-Tk2VPgTIt9CojLGAoeQqrFIhw0CXPs-f0Ip-aN_aBJ2zLyhzbjBJcCR_i6OUYmTZA')`,
-                }}
-              ></div>
-              <div
-                className="w-10 h-10 rounded-full border-2 border-white bg-surface-container bg-cover bg-center"
-                style={{
-                  backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuB3WGnYcQuPMV9i47CjYGaeKl9crM02gR9sG5mmZIH5KXtMRjQr2dKGQEV0nDIYyWRoDZbCYDPz2pgiWdCrswE6AMa10_lHYOJqMSywbyOor_RMoWtTWejDxFErlg9ycYVxmS2jjyBEZq_kEwlnzHFdNJgNXU76D2Vgh9MEzrnrp8GbLQblB7faWMjgADpuXLrIogEFLOlLj0pbYynU03EoJLT8zNeFDianTkKo-40aUdkP218HtxtHqg')`,
-                }}
-              ></div>
-              <div
-                className="w-10 h-10 rounded-full border-2 border-white bg-surface-container bg-cover bg-center"
-                style={{
-                  backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuBVtUDFDJjz57hMTBppoK6fP0fiCy9luILdYn6OiXcIEcacfJmW3-QAN4huoxXX6BcSY41slhaeNK85O8ggbcAqAnfr96KqdyOCP2ISMa1gVTt8OIacvxbUn6lw5ecRfZ_8PZK46gbdL4Ar8hJ0if7ovjGZ1eYjrEzor6hm5ahGi3rVjlOZWAttcxxymF9cA4D35Fl_2YaXKrlBO243CW7UxiPumTwbFyOnrwikF5wAy-w6x5DsmkF4_A')`,
-                }}
-              ></div>
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5CsuJYjpv13-lhlNJndSKRXGbmjz8GcbnNCH8sGaCwawA_72IeEonmHtedYKWzYa27JN0nDU7DvpL-Ff35Si704T0LnPYxsJxXpOnxPTFwguhk41Q0-D3HXvdxgI3qnsGNypZXrh_utpAaE_TLzQHxJp730HnUQHy-05BqsJFecDfCCgJNpcS-Tk2VPgTIt9CojLGAoeQqrFIhw0CXPs-f0Ip-aN_aBJ2zLyhzbjBJcCR_i6OUYmTZA"
+                alt="Avatar 1"
+                className="w-10 h-10 rounded-full border-2 border-white bg-surface-container object-cover"
+              />
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3WGnYcQuPMV9i47CjYGaeKl9crM02gR9sG5mmZIH5KXtMRjQr2dKGQEV0nDIYyWRoDZbCYDPz2pgiWdCrswE6AMa10_lHYOJqMSywbyOor_RMoWtTWejDxFErlg9ycYVxmS2jjyBEZq_kEwlnzHFdNJgNXU76D2Vgh9MEzrnrp8GbLQblB7faWMjgADpuXLrIogEFLOlLj0pbYynU03EoJLT8zNeFDianTkKo-40aUdkP218HtxtHqg"
+                alt="Avatar 2"
+                className="w-10 h-10 rounded-full border-2 border-white bg-surface-container object-cover"
+              />
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVtUDFDJjz57hMTBppoK6fP0fiCy9luILdYn6OiXcIEcacfJmW3-QAN4huoxXX6BcSY41slhaeNK85O8ggbcAqAnfr96KqdyOCP2ISMa1gVTt8OIacvxbUn6lw5ecRfZ_8PZK46gbdL4Ar8hJ0if7ovjGZ1eYjrEzor6hm5ahGi3rVjlOZWAttcxxymF9cA4D35Fl_2YaXKrlBO243CW7UxiPumTwbFyOnrwikF5wAy-w6x5DsmkF4_A"
+                alt="Avatar 3"
+                className="w-10 h-10 rounded-full border-2 border-white bg-surface-container object-cover"
+              />
             </div>
             <p className="text-small font-small text-secondary">
               <span className="font-bold text-on-background">50k+</span> satisfied foodies near you

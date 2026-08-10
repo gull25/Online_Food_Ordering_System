@@ -27,7 +27,7 @@ const RestaurantDetailPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const dispatch = useDispatch();
-  
+
   const { currentRestaurant, detailLoading: restaurantLoading, detailError } = useSelector((state) => state.restaurants);
   const { items: menuItems, loading: menuLoading } = useSelector((state) => state.menu);
   const { items: cart, totalQuantity: totalCartCount, restaurantId: cartRestaurantId } = useSelector((state) => state.cart);
@@ -47,9 +47,9 @@ const RestaurantDetailPage = () => {
     dispatch(addToCart(item));
     toast.success(`${item.name} added to cart`, { id: `cart-${item._id}` });
   }, [dispatch, cartRestaurantId]);
-  
+
   const handleRemoveFromCart = useCallback((itemId) => dispatch(removeFromCart(itemId)), [dispatch]);
-  
+
   const isFavorite = Array.isArray(favorites) && favorites.includes(id);
   const handleToggleFavorite = () => {
     if (!isAuthenticated) {
@@ -61,7 +61,7 @@ const RestaurantDetailPage = () => {
   const [shareText, setShareText] = useState('Share');
 
   const [categories, setCategories] = useState([]);
-  
+
   React.useEffect(() => {
     if (!id) return;
 
@@ -219,7 +219,7 @@ const RestaurantDetailPage = () => {
       <TopNavBar />
 
       {/* Header Section */}
-      <RestaurantHeader 
+      <RestaurantHeader
         handleShare={handleShare}
         shareText={shareText}
         isFavorite={isFavorite}
@@ -231,7 +231,7 @@ const RestaurantDetailPage = () => {
       {/* Main Content */}
       <main className="max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg grid grid-cols-1 md:grid-cols-12 gap-gutter relative">
         {/* Sidebar Categories (Desktop) */}
-        <CategorySidebar 
+        <CategorySidebar
           MENU_CATEGORIES={dynamicCategories}
           categoryCounts={categoryCounts}
           activeCategory={activeCategory}
@@ -265,7 +265,7 @@ const RestaurantDetailPage = () => {
             </div>
 
             {/* Mobile Categories Scrollbar */}
-            <MobileCategoryNav 
+            <MobileCategoryNav
               MENU_CATEGORIES={dynamicCategories}
               activeCategory={activeCategory}
               scrollToCategory={scrollToCategory}
@@ -282,7 +282,7 @@ const RestaurantDetailPage = () => {
               <p className="text-body font-body text-secondary max-w-md mx-auto">This restaurant hasn't added any menu items yet or is currently updating their offerings.</p>
             </div>
           ) : (
-            <MenuSection 
+            <MenuSection
               MENU_CATEGORIES={dynamicCategories}
               itemsByCategory={itemsByCategory}
               searchQuery={searchQuery}
@@ -299,7 +299,7 @@ const RestaurantDetailPage = () => {
       </main>
 
       {/* Floating Cart Summary */}
-      <FloatingCartSummary 
+      <FloatingCartSummary
         totalCartCount={totalCartCount}
         cartDescription={cartDescription}
         totalCartPrice={totalCartPrice}

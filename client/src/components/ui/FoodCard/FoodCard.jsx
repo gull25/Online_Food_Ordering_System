@@ -19,14 +19,7 @@ const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
             <Icon name="restaurant" className="text-[40px] text-on-surface-variant/40" />
           </div>
         )}
-        {item.rating && (
-          <div className="absolute top-2 left-2 bg-surface-container-highest/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
-            <Icon name="thumb_up" className="text-[14px] text-tertiary-container flex items-center justify-center" filled />
-            <span className="font-label text-label text-on-surface">
-              {item.rating}
-            </span>
-          </div>
-        )}
+
       </div>
       <div className="p-4 flex flex-col justify-between flex-1">
         <div>
@@ -44,16 +37,26 @@ const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
           <p className="text-[14px] font-normal text-on-surface/80 line-clamp-2 mt-2">
             {item.description}
           </p>
+          <div className="mt-2 flex items-center">
+            {item.numReviews > 0 ? (
+              <div className="flex items-center gap-1">
+                <Icon name="star" className="text-[16px] text-warning" />
+                <span className="font-button text-button text-on-surface font-bold">{item.rating?.toFixed(1)}</span>
+                <span className="font-label text-[12px] text-secondary">({item.numReviews} rating{item.numReviews !== 1 ? 's' : ''})</span>
+              </div>
+            ) : (
+              <span className="font-label text-[12px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded text-center">New</span>
+            )}
+          </div>
         </div>
         <div className="flex justify-between items-center mt-4">
           <div>
             {item.tag && (
               <span
-                className={`px-2 py-1 rounded-full font-label text-label flex items-center gap-1 w-fit ${
-                  item.tag === 'Spicy'
-                    ? 'bg-error-container text-on-error-container'
-                    : 'bg-surface-container text-on-surface-variant'
-                }`}
+                className={`px-2 py-1 rounded-full font-label text-label flex items-center gap-1 w-fit ${item.tag === 'Spicy'
+                  ? 'bg-error-container text-on-error-container'
+                  : 'bg-surface-container text-on-surface-variant'
+                  }`}
               >
                 {item.tag === 'Spicy' && <Icon name="local_fire_department" className="text-[12px]" />}
                 {item.tag}

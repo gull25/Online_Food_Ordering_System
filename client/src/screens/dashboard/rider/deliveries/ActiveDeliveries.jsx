@@ -7,6 +7,7 @@ import { RiderPageSkeleton } from '../../../../components/common/Skeleton';
 import { socket } from '../../../../helper/socket';
 import LiveTracker from '../../../../components/homeScreen/orderComponents/LiveTracker';
 import { haversineMetres } from '../../../../helper/osrm';
+import { useApiAction } from '../../../../hooks/useApiAction';
 
 // Minimum movement (metres) before re-emitting GPS to socket
 const GPS_EMIT_DISTANCE_M = 10;
@@ -91,13 +92,21 @@ const ActiveDeliveries = () => {
         };
     }, [activeOrder, user]);
 
-    const handleConfirmPickup = () => {
-        if (activeOrder) dispatch(confirmPickupThunk(activeOrder._id));
-    };
+    const { execute: handleAcceptDelivery, isSubmitting: isAccepting } = useApiAction(async () => {
+        if (activeOrder) await dispatch(acceptDeliveryThunk(activeOrder._id)).unwrap();
+    });
 
-    const handleConfirmDelivery = () => {
-        if (activeOrder) dispatch(confirmDeliveryThunk(activeOrder._id));
-    };
+    const { execute: handleConfirmPickup, isSubmitting: isPickingUp } = useApiAction(async () => {
+        if (activeOrder) await dispatch(confirmPickupThunk(activeOrder._id)).unwrap();
+    });
+
+    const { execute: handleStartDelivery, isSubmitting: isStarting } = useApiAction(async () => {
+        if (activeOrder) await dispatch(startDeliveryThunk(activeOrder._id)).unwrap();
+    });
+
+    const { execute: handleConfirmDelivery, isSubmitting: isDelivering } = useApiAction(async () => {
+        if (activeOrder) await dispatch(confirmDeliveryThunk(activeOrder._id)).unwrap();
+    });
 
     const openNavigation = () => {
         if (activeOrder?.deliveryAddress?.lat && activeOrder?.deliveryAddress?.lng) {
@@ -144,7 +153,11 @@ const ActiveDeliveries = () => {
                                 isRiderView={true}
                             />
                         ) : (
-                            <div className="w-full h-full grayscale opacity-30" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAk_NcAG8nNeDphk4IyLivG799dFcwW08rfVNuQwdFJsVj9Lbg43fqkhkxv-WOmcjTwkZC3XkFhtLpbxcDNo6xpiEwiMqjdjeKNjDs79RmD7o3jntMuTSPCbFhrryNIpLydoN9_cDuSek_3ohI_hFBWl_d1OX_9dORC4U9C65zY3GdQ9LHRB0U_-Ytk2VzestbmLKZhN8HRWxOl1W0S1UdmbXIelsZpeukoTCSdPTIqLOSbeEAn9OjmSg')", backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+                            <img 
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAk_NcAG8nNeDphk4IyLivG799dFcwW08rfVNuQwdFJsVj9Lbg43fqkhkxv-WOmcjTwkZC3XkFhtLpbxcDNo6xpiEwiMqjdjeKNjDs79RmD7o3jntMuTSPCbFhrryNIpLydoN9_cDuSek_3ohI_hFBWl_d1OX_9dORC4U9C65zY3GdQ9LHRB0U_-Ytk2VzestbmLKZhN8HRWxOl1W0S1UdmbXIelsZpeukoTCSdPTIqLOSbeEAn9OjmSg" 
+                                alt="Map Placeholder" 
+                                className="w-full h-full object-cover grayscale opacity-30" 
+                            />
                         )}
                         {/* UI Overlays for the Map */}
                         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent from-0% to-40% pointer-events-none"></div>
@@ -243,22 +256,22 @@ const ActiveDeliveries = () => {
                                         
                                         {activeOrder.status === 'RIDER_ASSIGNED' && (
                                             <div className="flex gap-2">
-                                                <button onClick={() => dispatch(acceptDeliveryThunk(activeOrder._id))} className="flex-1 bg-primary text-on-primary font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
-                                                    ACCEPT
+                                                <button disabled={isAccepting} onClick={handleAcceptDelivery} className="flex-1 bg-primary text-on-primary font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
+                                                    {isAccepting && <Icon name="sync" className="animate-spin text-sm" />} ACCEPT
                                                 </button>
-                                                <button onClick={() => dispatch(confirmPickupThunk(activeOrder._id))} className="flex-1 bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
-                                                    CONFIRM PICKUP
+                                                <button disabled={isPickingUp} onClick={handleConfirmPickup} className="flex-1 bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
+                                                    {isPickingUp && <Icon name="sync" className="animate-spin text-sm" />} CONFIRM PICKUP
                                                 </button>
                                             </div>
                                         )}
                                         {activeOrder.status === 'PICKED_UP' && (
-                                            <button onClick={() => dispatch(startDeliveryThunk(activeOrder._id))} className="w-full bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
-                                                START DELIVERY
+                                            <button disabled={isStarting} onClick={handleStartDelivery} className="w-full bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
+                                                {isStarting && <Icon name="sync" className="animate-spin text-sm" />} START DELIVERY
                                             </button>
                                         )}
                                         {activeOrder.status === 'OUT_FOR_DELIVERY' && (
-                                            <button onClick={() => dispatch(confirmDeliveryThunk(activeOrder._id))} className="w-full bg-secondary-container text-on-secondary-container font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95">
-                                                CONFIRM DELIVERY
+                                            <button disabled={isDelivering} onClick={handleConfirmDelivery} className="w-full bg-secondary-container text-on-secondary-container font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
+                                                {isDelivering && <Icon name="sync" className="animate-spin text-sm" />} CONFIRM DELIVERY
                                             </button>
                                         )}
                                     </div>

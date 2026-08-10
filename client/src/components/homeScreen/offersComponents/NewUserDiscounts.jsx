@@ -29,28 +29,30 @@ const NewUserDiscounts = ({ copyPromoCode, copiedCode, offers }) => {
               deliveryOffer?.code ? 'md:col-span-8' : 'md:col-span-12'
             } bg-surface-container-low border border-outline-variant/30 rounded-24 p-8 flex flex-col justify-between relative overflow-hidden group shadow-sm lift-hover`}
           >
-            <div className="relative z-10">
-              <span className="bg-tertiary-container text-on-tertiary-container px-3 py-1.5 rounded-full font-label text-label mb-4 inline-block">
-                {welcomeOffer.type || 'FEATURED'}
-              </span>
-              <h3 className="text-[40px] font-extrabold leading-tight mb-2 text-primary text-balance">
-                {welcomeTitle}
-              </h3>
-              <p className="text-on-surface-variant font-body text-body max-w-sm">
-                {welcomeOffer.description}{' '}
-                <span className="font-bold text-on-primary-container select-all bg-surface/60 px-2 py-1 rounded whitespace-nowrap">
-                  {welcomeOffer.code}
+            <div className="relative z-10 lg:w-[50%] flex flex-col justify-between h-full">
+              <div>
+                <span className="bg-tertiary-container text-on-tertiary-container px-3 py-1.5 rounded-full font-label text-label mb-4 inline-block">
+                  {welcomeOffer.type || 'FEATURED'}
                 </span>
-              </p>
-            </div>
-            <div className="relative z-10 flex gap-4 mt-6">
-              <button
-                onClick={() => copyPromoCode(welcomeOffer.code)}
-                className="bg-primary text-on-primary px-6 py-3 rounded-xl font-button text-button hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center gap-2"
-              >
-                <Icon name={copiedCode === welcomeOffer.code ? 'check' : 'content_copy'} className="text-[20px]" />
-                {copiedCode === welcomeOffer.code ? 'Copied!' : 'Claim Code'}
-              </button>
+                <h3 className="text-[40px] font-extrabold leading-tight mb-2 text-primary text-balance">
+                  {welcomeTitle}
+                </h3>
+                <p className="text-on-surface-variant font-body text-body max-w-sm">
+                  {welcomeOffer.description}{' '}
+                  <span className="font-bold text-on-primary-container select-all bg-surface/60 px-2 py-1 rounded whitespace-nowrap">
+                    {welcomeOffer.code}
+                  </span>
+                </p>
+              </div>
+              <div className="flex gap-4 mt-6">
+                <button
+                  onClick={() => copyPromoCode(welcomeOffer.code)}
+                  className="bg-primary text-on-primary px-6 py-3 rounded-xl font-button text-button hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center gap-2 w-fit"
+                >
+                  <Icon name={copiedCode === welcomeOffer.code ? 'check' : 'content_copy'} className="text-[20px]" />
+                  {copiedCode === welcomeOffer.code ? 'Copied!' : 'Claim Code'}
+                </button>
+              </div>
             </div>
             {welcomeImg && (
               <div className="absolute right-0 bottom-0 w-1/2 h-full hidden lg:block pointer-events-none">

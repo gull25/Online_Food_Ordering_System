@@ -64,6 +64,16 @@ const menuItemSchema = new mongoose.Schema(
         orderCount: {
             type: Number,
             default: 0
+        },
+        rating: {
+            type: Number,
+            default: 0,
+            min: [0, 'Rating must be at least 0'],
+            max: [5, 'Rating cannot be more than 5']
+        },
+        numReviews: {
+            type: Number,
+            default: 0
         }
     },
     {

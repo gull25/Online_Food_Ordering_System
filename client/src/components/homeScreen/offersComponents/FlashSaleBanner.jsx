@@ -22,11 +22,12 @@ const FlashSaleBanner = ({ formattedTime, copyPromoCode, copiedCode, offer }) =>
     : '';
 
   return (
-    <section className="relative w-full rounded-[32px] overflow-hidden mb-stack_lg min-h-[400px] flex items-center shadow-md">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url('${bgImage}')` }}
-      ></div>
+    <section className="relative w-full rounded-[32px] overflow-hidden mb-stack_lg min-h-[400px] flex items-center shadow-md bg-surface-container">
+      <img
+        src={bgImage}
+        alt={title}
+        className="absolute inset-0 w-full h-full object-cover object-center"
+      />
       <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent"></div>
       <div className="relative z-10 p-8 md:p-16 max-w-2xl text-white">
         <div className="inline-flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-1.5 rounded-full font-label text-label mb-4 animate-pulse">

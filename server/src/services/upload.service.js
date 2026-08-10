@@ -12,10 +12,12 @@ const uploadImage = async (fileBuffer, folder = 'foodora') => {
             {
                 folder,
                 resource_type: 'image',
-                transformation: [
-                    { width: 800, height: 800, crop: 'pad' }, // Pad to square (no cropping)
-                    { fetch_format: 'auto', quality: 'auto' }  // Optimize size & quality
-                ]
+                transformation: (folder === 'foodora/offers' || folder === 'foodora/banners')
+                    ? [ { fetch_format: 'auto', quality: 'auto' } ]
+                    : [
+                        { width: 800, height: 800, crop: 'pad' },
+                        { fetch_format: 'auto', quality: 'auto' }
+                      ]
             },
             (error, result) => {
                 if (error) return reject(error);

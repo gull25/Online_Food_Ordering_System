@@ -1,6 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
 const userRepository = require('../repositories/user.repository');
 const ApiError = require('../utils/ApiError');
+const { uploadImage, deleteImage } = require('../services/upload.service');
 
 // @desc    Update user profile
 // @route   PUT /api/users/profile
@@ -8,11 +9,22 @@ const ApiError = require('../utils/ApiError');
 exports.updateProfile = asyncHandler(async (req, res, next) => {
     // Only allow updating name and phone
     const { name, phone } = req.body;
-
-    const user = await userRepository.updateById(req.user.id, {
+    
+    const updateData = {
         ...(name && { name }),
         ...(phone && { phone })
-    });
+    };
+
+    if (req.file) {
+        const currentUser = await userRepository.findById(req.user.id);
+        if (currentUser && currentUser.avatar) {
+            await deleteImage(currentUser.avatar);
+        }
+        const avatarUrl = await uploadImage(req.file.buffer, 'users');
+        updateData.avatar = avatarUrl;
+    }
+
+    const user = await userRepository.updateById(req.user.id, updateData);
 
     if (!user) {
         throw new ApiError(404, 'User not found');
