@@ -40,7 +40,7 @@ exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
     const now = new Date();
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    
+
     let currentMonthOrders = 0;
     let previousMonthOrders = 0;
     let currentMonthRevenue = 0;
@@ -53,11 +53,11 @@ exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
         if (orderDate >= startOfCurrentMonth) {
             currentMonthOrders++;
             currentMonthRevenue += (o.totalAmount || 0);
-            if(o.user) currentMonthUsers.add(o.user.toString());
+            if (o.user) currentMonthUsers.add(o.user.toString());
         } else if (orderDate >= startOfPreviousMonth && orderDate < startOfCurrentMonth) {
             previousMonthOrders++;
             previousMonthRevenue += (o.totalAmount || 0);
-            if(o.user) previousMonthUsers.add(o.user.toString());
+            if (o.user) previousMonthUsers.add(o.user.toString());
         }
     });
 
@@ -83,7 +83,7 @@ exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
         const dayLabel = days[date.getDay()];
         timeSeriesMap[dayLabel] += (o.totalAmount || 0);
     });
-    
+
     // Order correctly from Mon to Sun
     const timeSeriesData = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => ({
         label: day,

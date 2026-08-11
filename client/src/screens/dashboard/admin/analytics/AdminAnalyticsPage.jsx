@@ -68,20 +68,20 @@ const AdminAnalyticsPage = () => {
         linePath: '', prevLinePath: '', xLabels: []
       };
     }
-    
+
     // Dynamic chart paths
     let data = [];
     if (analytics.timeSeriesData) {
-        data = analytics.timeSeriesData.map(ts => ({ value: ts.revenue, label: ts.label }));
+      data = analytics.timeSeriesData.map(ts => ({ value: ts.revenue, label: ts.label }));
     }
     const chart = generateChartPaths(data, 100, 100, 10);
-    
+
     const step = Math.max(1, Math.floor(data.length / 5));
     const labels = [];
-    for(let i=0; i<data.length; i+=step) {
-      if(labels.length < 6) labels.push(data[i].label);
+    for (let i = 0; i < data.length; i += step) {
+      if (labels.length < 6) labels.push(data[i].label);
     }
-    
+
     // Optional chaining throughout: a payload missing any sub-object (a fresh
     // restaurant with no orders yet) previously threw here and took the whole
     // analytics page down to a blank screen.
@@ -184,7 +184,7 @@ const AdminAnalyticsPage = () => {
       {/* Main Content Canvas */}
       <main className="flex-1">
         {/* Header */}
-        <AdminHeader 
+        <AdminHeader
           title="Analytics Overview"
           subtitle="Comprehensive performance metrics and geographical insights"
           showToast={showToast}
@@ -195,7 +195,7 @@ const AdminAnalyticsPage = () => {
 
           {/* 2. Revenue over Time & Distribution (Bento Layout) */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-            
+
             {/* Large Revenue Chart */}
             <div className="lg:col-span-2 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant flex flex-col">
               <div className="flex justify-between items-center mb-8">
@@ -302,7 +302,7 @@ const AdminAnalyticsPage = () => {
 
           {/* 3. Top Restaurants & Hotspots */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
-            
+
             {/* Top Performing Restaurants */}
             <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
               <div className="flex justify-between items-center mb-6">
