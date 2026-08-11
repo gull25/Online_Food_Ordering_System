@@ -116,14 +116,14 @@ const AdminMyRestaurantPage = () => {
           arr.forEach((ing, i) => data.append(`ingredients[${i}]`, ing));
         } else if (key === 'sizes' || key === 'addOns') {
           formData[key].forEach((item, i) => {
-             data.append(`${key}[${i}][name]`, item.name);
-             data.append(`${key}[${i}][${key === 'sizes' ? 'additionalPrice' : 'price'}]`, key === 'sizes' ? item.additionalPrice : item.price);
+            data.append(`${key}[${i}][name]`, item.name);
+            data.append(`${key}[${i}][${key === 'sizes' ? 'additionalPrice' : 'price'}]`, key === 'sizes' ? item.additionalPrice : item.price);
           });
         } else {
           data.append(key, formData[key]);
         }
       });
-      
+
       if (imageFile) {
         data.append('image', imageFile);
       }
@@ -220,9 +220,9 @@ const AdminMyRestaurantPage = () => {
     <div className="bg-background text-on-background min-h-screen">
       {/* Main Content Area */}
       <main className="p-margin_desktop">
-        
+
         {/* Top Navigation / Header */}
-        <AdminHeader 
+        <AdminHeader
           title="Menu Management"
           subtitle="Configure and update culinary offerings for your restaurant."
           searchQuery={searchQuery}
@@ -230,35 +230,41 @@ const AdminMyRestaurantPage = () => {
         />
 
         {/* Stripe Connect Warning Banner */}
-        {!restaurant.stripeOnboardingComplete && (
-          <div className="mt-8 bg-error-container text-on-error-container p-6 rounded-2xl border border-error/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex gap-4">
-              <Icon name="account_balance" className="text-3xl" />
-              <div>
-                <h3 className="font-h3 text-h3 font-bold mb-1">Action Required: Connect Stripe</h3>
-                <p className="text-body font-body text-sm">You must connect your bank account to receive automated payouts before your restaurant can be listed publicly.</p>
-              </div>
+        <div className={`mt-8 p-6 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 ${restaurant.stripeOnboardingComplete ? 'bg-tertiary/10 text-on-surface border-tertiary/20' : 'bg-error-container text-on-error-container border-error/30'}`}>
+          <div className="flex gap-4">
+            <Icon name={restaurant.stripeOnboardingComplete ? "check_circle" : "account_balance"} className={`text-3xl ${restaurant.stripeOnboardingComplete ? "text-tertiary" : ""}`} />
+            <div>
+              <h3 className="font-h3 text-h3 font-bold mb-1">
+                {restaurant.stripeOnboardingComplete ? 'Bank Account Connected' : 'Action Required: Connect Stripe'}
+              </h3>
+              <p className="text-body font-body text-sm">
+                {restaurant.stripeOnboardingComplete
+                  ? 'Your bank account is successfully connected. You are ready to receive automated payouts.'
+                  : 'You must connect your bank account to receive automated payouts before your restaurant can be listed publicly.'}
+              </p>
             </div>
-            <button 
-              onClick={handleStripeConnect}
-              disabled={isStripeConnecting}
-              className="px-6 py-3 bg-error text-white font-button text-button rounded-xl hover:opacity-90 shadow-md font-bold whitespace-nowrap disabled:opacity-70 flex items-center justify-center gap-2"
-            >
-              {isStripeConnecting && <Icon name="sync" className="animate-spin" />}
-              {isStripeConnecting ? 'Connecting...' : 'Connect Bank Account'}
-            </button>
           </div>
-        )}
+          <button
+            onClick={restaurant.stripeOnboardingComplete ? undefined : handleStripeConnect}
+            disabled={isStripeConnecting || restaurant.stripeOnboardingComplete}
+            className={`px-6 py-3 font-button text-button rounded-xl hover:opacity-90 shadow-md font-bold whitespace-nowrap disabled:opacity-70 flex items-center justify-center gap-2 ${restaurant.stripeOnboardingComplete ? 'bg-surface-variant text-on-surface-variant' : 'bg-error text-white'}`}
+          >
+            {isStripeConnecting && <Icon name="sync" className="animate-spin" />}
+            {restaurant.stripeOnboardingComplete 
+              ? 'Account Connected' 
+              : (isStripeConnecting ? 'Connecting...' : 'Connect Bank Account')}
+          </button>
+        </div>
 
         {/* Restaurant Header */}
         <section className="mb-stack_lg mt-8">
           <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-gutter">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-inner flex-shrink-0 bg-surface-container-low">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-inner flex-shrink-0 bg-white flex items-center justify-center p-1 border border-surface-variant">
                 <img
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   alt={restaurant.name}
-                  src={restaurant.image || 'https://via.placeholder.com/150'}
+                  src={(!restaurant?.images?.logo || restaurant.images.logo === 'no-photo.jpg') ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100' : restaurant.images.logo}
                 />
               </div>
               <div>
@@ -291,7 +297,7 @@ const AdminMyRestaurantPage = () => {
 
         {/* Menu Categories Bento Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-          
+
           {/* Category Sidebar/Jump Links */}
           <div className="lg:col-span-3">
             <div className="sticky top-margin_desktop bg-surface-container-low p-4 rounded-2xl border border-outline-variant/30">
@@ -408,7 +414,7 @@ const AdminMyRestaurantPage = () => {
                 <label className="font-label text-label text-secondary mb-2 block uppercase">Item Name</label>
                 <input
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary outline-none transition-all font-body"
                   type="text"
                   required
@@ -419,7 +425,7 @@ const AdminMyRestaurantPage = () => {
                   <label className="font-label text-label text-secondary mb-2 block uppercase">Price ($)</label>
                   <input
                     value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary outline-none transition-all font-body"
                     step="0.01"
                     type="number"
@@ -430,7 +436,7 @@ const AdminMyRestaurantPage = () => {
                   <label className="font-label text-label text-secondary mb-2 block uppercase">Discount (%)</label>
                   <input
                     value={formData.discount}
-                    onChange={(e) => setFormData({...formData, discount: Number(e.target.value)})}
+                    onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })}
                     className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary outline-none transition-all font-body"
                     type="number"
                     min="0"
@@ -443,7 +449,7 @@ const AdminMyRestaurantPage = () => {
                   <label className="font-label text-label text-secondary mb-2 block uppercase">Category</label>
                   <select
                     value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary outline-none transition-all appearance-none bg-transparent font-body"
                     required
                   >
@@ -459,7 +465,7 @@ const AdminMyRestaurantPage = () => {
                   <label className="font-label text-label text-secondary mb-2 block uppercase">Veg / Non-Veg</label>
                   <select
                     value={formData.vegNonVeg}
-                    onChange={(e) => setFormData({...formData, vegNonVeg: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, vegNonVeg: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary outline-none transition-all appearance-none bg-transparent font-body"
                   >
                     <option value="N/A">N/A</option>
@@ -472,7 +478,7 @@ const AdminMyRestaurantPage = () => {
                 <label className="font-label text-label text-secondary mb-2 block uppercase">Ingredients (comma separated)</label>
                 <input
                   value={formData.ingredients}
-                  onChange={(e) => setFormData({...formData, ingredients: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary outline-none transition-all font-body"
                   type="text"
                 />
@@ -490,7 +496,7 @@ const AdminMyRestaurantPage = () => {
                 <label className="font-label text-label text-secondary mb-2 block uppercase">Description</label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary outline-none transition-all h-24 font-body"
                   required
                 />
@@ -500,13 +506,13 @@ const AdminMyRestaurantPage = () => {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="font-label text-label text-secondary block uppercase">Sizes (Optional)</label>
-                  <button type="button" onClick={() => setFormData({...formData, sizes: [...formData.sizes, { name: '', additionalPrice: 0 }]})} className="text-xs text-primary font-bold hover:underline">+ Add Size</button>
+                  <button type="button" onClick={() => setFormData({ ...formData, sizes: [...formData.sizes, { name: '', additionalPrice: 0 }] })} className="text-xs text-primary font-bold hover:underline">+ Add Size</button>
                 </div>
                 {formData.sizes.map((size, index) => (
                   <div key={index} className="flex gap-2 mb-2">
-                    <input type="text" placeholder="Size (e.g. Large)" value={size.name} onChange={(e) => { const newSizes = [...formData.sizes]; newSizes[index].name = e.target.value; setFormData({...formData, sizes: newSizes}); }} className="flex-1 px-3 py-2 rounded-lg border border-outline-variant" required />
-                    <input type="number" step="0.01" placeholder="Addl. Price" value={size.additionalPrice} onChange={(e) => { const newSizes = [...formData.sizes]; newSizes[index].additionalPrice = parseFloat(e.target.value); setFormData({...formData, sizes: newSizes}); }} className="w-24 px-3 py-2 rounded-lg border border-outline-variant" required />
-                    <button type="button" onClick={() => { const newSizes = formData.sizes.filter((_, i) => i !== index); setFormData({...formData, sizes: newSizes}); }} className="text-error"><Icon name="delete" /></button>
+                    <input type="text" placeholder="Size (e.g. Large)" value={size.name} onChange={(e) => { const newSizes = [...formData.sizes]; newSizes[index].name = e.target.value; setFormData({ ...formData, sizes: newSizes }); }} className="flex-1 px-3 py-2 rounded-lg border border-outline-variant" required />
+                    <input type="number" step="0.01" placeholder="Addl. Price" value={size.additionalPrice} onChange={(e) => { const newSizes = [...formData.sizes]; newSizes[index].additionalPrice = parseFloat(e.target.value); setFormData({ ...formData, sizes: newSizes }); }} className="w-24 px-3 py-2 rounded-lg border border-outline-variant" required />
+                    <button type="button" onClick={() => { const newSizes = formData.sizes.filter((_, i) => i !== index); setFormData({ ...formData, sizes: newSizes }); }} className="text-error"><Icon name="delete" /></button>
                   </div>
                 ))}
               </div>
@@ -515,13 +521,13 @@ const AdminMyRestaurantPage = () => {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="font-label text-label text-secondary block uppercase">Add-ons (Optional)</label>
-                  <button type="button" onClick={() => setFormData({...formData, addOns: [...formData.addOns, { name: '', price: 0 }]})} className="text-xs text-primary font-bold hover:underline">+ Add Add-on</button>
+                  <button type="button" onClick={() => setFormData({ ...formData, addOns: [...formData.addOns, { name: '', price: 0 }] })} className="text-xs text-primary font-bold hover:underline">+ Add Add-on</button>
                 </div>
                 {formData.addOns.map((addon, index) => (
                   <div key={index} className="flex gap-2 mb-2">
-                    <input type="text" placeholder="Add-on (e.g. Extra Cheese)" value={addon.name} onChange={(e) => { const newAddons = [...formData.addOns]; newAddons[index].name = e.target.value; setFormData({...formData, addOns: newAddons}); }} className="flex-1 px-3 py-2 rounded-lg border border-outline-variant" required />
-                    <input type="number" step="0.01" placeholder="Price" value={addon.price} onChange={(e) => { const newAddons = [...formData.addOns]; newAddons[index].price = parseFloat(e.target.value); setFormData({...formData, addOns: newAddons}); }} className="w-24 px-3 py-2 rounded-lg border border-outline-variant" required />
-                    <button type="button" onClick={() => { const newAddons = formData.addOns.filter((_, i) => i !== index); setFormData({...formData, addOns: newAddons}); }} className="text-error"><Icon name="delete" /></button>
+                    <input type="text" placeholder="Add-on (e.g. Extra Cheese)" value={addon.name} onChange={(e) => { const newAddons = [...formData.addOns]; newAddons[index].name = e.target.value; setFormData({ ...formData, addOns: newAddons }); }} className="flex-1 px-3 py-2 rounded-lg border border-outline-variant" required />
+                    <input type="number" step="0.01" placeholder="Price" value={addon.price} onChange={(e) => { const newAddons = [...formData.addOns]; newAddons[index].price = parseFloat(e.target.value); setFormData({ ...formData, addOns: newAddons }); }} className="w-24 px-3 py-2 rounded-lg border border-outline-variant" required />
+                    <button type="button" onClick={() => { const newAddons = formData.addOns.filter((_, i) => i !== index); setFormData({ ...formData, addOns: newAddons }); }} className="text-error"><Icon name="delete" /></button>
                   </div>
                 ))}
               </div>

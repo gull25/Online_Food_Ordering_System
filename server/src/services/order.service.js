@@ -145,7 +145,7 @@ class OrderService {
                 amount: amountInCents,
                 currency: 'usd',
                 customer: customer.id,
-                payment_method_types: ['card'],
+                automatic_payment_methods: { enabled: true },
                 metadata: { integration_check: 'accept_a_payment' }
             };
 

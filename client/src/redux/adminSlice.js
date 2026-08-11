@@ -21,10 +21,10 @@ export const updateAdminOrderStatus = createAsyncThunk(
   'admin/updateOrderStatus',
   async ({ orderId, status, estimatedDeliveryTime, rejectionReason }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.put(`/orders/${orderId}/status`, { 
-        status, 
-        estimatedDeliveryTime, 
-        rejectionReason 
+      const response = await axiosInstance.put(`/orders/${orderId}/status`, {
+        status,
+        estimatedDeliveryTime,
+        rejectionReason
       });
       return response.data.data;
     } catch (error) {
@@ -121,7 +121,7 @@ const adminSlice = createSlice({
         state.ordersLoading = false;
         state.error = action.payload;
       })
-      
+
       // updateAdminOrderStatus
       .addCase(updateAdminOrderStatus.pending, (state) => {
         state.updating = true;
@@ -140,7 +140,7 @@ const adminSlice = createSlice({
         state.updating = false;
         state.error = action.payload;
       })
-      
+
       // assignAdminRiderThunk
       .addCase(assignAdminRiderThunk.pending, (state) => {
         state.updating = true;

@@ -13,7 +13,6 @@ export const APP_ROUTES = {
   ADMIN_DASHBOARD: '/admin',
   ADMIN_ONBOARDING: '/admin/onboarding',
   ADMIN_ORDERS: '/admin/orders',
-  ADMIN_ANALYTICS: '/admin/analytics',
   ADMIN_RESTAURANT: '/admin/my-restaurant',
   ADMIN_CATEGORIES: '/admin/categories',
   ADMIN_OFFERS: '/admin/offers',

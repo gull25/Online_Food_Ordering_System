@@ -11,9 +11,9 @@ exports.onboardStripe = asyncHandler(async (req, res, next) => {
     if (!req.user.restaurantId) {
         return next(new ApiError(400, 'User does not have a restaurant'));
     }
-    
+
     const restaurant = await Restaurant.findById(req.user.restaurantId);
-    
+
     if (!restaurant) {
         return next(new ApiError(404, 'Restaurant not found'));
     }
@@ -34,7 +34,7 @@ exports.onboardStripe = asyncHandler(async (req, res, next) => {
                 name: restaurant.name
             }
         });
-        
+
         accountId = account.id;
         restaurant.stripeAccountId = accountId;
         await restaurant.save();
@@ -43,7 +43,7 @@ exports.onboardStripe = asyncHandler(async (req, res, next) => {
     // 3. Create Account Link for onboarding
     // In production, these should be your real frontend URLs
     const origin = req.headers.origin || 'http://localhost:5173';
-    
+
     const accountLink = await stripe.accountLinks.create({
         account: accountId,
         refresh_url: `${origin}/admin/stripe/refresh`,
@@ -64,9 +64,9 @@ exports.verifyStripeStatus = asyncHandler(async (req, res, next) => {
     if (!req.user.restaurantId) {
         return next(new ApiError(400, 'User does not have a restaurant'));
     }
-    
+
     const restaurant = await Restaurant.findById(req.user.restaurantId);
-    
+
     if (!restaurant || !restaurant.stripeAccountId) {
         return next(new ApiError(404, 'Stripe account not initiated'));
     }

@@ -36,9 +36,9 @@ const StripeReturnPage = () => {
         <Icon name={error ? 'error' : 'sync'} className={`text-6xl mb-6 ${error ? 'text-error' : 'text-primary animate-pulse'}`} />
         <h1 className="text-h2 font-h2 text-on-surface mb-4">Stripe Connect</h1>
         <p className="text-body font-body text-secondary mb-8">{status}</p>
-        
+
         {error && (
-          <button 
+          <button
             onClick={() => navigate('/admin/my-restaurant')}
             className="w-full py-3 bg-surface-container-highest text-on-surface rounded-xl font-button hover:bg-surface-variant transition-colors"
           >

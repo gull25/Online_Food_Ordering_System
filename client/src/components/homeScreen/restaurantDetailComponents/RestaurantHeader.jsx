@@ -5,9 +5,9 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, r
   return (
     <header className="relative w-full min-h-[200px] bg-background">
       <img
-        src={restaurant?.images?.banner || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80'}
+        src={(!restaurant?.images?.banner || restaurant.images.banner === 'no-photo.jpg') ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80' : restaurant.images.banner}
         alt="Restaurant Banner"
-        className="w-full h-auto max-h-[500px] object-cover"
+        className="w-full h-[768px] object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-full px-margin_mobile md:px-margin_desktop pb-stack_lg max-w-container_max mx-auto">
@@ -20,7 +20,7 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, r
               <img
                 className="w-full h-full object-contain"
                 alt={`${restaurant?.name || 'Restaurant'} Logo`}
-                src={restaurant?.images?.logo || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100"}
+                src={(!restaurant?.images?.logo || restaurant.images.logo === 'no-photo.jpg') ? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100" : restaurant.images.logo}
               />
             )}
           </div>
