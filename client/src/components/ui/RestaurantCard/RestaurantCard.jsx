@@ -10,7 +10,8 @@ const RestaurantCard = ({ restaurant }) => {
   const cardId = _id || id;
   const cardTags = cuisine || tags || [];
   const cardTime = estimatedDeliveryTime || time || '30 min';
-  const cardImage = images?.banner || images?.logo || image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80';
+  const resolveImage = (img) => (!img || img === 'no-photo.jpg') ? null : img;
+  const cardImage = resolveImage(images?.banner) || resolveImage(images?.logo) || resolveImage(image) || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80';
   const freeDelivery = deliveryFee === 0 || restaurant.freeDelivery;
 
   return (

@@ -192,7 +192,7 @@ const Navbar = () => {
                     >
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-variant shrink-0">
                         <img
-                          src={rest.images?.logo || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100'}
+                          src={(!rest.images?.logo || rest.images.logo === 'no-photo.jpg') ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100' : rest.images.logo}
                           alt=""
                           aria-hidden="true"
                           loading="lazy"
@@ -388,7 +388,7 @@ const Navbar = () => {
                       >
                         <div className="w-9 h-9 rounded-full overflow-hidden bg-surface-variant shrink-0">
                           <img
-                            src={rest.images?.logo || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100'}
+                            src={(!rest.images?.logo || rest.images.logo === 'no-photo.jpg') ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100' : rest.images.logo}
                             alt=""
                             aria-hidden="true"
                             loading="lazy"

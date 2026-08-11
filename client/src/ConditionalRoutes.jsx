@@ -25,7 +25,6 @@ const AdminMyRestaurantPage = React.lazy(() => import('./screens/dashboard/admin
 const AdminCategoriesPage = React.lazy(() => import('./screens/dashboard/admin/categories/AdminCategoriesPage'));
 const AdminOffersPage = React.lazy(() => import('./screens/dashboard/admin/offers/AdminOffersPage'));
 const AdminProductsPage = React.lazy(() => import('./screens/dashboard/admin/products/AdminProductsPage'));
-const AdminAnalyticsPage = React.lazy(() => import('./screens/dashboard/admin/analytics/AdminAnalyticsPage'));
 const RestaurantOnboardingPage = React.lazy(() => import('./screens/dashboard/admin/restaurant/RestaurantOnboardingPage'));
 const StripeReturnPage = React.lazy(() => import('./screens/dashboard/admin/dashboard/StripeReturnPage'));
 
@@ -80,7 +79,6 @@ const ConditionalRoutes = () => {
             <Route path={APP_ROUTES.ADMIN_DASHBOARD} element={<AdminDashboardPage />} />
             <Route path={APP_ROUTES.ADMIN_ONBOARDING} element={<RestaurantOnboardingPage />} />
             <Route path={APP_ROUTES.ADMIN_ORDERS} element={<AdminOrdersPage />} />
-            <Route path={APP_ROUTES.ADMIN_ANALYTICS} element={<AdminAnalyticsPage />} />
             <Route path={APP_ROUTES.ADMIN_RESTAURANT} element={<AdminMyRestaurantPage />} />
             <Route path={APP_ROUTES.ADMIN_CATEGORIES} element={<AdminCategoriesPage />} />
             <Route path={APP_ROUTES.ADMIN_OFFERS} element={<AdminOffersPage />} />

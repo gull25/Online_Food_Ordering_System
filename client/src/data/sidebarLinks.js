@@ -6,8 +6,7 @@ export const ADMIN_SIDEBAR_LINKS = [
   { id: 'my-restaurant', label: 'My Restaurant', path: APP_ROUTES.ADMIN_RESTAURANT, icon: 'storefront', roles: [USER_ROLES.RESTAURANT_ADMIN] },
   { id: 'categories', label: 'Categories', path: APP_ROUTES.ADMIN_CATEGORIES, icon: 'category', roles: [USER_ROLES.RESTAURANT_ADMIN] },
   { id: 'offers', label: 'Offers', path: APP_ROUTES.ADMIN_OFFERS, icon: 'local_offer', roles: [USER_ROLES.RESTAURANT_ADMIN] },
-  { id: 'products', label: 'Products', path: APP_ROUTES.ADMIN_PRODUCTS, icon: 'fastfood', roles: [USER_ROLES.RESTAURANT_ADMIN] },
-  { id: 'analytics', label: 'Analytics', path: APP_ROUTES.ADMIN_ANALYTICS, icon: 'analytics', roles: [] }
+  { id: 'products', label: 'Products', path: APP_ROUTES.ADMIN_PRODUCTS, icon: 'fastfood', roles: [USER_ROLES.RESTAURANT_ADMIN] }
 ];
 
 /**
