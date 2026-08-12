@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import Icon from '../../components/common/Icon';
 import { useNavigate, useParams } from 'react-router-dom';
-import TopNavBar from '../../components/layout/Navbar';
-import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
+import TopNavBar from '../../components/globalComponents/Navbar';
+import HomeFooter from '../../components/globalComponents/HomeFooter';
 import RestaurantHeader from '../../components/homeScreen/restaurantDetailComponents/RestaurantHeader';
 import CategorySidebar from '../../components/homeScreen/restaurantDetailComponents/CategorySidebar';
 import MobileCategoryNav from '../../components/homeScreen/restaurantDetailComponents/MobileCategoryNav';

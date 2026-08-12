@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Icon from '../../common/Icon';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchFeaturedRestaurants } from "../../../redux/restaurantSlice";
-import RestaurantCard from '../../ui/RestaurantCard/RestaurantCard';
+import RestaurantCard from '../../ui/RestaurantCard';
 import { RestaurantCardSkeleton } from '../../common/Skeleton';
 
 const FeaturedRestaurantsSection = () => {

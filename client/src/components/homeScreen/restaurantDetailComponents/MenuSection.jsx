@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Icon from '../../common/Icon';
-import FoodCard from '../../ui/FoodCard/FoodCard';
-import MenuItemModal from '../../ui/MenuItemModal/MenuItemModal';
+import FoodCard from '../../ui/FoodCard';
+import MenuItemModal from '../../ui/MenuItemModal';
 
 const MenuSection = ({ MENU_CATEGORIES, itemsByCategory, searchQuery, cart, addToCart, removeFromCart, filteredItems }) => {
   const [selectedItemForModal, setSelectedItemForModal] = useState(null);

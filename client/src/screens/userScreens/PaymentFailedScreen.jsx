@@ -1,8 +1,8 @@
 import React from 'react';
 import Icon from '../../components/common/Icon';
 import { Link } from 'react-router-dom';
-import TopNavBar from '../../components/layout/Navbar';
-import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
+import TopNavBar from '../../components/globalComponents/Navbar';
+import HomeFooter from '../../components/globalComponents/HomeFooter';
 
 const PaymentFailedScreen = () => {
   return (

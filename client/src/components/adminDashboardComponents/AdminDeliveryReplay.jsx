@@ -35,7 +35,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
   const playbackIntervalRef = useRef(null);
 
   const routeHistory = order?.routeHistory || [];
-  
+
   // Custom Icons
   const restaurantIcon = useMemo(() => new L.DivIcon({
     className: '',
@@ -67,7 +67,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
   // Stats calculation
   const stats = useMemo(() => {
     if (routeHistory.length < 2) return { distance: 0, duration: 0, speed: 0 };
-    
+
     let totalDistanceMeters = 0;
     for (let i = 1; i < routeHistory.length; i++) {
       const p1 = L.latLng(routeHistory[i - 1].lat, routeHistory[i - 1].lng);
@@ -146,7 +146,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-in fade-in">
       <div className="bg-surface-container-lowest max-w-5xl w-full h-[85vh] rounded-2xl border border-outline-variant/30 shadow-2xl animate-in zoom-in-95 flex flex-col overflow-hidden">
-        
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-outline-variant/20 flex justify-between items-center bg-surface">
           <div className="flex items-center gap-3">
@@ -188,19 +188,19 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
 
             {/* Ghost Path (Full Route) */}
             <Polyline positions={fullPath} color="#1c1b1f" weight={4} opacity={0.2} dashArray="8, 8" />
-            
+
             {/* Traveled Path */}
             <Polyline positions={traveledPath} color="#ae3200" weight={5} opacity={0.8} />
 
             {restaurantLoc && (
               <Marker position={restaurantLoc} icon={restaurantIcon}>
-                <Popup className="font-body"><strong>{order.restaurant?.name}</strong><br/>Pickup Location</Popup>
+                <Popup className="font-body"><strong>{order.restaurant?.name}</strong><br />Pickup Location</Popup>
               </Marker>
             )}
 
             {customerLoc && (
               <Marker position={customerLoc} icon={customerIcon}>
-                <Popup className="font-body"><strong>Customer</strong><br/>Dropoff Location</Popup>
+                <Popup className="font-body"><strong>Customer</strong><br />Dropoff Location</Popup>
               </Marker>
             )}
 
@@ -212,19 +212,19 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
 
         {/* Playback Controls */}
         <div className="px-6 py-4 bg-surface border-t border-outline-variant/20 flex items-center gap-4">
-          <button 
+          <button
             onClick={togglePlayback}
             className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center hover:opacity-90 shadow-md transition-opacity shrink-0"
           >
             <Icon name={isPlaying ? 'pause' : (currentIndex >= routeHistory.length - 1 ? 'replay' : 'play_arrow')} className="text-[24px]" />
           </button>
-          
+
           <div className="flex-1 flex flex-col gap-1">
-            <input 
-              type="range" 
-              min="0" 
-              max={routeHistory.length - 1} 
-              value={currentIndex} 
+            <input
+              type="range"
+              min="0"
+              max={routeHistory.length - 1}
+              value={currentIndex}
               onChange={handleSeek}
               className="w-full accent-primary h-2 bg-surface-variant rounded-lg appearance-none cursor-pointer"
             />

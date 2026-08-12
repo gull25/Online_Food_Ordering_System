@@ -4,8 +4,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { updateProfileThunk } from '../../redux/userSlice';
 import toast from 'react-hot-toast';
 import { useApiAction } from '../../hooks/useApiAction';
-import TopNavBar from '../../components/layout/Navbar';
-import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
+import TopNavBar from '../../components/globalComponents/Navbar';
+import HomeFooter from '../../components/globalComponents/HomeFooter';
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
