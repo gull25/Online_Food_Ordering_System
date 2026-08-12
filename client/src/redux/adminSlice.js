@@ -1,13 +1,45 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '../api/axios';
 
-// Fetch all orders for admin
+/**
+ * Orders for the admin table.
+ *
+ * `/admin/orders` is paginated now -- it used to answer with the restaurant's
+ * entire order history in a single response, which grew without bound. The
+ * table filters and paginates client-side, so this walks the pages and
+ * accumulates them, stopping at MAX_ORDERS.
+ *
+ * The cap is deliberate and surfaced: `truncated` is set when there is more
+ * history than was loaded, so the UI can say so rather than quietly showing a
+ * partial list as if it were everything.
+ */
+const PAGE_SIZE = 100;
+const MAX_ORDERS = 500;
+
 export const fetchAdminOrders = createAsyncThunk(
   'admin/fetchOrders',
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get('/admin/orders');
-      return response.data.data;
+      const collected = [];
+      let page = 1;
+      let total = 0;
+
+      // Bounded: at most MAX_ORDERS / PAGE_SIZE requests, however large the
+      // history is.
+      while (collected.length < MAX_ORDERS) {
+        const response = await axiosInstance.get('/admin/orders', {
+          params: { page, limit: PAGE_SIZE, ...(params.status ? { status: params.status } : {}) },
+        });
+
+        const batch = response.data.data ?? [];
+        total = response.data.total ?? batch.length;
+        collected.push(...batch);
+
+        if (batch.length < PAGE_SIZE || collected.length >= total) break;
+        page += 1;
+      }
+
+      return { orders: collected, total, truncated: collected.length < total };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Failed to fetch admin orders'
@@ -83,6 +115,8 @@ export const fetchAdminAnalytics = createAsyncThunk(
  */
 const initialState = {
   orders: [],
+  ordersTotal: 0,
+  ordersTruncated: false,
   analytics: null,
   ordersLoading: false,
   analyticsLoading: false,
@@ -115,7 +149,9 @@ const adminSlice = createSlice({
       })
       .addCase(fetchAdminOrders.fulfilled, (state, action) => {
         state.ordersLoading = false;
-        state.orders = action.payload;
+        state.orders = action.payload.orders;
+        state.ordersTotal = action.payload.total;
+        state.ordersTruncated = action.payload.truncated;
       })
       .addCase(fetchAdminOrders.rejected, (state, action) => {
         state.ordersLoading = false;

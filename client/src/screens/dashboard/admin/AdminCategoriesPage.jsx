@@ -36,7 +36,7 @@ const AdminCategoriesPage = () => {
     try {
       const res = await api.get(`/categories/restaurant/${user.restaurantId}`);
       setCategories(res.data.data || []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load categories');
     } finally {
       setLoading(false);
@@ -112,7 +112,7 @@ const AdminCategoriesPage = () => {
 
   return (
     <div className="bg-surface text-on-surface min-h-screen relative flex">
-      <main className="p-margin_desktop flex-1">
+      <main id="main-content" tabIndex={-1} className="p-margin_desktop flex-1">
         <AdminHeader 
           title="Categories"
           subtitle="Manage your menu groupings."
@@ -180,7 +180,7 @@ const AdminCategoriesPage = () => {
               <h3 className="font-h3 text-h3 font-bold text-on-surface">
                 {editingCategory ? 'Edit Category' : 'New Category'}
               </h3>
-              <button onClick={closeModal} className="text-secondary hover:text-on-surface transition-colors">
+              <button type="button" onClick={closeModal} aria-label="Close category form" className="text-secondary hover:text-on-surface transition-colors">
                 <Icon name="close" />
               </button>
             </div>

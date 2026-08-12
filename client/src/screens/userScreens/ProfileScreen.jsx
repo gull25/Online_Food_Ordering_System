@@ -12,7 +12,7 @@ const ProfilePage = () => {
   
   // Read from auth state to pre-fill
   const { user } = useSelector(state => state.auth);
-  const { loading, error } = useSelector(state => state.user);
+  const { loading } = useSelector(state => state.user);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -84,7 +84,7 @@ const ProfilePage = () => {
     <div className="bg-background text-on-background min-h-screen flex flex-col relative">
       <TopNavBar />
 
-      <main className="flex-grow w-full max-w-2xl mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg">
+      <main id="main-content" tabIndex={-1} className="flex-grow w-full max-w-2xl mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg">
         <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant p-gutter">
           <div className="flex items-center gap-4 mb-stack_lg">
             <div 

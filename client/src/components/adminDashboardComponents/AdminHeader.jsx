@@ -1,7 +1,9 @@
 import React from 'react';
 import ThemeToggle from '../common/ThemeToggle';
 
-const AdminHeader = ({ title, subtitle, searchQuery, setSearchQuery, showToast, actions }) => {
+// `searchQuery`, `setSearchQuery` and `showToast` were in the signature but
+// never referenced -- callers were passing state this component does not own.
+const AdminHeader = ({ title, subtitle, actions }) => {
   return (
     <header className="flex justify-between items-center mb-stack_lg">
       <div>

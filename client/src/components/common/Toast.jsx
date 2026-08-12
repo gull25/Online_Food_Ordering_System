@@ -13,7 +13,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
       <Icon name={type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'} />
       <span className="font-button text-small">{message}</span>
       {onClose && (
-        <button onClick={onClose} className="hover:opacity-80 ml-2">
+        <button type="button" onClick={onClose} aria-label="Dismiss notification" className="hover:opacity-80 ml-2">
           <Icon name="close" className="text-sm" />
         </button>
       )}

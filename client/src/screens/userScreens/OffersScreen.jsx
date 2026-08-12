@@ -41,9 +41,6 @@ const OffersPage = () => {
   // If nothing is available → show ALL offers (global /offers route).
   const activeRestaurantId = urlRestaurantId || cartRestaurantId || currentRestaurant?._id;
 
-  // Subscribe modal only appears on restaurant-specific pages, never on global
-  const showSubscribeModal = !!activeRestaurantId;
-
   // ── State ─────────────────────────────────────────────────────────────────
   const [offersData, setOffersData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -171,7 +168,7 @@ const OffersPage = () => {
     <div className="bg-background text-on-background font-body min-h-screen relative flex flex-col">
       <TopNavBar />
 
-      <main className="max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg grow w-full">
+      <main id="main-content" tabIndex={-1} className="max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg grow w-full">
 
         {/* Restaurant context header — shown only in restaurant-specific mode */}
         {loading && activeRestaurantId && (

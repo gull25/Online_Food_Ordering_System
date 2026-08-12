@@ -1,54 +1,41 @@
-const Subscriber = require('../models/subscriber.model');
-const asyncHandler = require('../utils/asyncHandler');
-const ApiError = require('../utils/ApiError');
+const asyncHandler = require("../utils/asyncHandler");
+const Subscriber = require("../models/subscriber.model");
 
-// @desc    Subscribe to newsletter
+// @desc    Join a newsletter
 // @route   POST /api/subscribers
 // @access  Public
-exports.subscribe = asyncHandler(async (req, res, next) => {
+exports.subscribe = asyncHandler(async (req, res) => {
     const { email, restaurantId } = req.body;
 
-    if (!email) {
-        return next(new ApiError(400, 'Please provide an email'));
-    }
+    // The duplicate case (E11000 from the compound unique index) is mapped to a
+    // 409 by the error middleware, so the hand-written try/catch is gone.
+    const subscriber = await Subscriber.create({ email, restaurantId });
 
-    try {
-        const subscriber = await Subscriber.create({ email, restaurantId });
-        res.status(201).json({
-            success: true,
-            data: subscriber
-        });
-    } catch (error) {
-        if (error.code === 11000) {
-            return next(new ApiError(400, 'You are already subscribed to this restaurant\'s newsletter'));
-        }
-        next(error);
-    }
+    res.status(201).json({
+        success: true,
+        // Only the fields the confirmation UI needs — the raw document was
+        // returned before, echoing internal ids back to an anonymous caller.
+        data: { email: subscriber.email, createdAt: subscriber.createdAt },
+    });
 });
 
-// @desc    Get recent subscribers for a restaurant
+// @desc    Recent signups for the caller's restaurant
 // @route   GET /api/subscribers/recent
-// @access  Private (Restaurant Admin)
-exports.getRecentSubscribers = asyncHandler(async (req, res, next) => {
-    const restaurantId = req.user.restaurantId;
-    
-    if (!restaurantId) {
-        return next(new ApiError(403, 'User does not have an associated restaurant'));
-    }
-
-    const subscribers = await Subscriber.find({ 
-        $or: [
-            { restaurantId: restaurantId },
-            { restaurantId: null },
-            { restaurantId: { $exists: false } }
-        ]
-    })
+// @access  Private (restaurant owner)
+exports.getRecentSubscribers = asyncHandler(async (req, res) => {
+    /*
+     * Scoped strictly to this restaurant.
+     *
+     * The previous `$or` also matched rows with no `restaurantId` — general
+     * newsletter signups that belong to the platform, not to any one restaurant —
+     * so every restaurant owner saw the email addresses of people who had never
+     * interacted with them.
+     */
+    const subscribers = await Subscriber.find({ restaurantId: req.user.restaurantId })
+        .select("email createdAt")
         .sort({ createdAt: -1 })
-        .limit(4);
+        .limit(10)
+        .lean();
 
-    res.status(200).json({
-        success: true,
-        count: subscribers.length,
-        data: subscribers
-    });
+    res.status(200).json({ success: true, count: subscribers.length, data: subscribers });
 });

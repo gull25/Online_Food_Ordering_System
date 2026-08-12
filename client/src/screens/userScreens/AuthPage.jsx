@@ -10,7 +10,7 @@ const AuthPage = () => {
   const message = location.state?.message;
 
   return (
-    <main className="flex h-screen w-full flex-col md:flex-row bg-background text-on-background overflow-hidden">
+    <main id="main-content" tabIndex={-1} className="flex h-screen w-full flex-col md:flex-row bg-background text-on-background overflow-hidden">
       {/* Left Side: Visual Experience */}
       <section className="relative w-full h-1/3 md:w-1/2 md:h-full overflow-hidden">
         <img

@@ -8,6 +8,7 @@ import AdminLayout from './components/adminDashboardComponents/AdminLayout';
 import RiderLayout from './components/riderDashboardComponents/RiderLayout';
 
 import RouteProgress from './components/common/RouteProgress';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 const HomeScreen = React.lazy(() => import('./screens/userScreens/HomeScreen'));
 const AuthScreen = React.lazy(() => import('./screens/userScreens/AuthPage')); // To be split
@@ -52,10 +53,19 @@ const ScrollToTop = () => {
 };
 
 const ConditionalRoutes = () => {
+  const { pathname } = useLocation();
+
   return (
-    <Suspense fallback={<RouteProgress />}>
-      <ScrollToTop />
-      <Routes>
+    /*
+     * The boundary sits inside the router so `pathname` can reset it: without
+     * that, a render error left the fallback on screen even after the user
+     * navigated somewhere else, because the boundary has no reason to re-render
+     * its children once it has caught.
+     */
+    <ErrorBoundary resetKey={pathname}>
+      <Suspense fallback={<RouteProgress />}>
+        <ScrollToTop />
+        <Routes>
         <Route path={APP_ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
         <Route path={APP_ROUTES.HOME} element={<HomeScreen />} />
 
@@ -96,10 +106,10 @@ const ConditionalRoutes = () => {
           </Route>
         </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-
-      </Routes>
-    </Suspense>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 

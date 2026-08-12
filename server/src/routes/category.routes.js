@@ -1,25 +1,46 @@
-const express = require('express');
+const router = require("express").Router();
+const { z } = require("zod");
+
 const {
     createCategory,
     getCategoriesByRestaurant,
     updateCategory,
-    deleteCategory
-} = require('../controllers/category.controller');
-const { protect } = require('../middlewares/auth.middleware');
-const { authorize } = require('../middlewares/authorize.middleware');
+    deleteCategory,
+} = require("../controllers/category.controller");
+const { protect, optionalAuth } = require("../middlewares/auth.middleware");
+const { authorize, requireRestaurant } = require("../middlewares/authorize.middleware");
+const validate = require("../middlewares/validate.middleware");
+const upload = require("../middlewares/upload.middleware");
+const { uploadLimiter } = require("../middlewares/rateLimit.middleware");
+const { idParam, objectId } = require("../validations/common.validation");
+const { createCategorySchema, updateCategorySchema } = require("../validations/catalog.validation");
 
-const router = express.Router();
+// `optionalAuth` so the owning restaurant also sees deactivated categories.
+router.get(
+    "/restaurant/:restaurantId",
+    optionalAuth,
+    validate({ params: z.object({ restaurantId: objectId }) }),
+    getCategoriesByRestaurant,
+);
 
-router.get('/restaurant/:restaurantId', getCategoriesByRestaurant);
+router.use(protect, authorize("restaurant_admin"), requireRestaurant);
 
-// Admin only routes
-router.use(protect);
-router.use(authorize('restaurant_admin'));
+router.post(
+    "/",
+    uploadLimiter,
+    upload.single("image"),
+    validate({ body: createCategorySchema }),
+    createCategory,
+);
 
-const upload = require('../middlewares/upload.middleware');
+router.put(
+    "/:id",
+    uploadLimiter,
+    upload.single("image"),
+    validate({ params: idParam, body: updateCategorySchema }),
+    updateCategory,
+);
 
-router.post('/', upload.single('image'), createCategory);
-router.put('/:id', upload.single('image'), updateCategory);
-router.delete('/:id', deleteCategory);
+router.delete("/:id", validate({ params: idParam }), deleteCategory);
 
 module.exports = router;

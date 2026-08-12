@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import Icon from '../../../components/common/Icon';
-import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEarningsThunk, cashOutThunk } from '../../../redux/riderSlice';
 import { RiderPageSkeleton } from '../../../components/common/Skeleton';
 
 const Earnings = () => {
-    const [timeframe, setTimeframe] = useState('weekly');
+    // Fixed for now: the UI has no timeframe switcher, so this was state with a
+    // setter nothing called. Kept as a constant so the request still asks for
+    // the weekly view.
+    const timeframe = 'weekly';
     const [cashOutState, setCashOutState] = useState('default'); // 'default', 'processing', 'transferred'
     const dispatch = useDispatch();
     const { earnings, loading } = useSelector((state) => state.rider);
@@ -38,7 +40,7 @@ const Earnings = () => {
             setTimeout(() => {
                 setCashOutState('default');
             }, 3000);
-        } catch (error) {
+        } catch {
             setCashOutState('default');
         }
     };
@@ -48,7 +50,7 @@ const Earnings = () => {
     }
 
     return (
-        <main className="flex-1 p-container-margin max-w-7xl mx-auto w-full pb-24 lg:pb-0">
+        <main id="main-content" tabIndex={-1} className="flex-1 p-container-margin max-w-7xl mx-auto w-full pb-24 lg:pb-0">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-6">
                         {/* Left Column: Balance & Stats */}
                         <div className="md:col-span-12 lg:col-span-4 space-y-3 lg:space-y-6">

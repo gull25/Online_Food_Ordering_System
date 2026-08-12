@@ -6,12 +6,11 @@ import { toast } from 'react-hot-toast';
 import { loginSuccess } from '../../../../redux/authSlice';
 
 const RestaurantOnboardingPage = () => {
-  const { user, token } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [restaurant, setRestaurant] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '', slug: '', description: '', phone: '', email: '', website: '',
@@ -29,14 +28,23 @@ const RestaurantOnboardingPage = () => {
     fetchStatus();
   }, []);
 
+  /*
+   * An owner who already has a restaurant does not belong on this form — there
+   * is one restaurant per owner, so submitting it would only fail. The request
+   * was already being made and its result assigned to state that nothing read;
+   * routing on it is what it was fetching for.
+   */
   const fetchStatus = async () => {
     try {
       if (user.restaurantId) {
         const res = await api.get(`/restaurants/${user.restaurantId}`);
-        setRestaurant(res.data.data);
+        if (res.data?.data) {
+          navigate('/admin/my-restaurant', { replace: true });
+          return;
+        }
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // No restaurant yet, or it could not be loaded — fall through to the form.
     } finally {
       setLoading(false);
     }

@@ -366,7 +366,7 @@ const AdminOrdersPage = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="p-margin_desktop flex-1 min-w-0">
+      <main id="main-content" tabIndex={-1} className="p-margin_desktop flex-1 min-w-0">
 
         {/* Header Section */}
         <AdminHeader

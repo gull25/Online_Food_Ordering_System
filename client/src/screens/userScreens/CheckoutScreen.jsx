@@ -17,6 +17,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import api from '../../api/axios';
 import { useApiAction } from '../../hooks/useApiAction';
+import { calculateTotals, unitPrice } from '../../helper/pricing';
 
 // Initialize Stripe outside component to avoid recreating the object on every render
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -171,18 +172,21 @@ const CheckoutPage = () => {
 
     const orderPayload = {
       restaurant: restaurantId,
-      items: cartItems.map(i => ({
-        menuItem: i._id || i.id,
-        name: i.name,
-        quantity: i.quantity,
-        price: i.price,
-        selectedSize: i.selectedSize,
-        selectedAddOns: i.selectedAddOns
+      /*
+       * Only the customer's choices are sent. `name`, `price` and `totalAmount`
+       * used to be included and are now rejected outright by the server's
+       * schema -- it prices every line from the database, so sending them only
+       * created the impression that the client had a say in what things cost.
+       */
+      items: cartItems.map((item) => ({
+        menuItem: item._id || item.id,
+        quantity: item.quantity,
+        ...(item.selectedSize ? { selectedSize: { name: item.selectedSize.name } } : {}),
+        selectedAddOns: (item.selectedAddOns ?? []).map((addOn) => ({ name: addOn.name })),
       })),
-      totalAmount: total, // Still sent but ignored by backend for security
       deliveryAddress: formData,
       paymentMethod,
-      promoCode: promoInput.trim().toUpperCase(),
+      ...(promoInput.trim() ? { promoCode: promoInput.trim().toUpperCase() } : {}),
       idempotencyKey
     };
 
@@ -231,38 +235,33 @@ const CheckoutPage = () => {
     setFormError('Payment was cancelled. You can try again.');
   };
 
-  // Computations
-  const subtotal = useMemo(() => {
-    return cartItems.reduce((sum, item) => {
-      const itemPrice = item.price + (item.selectedSize?.additionalPrice || 0) + (item.selectedAddOns?.reduce((s, a) => s + a.price, 0) || 0);
-      return sum + itemPrice * item.quantity;
-    }, 0);
-  }, [cartItems]);
+  /*
+   * Totals come from the shared helper that mirrors the server's arithmetic
+   * exactly (helper/pricing.js). This screen used to compute them inline and
+   * round only at the very end, so the figure shown to the customer could differ
+   * by a cent or more from the amount the server calculated and the gateway
+   * charged.
+   */
+  const subtotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + unitPrice(item) * item.quantity, 0),
+    [cartItems]
+  );
 
-  const discountAmount = useMemo(() => {
-    return subtotal * (discountPercent / 100);
-  }, [subtotal, discountPercent]);
-
-  const tax = useMemo(() => {
-    const taxableAmount = Math.max(0, subtotal - discountAmount);
-    return taxableAmount * 0.087; // ~8.7% tax rate
-  }, [subtotal, discountAmount]);
-
-  const serviceFee = subtotal > 0 ? 2.50 : 0;
-
-  // Dynamic Delivery Fee
-  const deliveryFee = restaurantData?.deliveryFee || 0;
-
-  const total = useMemo(() => {
-    const calculatedTotal = subtotal - discountAmount + tax + serviceFee + deliveryFee;
-    return Math.max(0, calculatedTotal);
-  }, [subtotal, discountAmount, tax, serviceFee, deliveryFee]);
+  const { discountAmount, tax, serviceFee, deliveryFee, total } = useMemo(
+    () =>
+      calculateTotals({
+        subtotal,
+        discountPercent,
+        deliveryFee: restaurantData?.deliveryFee || 0,
+      }),
+    [subtotal, discountPercent, restaurantData?.deliveryFee]
+  );
 
   return (
     <div className="bg-background text-on-background min-h-screen relative flex flex-col">
       <TopNavBar />
 
-      <main className="pt-24 pb-16 px-margin_mobile md:px-margin_desktop max-w-container_max mx-auto flex-grow w-full">
+      <main id="main-content" tabIndex={-1} className="pt-24 pb-16 px-margin_mobile md:px-margin_desktop max-w-container_max mx-auto flex-grow w-full">
         {/* Progress Indicator */}
         <CheckoutProgress currentStep={currentStep} />
 

@@ -198,7 +198,7 @@ const RestaurantDetailPage = () => {
     return (
       <div className="font-body text-body bg-background min-h-screen flex flex-col">
         <TopNavBar />
-        <main className="grow flex flex-col items-center justify-center text-center px-margin_mobile py-stack_lg">
+        <main id="main-content" tabIndex={-1} className="grow flex flex-col items-center justify-center text-center px-margin_mobile py-stack_lg">
           <Icon name="storefront" className="text-6xl text-surface-variant mb-4" />
           <h1 className="font-h2 text-h2-mobile md:text-h2 text-on-surface mb-2">Restaurant unavailable</h1>
           <p className="font-body text-body text-secondary max-w-md mb-6">{detailError}</p>

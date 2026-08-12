@@ -9,7 +9,7 @@ const PaymentFailedScreen = () => {
     <div className="bg-background text-on-background min-h-screen relative flex flex-col">
       <TopNavBar />
 
-      <main className="pt-24 pb-16 px-margin_mobile md:px-margin_desktop max-w-container_max mx-auto flex-grow w-full flex items-center justify-center">
+      <main id="main-content" tabIndex={-1} className="pt-24 pb-16 px-margin_mobile md:px-margin_desktop max-w-container_max mx-auto flex-grow w-full flex items-center justify-center">
         <div className="bg-surface-container-lowest rounded-2xl p-8 md:p-12 shadow-sm border border-outline-variant text-center max-w-md w-full">
           <div className="w-20 h-20 bg-error-container text-on-error-container rounded-full flex items-center justify-center mx-auto mb-6">
             <Icon name="error" className="text-4xl" />

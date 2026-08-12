@@ -158,7 +158,7 @@ const AdminDeliveryReplay = ({ order, onClose }) => {
               <p className="text-xs text-on-surface-variant font-label">Order #{order._id.slice(-6).toUpperCase()}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-surface-variant flex items-center justify-center text-secondary transition-colors">
+          <button type="button" onClick={onClose} aria-label="Close delivery replay" className="w-10 h-10 rounded-full hover:bg-surface-variant flex items-center justify-center text-secondary transition-colors">
             <Icon name="close" />
           </button>
         </div>

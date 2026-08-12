@@ -12,7 +12,7 @@ const UnauthorizedPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-margin_desktop text-center">
+    <main id="main-content" tabIndex={-1} className="min-h-screen bg-background flex flex-col items-center justify-center px-margin_mobile md:px-margin_desktop text-center">
       {/* Large visual number */}
       <span className="text-[120px] font-extrabold text-error/10 leading-none select-none">
         403
@@ -47,7 +47,7 @@ const UnauthorizedPage = () => {
           Go Home
         </Link>
       </div>
-    </div>
+    </main>
   );
 };
 

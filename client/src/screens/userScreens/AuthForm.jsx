@@ -5,7 +5,6 @@ import { USER_ROLES } from '../../constants';
 
 const AuthForm = () => {
   const {
-    mode,
     isRegister,
     isSubmitting,
     isSuccess,
