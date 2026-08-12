@@ -76,7 +76,6 @@ const AdminDashboardPage = () => {
 
   // Orders and search states
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeDropdownId, setActiveDropdownId] = useState(null);
 
   // (Mock modal state removed, using /admin/onboarding route instead)
 
@@ -161,7 +160,7 @@ const AdminDashboardPage = () => {
 
       {/* Main Content Canvas. `max-w` without `mx-auto` left the whole
           dashboard hard against the left edge on wide screens. */}
-      <main className="p-margin_mobile md:p-margin_desktop max-w-container_max mx-auto">
+      <main id="main-content" tabIndex={-1} className="p-margin_mobile md:p-margin_desktop max-w-container_max mx-auto">
         {/* Header */}
         <AdminHeader
           title={`Welcome back, ${user?.name?.split(' ')[0] || 'Admin'}`}

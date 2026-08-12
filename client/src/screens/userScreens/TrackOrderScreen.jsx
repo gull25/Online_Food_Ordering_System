@@ -276,7 +276,7 @@ const TrackOrderPage = () => {
     return (
       <div className="bg-background text-on-background min-h-screen flex flex-col">
         <TopNavBar />
-        <main className="grow w-full max-w-3xl mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg">
+        <main id="main-content" tabIndex={-1} className="grow w-full max-w-3xl mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg">
           <h1 className="font-h2-mobile md:font-h2 text-h2-mobile md:text-h2 text-on-surface mb-2">
             Track an order
           </h1>

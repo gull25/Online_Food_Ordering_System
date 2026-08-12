@@ -22,7 +22,7 @@ const StripeReturnPage = () => {
           setStatus('Onboarding incomplete. Please try again.');
           toast.error('Stripe onboarding was not completed.');
         }
-      } catch (err) {
+      } catch {
         setError(true);
         setStatus('Failed to verify Stripe account. Please contact support.');
       }

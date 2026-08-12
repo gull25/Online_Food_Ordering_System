@@ -38,6 +38,9 @@ const itemReviewSchema = new mongoose.Schema({
 
 // Prevent multiple reviews from the same user on the same order item
 itemReviewSchema.index({ orderId: 1, menuItemId: 1, user: 1 }, { unique: true });
+// Backs the paginated listings, which sort by recency.
+itemReviewSchema.index({ menuItemId: 1, createdAt: -1 });
+itemReviewSchema.index({ restaurantId: 1, createdAt: -1 });
 
 // Static method to get avg rating and save
 itemReviewSchema.statics.getAverageRating = async function (menuItemId, restaurantId) {

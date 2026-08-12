@@ -44,13 +44,21 @@ function App() {
   }, [dispatch]);
 
   useEffect(() => {
-    api.get('/status').catch(() => {
+    api.get('/health').catch(() => {
       console.warn('Backend connection check failed.');
     });
   }, []);
 
   return (
     <>
+      {/*
+        Targets the `#main-content` landmark that the screens render. Placed
+        first in the DOM so it is the very first thing focus reaches.
+      */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       <Toaster
         position="top-right"
         gutter={12}

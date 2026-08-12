@@ -1,17 +1,27 @@
-const express = require('express');
-const { getAdminOrders, getAdminAnalytics, getRiders, downloadSalesReport } = require('../controllers/admin.controller');
-const { protect } = require('../middlewares/auth.middleware');
-const { authorize } = require('../middlewares/authorize.middleware');
+const router = require("express").Router();
 
-const router = express.Router();
+const {
+    getAdminOrders,
+    getAdminAnalytics,
+    getRiders,
+    downloadSalesReport,
+} = require("../controllers/admin.controller");
+const { protect } = require("../middlewares/auth.middleware");
+const { authorize } = require("../middlewares/authorize.middleware");
+const validate = require("../middlewares/validate.middleware");
+const { listOrdersSchema } = require("../validations/order.validation");
 
-// Apply auth middlewares to all routes below
 router.use(protect);
-router.use(authorize('restaurant_admin', 'admin'));
+router.use(authorize("restaurant_admin", "admin"));
 
-router.get('/orders', getAdminOrders);
-router.get('/analytics', getAdminAnalytics);
-router.get('/riders', getRiders);
-router.get('/reports/sales', downloadSalesReport);
+/*
+ * Scoping to the caller's restaurant happens in the controller (`scopeFor`),
+ * not here — a role check alone was what let an owner with no restaurant read
+ * the whole platform's orders.
+ */
+router.get("/orders", validate({ query: listOrdersSchema }), getAdminOrders);
+router.get("/analytics", getAdminAnalytics);
+router.get("/riders", getRiders);
+router.get("/reports/sales", downloadSalesReport);
 
 module.exports = router;

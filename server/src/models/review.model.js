@@ -30,6 +30,12 @@ const reviewSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// One restaurant review per order. `order.isReviewed` was the only guard
+// before, and it is set in a separate write -- so two submissions racing each
+// other both saw `isReviewed: false` and both inserted.
+reviewSchema.index({ orderId: 1, user: 1 }, { unique: true });
+reviewSchema.index({ restaurantId: 1, createdAt: -1 });
+
 // Static method to get avg rating and save
 reviewSchema.statics.getAverageRating = async function (restaurantId) {
     try {

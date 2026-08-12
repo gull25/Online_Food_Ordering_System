@@ -3,7 +3,7 @@ import Icon from '../../../../components/common/Icon';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../api/axios';
-import { Toaster, toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { useDebounce } from '../../../../helper/useDebounce';
 import AdminHeader from '../../../../components/adminDashboardComponents/AdminHeader';
 import { AdminPageSkeleton } from '../../../../components/common/Skeleton';
@@ -55,7 +55,7 @@ const AdminMyRestaurantPage = () => {
       setRestaurant(restRes.data.data);
       setCategories(catRes.data.data || []);
       setMenuItems(menuRes.data.data || []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load restaurant data');
     } finally {
       setLoading(false);
@@ -148,7 +148,7 @@ const AdminMyRestaurantPage = () => {
         await api.delete(`/restaurants/menu/${id}`);
         toast.success('Item deleted successfully');
         fetchData();
-      } catch (err) {
+      } catch {
         toast.error('Failed to delete item');
       }
     }
@@ -160,7 +160,7 @@ const AdminMyRestaurantPage = () => {
       await api.put(`/restaurants/${restaurant._id}`, { isFeatured: newStatus });
       setRestaurant({ ...restaurant, isFeatured: newStatus });
       toast.success(newStatus ? 'Restaurant is now featured!' : 'Restaurant is no longer featured.');
-    } catch (err) {
+    } catch {
       toast.error('Failed to update featured status');
     }
   });
@@ -207,7 +207,7 @@ const AdminMyRestaurantPage = () => {
   if (!restaurant) {
     return (
       <div className="bg-background text-on-background min-h-screen flex">
-        <main className="p-margin_desktop flex-1 flex items-center justify-center">
+        <main id="main-content" tabIndex={-1} className="p-margin_desktop flex-1 flex items-center justify-center">
           <div className="text-center">
             <Icon name="store_off" className="text-[64px] text-secondary mb-4" />
             <h2 className="font-h2 text-h2 text-on-surface mb-2">No Restaurant Found</h2>
@@ -407,7 +407,7 @@ const AdminMyRestaurantPage = () => {
           <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 relative">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-h3 text-h3 text-on-surface">{editingItem ? 'Edit Menu Item' : 'New Menu Item'}</h3>
-              <button onClick={closeModal} className="p-2 hover:bg-surface-container rounded-full transition-colors">
+              <button type="button" onClick={closeModal} aria-label="Close menu item form" className="p-2 hover:bg-surface-container rounded-full transition-colors">
                 <Icon name="close" className="text-secondary" />
               </button>
             </div>

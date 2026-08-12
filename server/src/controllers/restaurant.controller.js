@@ -1,219 +1,161 @@
-const asyncHandler = require('../utils/asyncHandler');
-const restaurantService = require('../services/restaurant.service');
-const MenuItem = require('../models/menuItem.model');
+const asyncHandler = require("../utils/asyncHandler");
+const ApiError = require("../utils/ApiError");
+const restaurantService = require("../services/restaurant.service");
+const MenuItem = require("../models/menuItem.model");
+const User = require("../models/user.model");
+const { uploadImage } = require("../services/upload.service");
 
-// @desc    Get all restaurants (or featured via query)
+/**
+ * True when the caller owns the restaurant in the URL.
+ * Owners see their own listing even while it is Closed; everyone else does not.
+ */
+const isOwner = (req, restaurantId) =>
+    Boolean(req.user?.restaurantId && req.user.restaurantId === String(restaurantId));
+
+/** Uploads any files multer collected, keyed by field name. */
+const collectImages = async (files, folders) => {
+    if (!files) return {};
+
+    const entries = await Promise.all(
+        Object.entries(folders)
+            .filter(([field]) => files[field]?.[0])
+            .map(async ([field, folder]) => [field, await uploadImage(files[field][0].buffer, folder)]),
+    );
+
+    return Object.fromEntries(entries);
+};
+
+// @desc    List restaurants
 // @route   GET /api/restaurants
 // @access  Public
-exports.getRestaurants = asyncHandler(async (req, res, next) => {
-    let restaurants;
-    const options = {};
-    
-    let query = {};
-    if (req.query.lat && req.query.lng) {
-        query.lat = req.query.lat;
-        query.lng = req.query.lng;
-    }
+exports.getRestaurants = asyncHandler(async (req, res) => {
+    const { items, total, page, limit } = await restaurantService.getRestaurants(req.query);
 
-    if (req.query.featured === 'true') {
-        // Pass lat/lng into featured too if provided
-        restaurants = await restaurantService.getFeaturedRestaurants(query, options);
-    } else {
-        restaurants = await restaurantService.getRestaurants(query, options);
-    }
-    
     res.status(200).json({
         success: true,
-        count: restaurants.length,
-        data: restaurants
+        count: items.length,
+        total,
+        page,
+        pages: Math.ceil(total / limit) || 1,
+        data: items,
     });
 });
 
-// @desc    Get single restaurant details
+// @desc    Restaurant detail
 // @route   GET /api/restaurants/:id
 // @access  Public
-exports.getRestaurantById = asyncHandler(async (req, res, next) => {
-    // If the requester is the owner, they can see their own restaurant
-    const isOwner = req.user && req.user.restaurantId?.toString() === req.params.id;
-    const options = { includeUnapproved: isOwner };
-
-    const restaurant = await restaurantService.getRestaurantDetails(req.params.id, options);
-
-    res.status(200).json({
-        success: true,
-        data: restaurant
+exports.getRestaurantById = asyncHandler(async (req, res) => {
+    const restaurant = await restaurantService.getRestaurantDetails(req.params.id, {
+        includeUnapproved: isOwner(req, req.params.id),
     });
+
+    res.status(200).json({ success: true, data: restaurant });
 });
 
-// @desc    Get menu items for a restaurant
+// @desc    Restaurant menu
 // @route   GET /api/restaurants/:id/menu
 // @access  Public
-exports.getRestaurantMenu = asyncHandler(async (req, res, next) => {
-    // If the requester is the owner, they can see their own restaurant
-    const isOwner = req.user && req.user.restaurantId?.toString() === req.params.id;
-    const options = { includeUnapproved: isOwner };
+exports.getRestaurantMenu = asyncHandler(async (req, res) => {
+    const owner = isOwner(req, req.params.id);
 
-    const menuItems = await restaurantService.getRestaurantMenu(req.params.id, options);
-
-    res.status(200).json({
-        success: true,
-        count: menuItems.length,
-        data: menuItems
+    const menuItems = await restaurantService.getRestaurantMenu(req.params.id, {
+        includeUnapproved: owner,
+        // Customers should not see dishes the kitchen has switched off; the owner
+        // needs to see them in order to switch them back on.
+        includeUnavailable: owner,
     });
+
+    res.status(200).json({ success: true, count: menuItems.length, data: menuItems });
 });
 
-// @desc    Create new restaurant
+// @desc    Create the caller's restaurant
 // @route   POST /api/restaurants
-// @access  Private/Admin
-exports.createRestaurant = asyncHandler(async (req, res, next) => {
-    // Add user to req.body
-    req.body.owner = req.body.owner || req.user.id;
-    
-    req.body.images = req.body.images || {};
+// @access  Private (restaurant owner)
+exports.createRestaurant = asyncHandler(async (req, res) => {
+    const images = await collectImages(req.files, { logo: "foodora/logos", banner: "foodora/banners" });
 
-    if (req.files) {
-        const { uploadImage } = require('../services/upload.service');
-        if (req.files.logo && req.files.logo[0]) {
-            req.body.images.logo = await uploadImage(req.files.logo[0].buffer, 'foodora/logos');
-        }
-        if (req.files.banner && req.files.banner[0]) {
-            req.body.images.banner = await uploadImage(req.files.banner[0].buffer, 'foodora/banners');
-        }
-    }
+    const restaurant = await restaurantService.createRestaurant(req.user.id, req.body, images);
 
-    const restaurant = await restaurantService.createRestaurant(req.body);
+    await User.findByIdAndUpdate(req.user.id, { restaurantId: restaurant._id });
 
-    // Update the user with the new restaurantId
-    await require('../models/user.model').findByIdAndUpdate(req.user.id, {
-        restaurantId: restaurant._id
-    });
-
-    res.status(201).json({
-        success: true,
-        data: restaurant
-    });
+    res.status(201).json({ success: true, data: restaurant });
 });
 
-// @desc    Update restaurant
+// @desc    Update the caller's restaurant
 // @route   PUT /api/restaurants/:id
-// @access  Private/Admin
-exports.updateRestaurant = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'restaurant_admin' && req.params.id !== req.user.restaurantId?.toString()) {
-        return res.status(403).json({ success: false, message: 'Not authorized to update this restaurant' });
+// @access  Private (owner)
+exports.updateRestaurant = asyncHandler(async (req, res) => {
+    if (req.user.role === "restaurant_admin" && !isOwner(req, req.params.id)) {
+        throw new ApiError(403, "You can only edit your own restaurant");
     }
 
-    req.body.images = req.body.images || {};
+    const images = await collectImages(req.files, { logo: "foodora/logos", banner: "foodora/banners" });
+    const restaurant = await restaurantService.updateRestaurant(req.params.id, req.body, images);
 
-    if (req.files) {
-        const { uploadImage } = require('../services/upload.service');
-        if (req.files.logo && req.files.logo[0]) {
-            req.body.images.logo = await uploadImage(req.files.logo[0].buffer, 'foodora/logos');
-        }
-        if (req.files.banner && req.files.banner[0]) {
-            req.body.images.banner = await uploadImage(req.files.banner[0].buffer, 'foodora/banners');
-        }
-    }
-
-    const options = {};
-    const restaurant = await restaurantService.updateRestaurant(req.params.id, req.body, options);
-
-    res.status(200).json({
-        success: true,
-        data: restaurant
-    });
+    res.status(200).json({ success: true, data: restaurant });
 });
 
-// @desc    Delete restaurant
+// @desc    Delete the caller's restaurant
 // @route   DELETE /api/restaurants/:id
-// @access  Private/Admin
-exports.deleteRestaurant = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'restaurant_admin' && req.params.id !== req.user.restaurantId?.toString()) {
-        return res.status(403).json({ success: false, message: 'Not authorized to delete this restaurant' });
+// @access  Private (owner)
+exports.deleteRestaurant = asyncHandler(async (req, res) => {
+    if (req.user.role === "restaurant_admin" && !isOwner(req, req.params.id)) {
+        throw new ApiError(403, "You can only delete your own restaurant");
     }
 
     await restaurantService.deleteRestaurant(req.params.id);
 
-    res.status(200).json({
-        success: true,
-        data: {}
-    });
+    // The owner's stale pointer has to go too, or every subsequent request
+    // resolves a restaurantId that no longer exists.
+    await User.findByIdAndUpdate(req.user.id, { $unset: { restaurantId: "" } });
+
+    res.status(200).json({ success: true, data: {} });
 });
 
-// @desc    Create menu item
+// @desc    Add a menu item
 // @route   POST /api/restaurants/:id/menu
-// @access  Private/Admin
-exports.createMenuItem = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'restaurant_admin' && req.params.id !== req.user.restaurantId?.toString()) {
-        return res.status(403).json({ success: false, message: 'Not authorized to add menu items to this restaurant' });
+// @access  Private (owner)
+exports.createMenuItem = asyncHandler(async (req, res) => {
+    if (req.user.role === "restaurant_admin" && !isOwner(req, req.params.id)) {
+        throw new ApiError(403, "You can only add items to your own menu");
     }
 
-    if (req.file) {
-        const { uploadImage } = require('../services/upload.service');
-        req.body.image = await uploadImage(req.file.buffer, 'foodora/menu');
-    }
-    
-    if (typeof req.body.sizes === 'string') {
-        try { req.body.sizes = JSON.parse(req.body.sizes); } catch(e){}
-    }
-    if (typeof req.body.addOns === 'string') {
-        try { req.body.addOns = JSON.parse(req.body.addOns); } catch(e){}
-    }
+    const image = req.file ? await uploadImage(req.file.buffer, "foodora/menu") : null;
+    const menuItem = await restaurantService.createMenuItem(req.params.id, req.body, image);
 
-    const menuItem = await restaurantService.createMenuItem(req.params.id, req.body);
-
-    res.status(201).json({
-        success: true,
-        data: menuItem
-    });
+    res.status(201).json({ success: true, data: menuItem });
 });
 
-// @desc    Update menu item
+// @desc    Update a menu item
 // @route   PUT /api/restaurants/menu/:menuId
-// @access  Private/Admin
-exports.updateMenuItem = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'restaurant_admin') {
-        const menuItem = await MenuItem.findById(req.params.menuId);
-        if (!menuItem || menuItem.restaurant.toString() !== req.user.restaurantId?.toString()) {
-            return res.status(403).json({ success: false, message: 'Not authorized to update this menu item' });
-        }
-    }
+// @access  Private (owner)
+exports.updateMenuItem = asyncHandler(async (req, res) => {
+    await assertOwnsMenuItem(req);
 
-    if (req.file) {
-        const { uploadImage } = require('../services/upload.service');
-        req.body.image = await uploadImage(req.file.buffer, 'foodora/menu');
-    }
+    const image = req.file ? await uploadImage(req.file.buffer, "foodora/menu") : null;
+    const menuItem = await restaurantService.updateMenuItem(req.params.menuId, req.body, image);
 
-    if (typeof req.body.sizes === 'string') {
-        try { req.body.sizes = JSON.parse(req.body.sizes); } catch(e){}
-    }
-    if (typeof req.body.addOns === 'string') {
-        try { req.body.addOns = JSON.parse(req.body.addOns); } catch(e){}
-    }
-
-    const menuItem = await restaurantService.updateMenuItem(req.params.menuId, req.body);
-
-    res.status(200).json({
-        success: true,
-        data: menuItem
-    });
+    res.status(200).json({ success: true, data: menuItem });
 });
 
-// @desc    Delete menu item
+// @desc    Delete a menu item
 // @route   DELETE /api/restaurants/menu/:menuId
-// @access  Private/Admin
-exports.deleteMenuItem = asyncHandler(async (req, res, next) => {
-    if (req.user.role === 'restaurant_admin') {
-        const menuItem = await MenuItem.findById(req.params.menuId);
-        if (!menuItem || menuItem.restaurant.toString() !== req.user.restaurantId?.toString()) {
-            return res.status(403).json({ success: false, message: 'Not authorized to delete this menu item' });
-        }
-    }
+// @access  Private (owner)
+exports.deleteMenuItem = asyncHandler(async (req, res) => {
+    await assertOwnsMenuItem(req);
 
     await restaurantService.deleteMenuItem(req.params.menuId);
 
-    res.status(200).json({
-        success: true,
-        data: {}
-    });
+    res.status(200).json({ success: true, data: {} });
 });
 
+async function assertOwnsMenuItem(req) {
+    if (req.user.role !== "restaurant_admin") return;
+
+    const menuItem = await MenuItem.findById(req.params.menuId).select("restaurant").lean();
+    if (!menuItem || menuItem.restaurant.toString() !== req.user.restaurantId) {
+        // 404, not 403 — a 403 confirms the id belongs to a real menu item on
+        // somebody else's menu.
+        throw new ApiError(404, "Menu item not found");
+    }
+}

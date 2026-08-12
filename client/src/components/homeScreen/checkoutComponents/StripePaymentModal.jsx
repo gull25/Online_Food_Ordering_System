@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Icon from '../../common/Icon';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-
+import Icon from '../../common/Icon';
+import Modal from '../../Modals/Modal';
 import { useApiAction } from '../../../hooks/useApiAction';
 
 const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
@@ -9,74 +9,67 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
   const elements = useElements();
   const [error, setError] = useState('');
 
-  const { execute: handleSubmit, isSubmitting: isProcessing } = useApiAction(async (e) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) {
-      // Stripe.js has not yet loaded.
-      return;
-    }
+  const { execute: handleSubmit, isSubmitting: isProcessing } = useApiAction(async (event) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
 
     setError('');
 
-    // Confirm the payment
     const { error: submitError } = await stripe.confirmPayment({
       elements,
-      redirect: 'if_required', // We handle success locally without redirecting immediately
+      // Success is handled locally rather than via a redirect round trip.
+      redirect: 'if_required',
     });
 
     if (submitError) {
       setError(submitError.message);
     } else {
-      // Payment succeeded!
       onSuccess();
     }
   });
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-surface-container-lowest w-full max-w-md rounded-2xl p-8 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2 className="font-h3 text-h3 font-bold text-on-surface">Payment Details</h2>
-            <p className="font-body text-body text-secondary mt-1">
-              Complete your purchase securely via Stripe.
-            </p>
-          </div>
-          <button
-            onClick={onCancel}
-            disabled={isProcessing}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant disabled:opacity-50"
-          >
-            <Icon name="close" className="text-xl" />
-          </button>
-        </div>
-
-        <div className="bg-primary/5 rounded-xl p-4 mb-6 border border-primary/20 flex justify-between items-center">
-          <span className="font-label text-label text-on-surface uppercase tracking-wide">Total to Pay</span>
+    <Modal
+      isOpen
+      // Dismissing the backdrop mid-payment would abandon a card authorisation
+      // that may already be in flight, so the only way out is the explicit
+      // cancel control — and that is disabled while processing.
+      closeOnBackdrop={false}
+      onClose={isProcessing ? undefined : onCancel}
+      title="Payment details"
+      description="Complete your purchase securely via Stripe."
+      size="md"
+    >
+      <div className="space-y-stack_md">
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <span className="font-label text-label uppercase tracking-wide text-on-surface">
+            Total to pay
+          </span>
           <span className="font-h3 text-h3 font-bold text-primary">${amount.toFixed(2)}</span>
         </div>
 
         {error && (
-          <div className="bg-error-container text-on-error-container text-small font-label p-3 rounded-lg mb-4 flex items-center gap-2">
-            <Icon name="error" className="text-sm" />
-            {error}
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-lg bg-error-container p-3 font-body text-small text-on-error-container animate-in fade-in slide-in-from-top-1"
+          >
+            <Icon name="error" className="mt-0.5 shrink-0 text-[18px]" />
+            <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-stack_md">
           <PaymentElement />
 
           <button
             type="submit"
             disabled={!stripe || isProcessing}
-            className="w-full h-14 bg-primary text-on-primary font-button text-button rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary font-button text-button text-on-primary shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isProcessing ? (
               <>
                 <Icon name="progress_activity" className="animate-spin" />
-                <span>Processing Payment...</span>
+                <span>Processing payment…</span>
               </>
             ) : (
               <>
@@ -86,14 +79,13 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
             )}
           </button>
 
-          <p className="text-center font-small text-[12px] text-secondary mt-4 flex items-center justify-center gap-1">
-            <Icon name="verified_user" className="text-[12px]" />
-            Secured by Stripe
+          <p className="flex items-center justify-center gap-1.5 font-body text-label text-secondary">
+            <Icon name="verified_user" className="text-[14px]" />
+            <span>Secured by Stripe</span>
           </p>
         </form>
-
       </div>
-    </div>
+    </Modal>
   );
 };
 

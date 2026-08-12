@@ -1,14 +1,17 @@
-const express = require('express');
-const { onboardStripe, verifyStripeStatus } = require('../controllers/stripe.controller');
-const { protect } = require('../middlewares/auth.middleware');
-const { authorize } = require('../middlewares/authorize.middleware');
+const router = require("express").Router();
 
-const router = express.Router();
+const { onboardStripe, verifyStripeStatus } = require("../controllers/stripe.controller");
+const { protect } = require("../middlewares/auth.middleware");
+const { authorize, requireRestaurant } = require("../middlewares/authorize.middleware");
 
 router.use(protect);
-router.use(authorize('restaurant_admin')); // Only restaurant admins need to onboard
+router.use(authorize("restaurant_admin"));
 
-router.post('/onboard', onboardStripe);
-router.get('/verify', verifyStripeStatus);
+// Both handlers previously opened with `if (!req.user.restaurantId)`; doing it
+// once here keeps the controllers to their actual job.
+router.use(requireRestaurant);
+
+router.post("/onboard", onboardStripe);
+router.get("/verify", verifyStripeStatus);
 
 module.exports = router;

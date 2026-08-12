@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "seed": "node seed.js"
+    "seed": "node seed-custom.js",
+    "test": "node tests/validation.test.js && node tests/http.test.js",
+    "test:schemas": "node tests/validation.test.js",
+    "test:http": "node tests/http.test.js"
   },
   "keywords": [],
   "author": "",

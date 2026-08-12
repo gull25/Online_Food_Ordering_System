@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux';
 const RestaurantCard = ({ restaurant }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
-  const { _id, id, name, rating, cuisine, tags, estimatedDeliveryTime, time, minOrder, images, image, deliveryFee, promo } = restaurant;
+  const { _id, id, name, cuisine, tags, estimatedDeliveryTime, time, minOrder, images, image, deliveryFee, promo } = restaurant;
   const cardId = _id || id;
   const cardTags = cuisine || tags || [];
   const cardTime = estimatedDeliveryTime || time || '30 min';

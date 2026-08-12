@@ -87,7 +87,11 @@ const orderSchema = new mongoose.Schema({
     },
     rider: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Rider'
+        ref: 'Rider',
+        // Explicit null (rather than absent) so `{ rider: null }` matches every
+        // unclaimed order -- the filter the rider "available deliveries" query
+        // relies on to stop showing work that is already taken.
+        default: null
     },
     riderEarning: {
         type: Number,
@@ -122,7 +126,10 @@ const orderSchema = new mongoose.Schema({
     },
     paymentGateway: {
         type: String,
-        enum: ['cod', 'stripe', 'easypaisa', 'jazzcash']
+        // `meezan` and `ubl` were offered by the checkout screen and set by the
+        // order service, but were missing from this enum -- so choosing either
+        // bank transfer failed validation and the order was never created.
+        enum: ['cod', 'stripe', 'easypaisa', 'jazzcash', 'meezan', 'ubl']
     },
     paymentStatus: {
         type: String,
@@ -154,11 +161,20 @@ const orderSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Indexes for common queries
+// ---------------------------------------------------------------------------
+// Indexes.
+//
+// The compound forms below match the exact shape of the queries the app runs,
+// so each is served by an index scan rather than a filter over a partial one:
+//   - restaurant + status + createdAt  -> the admin order list, filtered by tab
+//   - status + rider + createdAt       -> the rider "available deliveries" feed
+//   - stripePaymentIntentId            -> webhook lookups, previously a scan
+// ---------------------------------------------------------------------------
 orderSchema.index({ user: 1, createdAt: -1 });
-orderSchema.index({ restaurant: 1, createdAt: -1 });
-orderSchema.index({ status: 1 });
-orderSchema.index({ rider: 1, status: 1 });
+orderSchema.index({ restaurant: 1, status: 1, createdAt: -1 });
+orderSchema.index({ status: 1, rider: 1, createdAt: 1 });
+orderSchema.index({ rider: 1, status: 1, updatedAt: -1 });
+orderSchema.index({ stripePaymentIntentId: 1 }, { sparse: true });
 orderSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Order', orderSchema);

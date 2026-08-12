@@ -30,12 +30,26 @@ export const fetchOrderByIdThunk = createAsyncThunk(
   }
 );
 
+/**
+ * The customer's order history.
+ *
+ * `/orders/my-orders` is paginated; passing `{ page }` appends rather than
+ * replaces, which is what drives the "Load more" control on the history screen.
+ * The endpoint previously returned every order the account had ever placed in
+ * one response.
+ */
 export const fetchMyOrdersThunk = createAsyncThunk(
   'orders/fetchMyOrders',
-  async (_, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10 } = {}, { rejectWithValue }) => {
     try {
-      const response = await api.get('/orders/my-orders');
-      return response.data.data;
+      const response = await api.get('/orders/my-orders', { params: { page, limit } });
+      return {
+        orders: response.data.data ?? [],
+        page: response.data.page ?? page,
+        pages: response.data.pages ?? 1,
+        total: response.data.total ?? 0,
+        append: page > 1,
+      };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch order history');
     }
@@ -56,6 +70,9 @@ export const cancelOrderThunk = createAsyncThunk(
 
 const initialState = {
   orders: [],
+  ordersPage: 1,
+  ordersPages: 1,
+  ordersTotal: 0,
   currentOrder: null,
   // `loading` covers reads (fetching an order or the order list).
   // `mutating` covers writes, so a write never blanks a screen that is already
@@ -102,7 +119,10 @@ const orderSlice = createSlice({
       .addCase(createOrderThunk.fulfilled, (state, action) => {
         state.loading = false;
         state.currentOrder = action.payload.order;
-        state.orders.push(action.payload.order); // optional, just to keep local history updated
+        // Prepended, not pushed: the list is sorted newest-first, so appending
+        // put a just-placed order at the very bottom of the history.
+        state.orders.unshift(action.payload.order);
+        state.ordersTotal += 1;
       })
       .addCase(createOrderThunk.rejected, (state, action) => {
         state.loading = false;
@@ -128,7 +148,21 @@ const orderSlice = createSlice({
       })
       .addCase(fetchMyOrdersThunk.fulfilled, (state, action) => {
         state.loading = false;
-        state.orders = action.payload;
+        const { orders, page, pages, total, append } = action.payload;
+
+        // De-duplicated on append: a new order arriving between two page
+        // requests shifts every later row down one, which would otherwise
+        // repeat the boundary order.
+        if (append) {
+          const seen = new Set(state.orders.map((order) => order._id));
+          state.orders.push(...orders.filter((order) => !seen.has(order._id)));
+        } else {
+          state.orders = orders;
+        }
+
+        state.ordersPage = page;
+        state.ordersPages = pages;
+        state.ordersTotal = total;
       })
       .addCase(fetchMyOrdersThunk.rejected, (state, action) => {
         state.loading = false;

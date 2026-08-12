@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Icon from '../../../components/common/Icon';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDashboardThunk, updateRiderStatusThunk, fetchRiderProfileThunk } from '../../../redux/riderSlice';
+import { fetchDashboardThunk, fetchRiderProfileThunk } from '../../../redux/riderSlice';
 import { RiderPageSkeleton } from '../../../components/common/Skeleton';
 
 const RiderDashboard = () => {
@@ -14,10 +14,8 @@ const RiderDashboard = () => {
         dispatch(fetchDashboardThunk());
     }, [dispatch]);
 
-    const handleGoOnline = () => {
-        const newStatus = profile?.status === 'Available' ? 'Offline' : 'Available';
-        dispatch(updateRiderStatusThunk(newStatus));
-    };
+    // The availability toggle it duplicated is rendered by RiderHeader, which is
+    // where riders actually use it; nothing here was ever wired to this.
 
     // First paint only. `fetchRiderProfileThunk` (dispatched by RiderLayout) and
     // `fetchDashboardThunk` (dispatched here) share one `loading` flag, so this
@@ -47,7 +45,7 @@ const RiderDashboard = () => {
     }
 
     return (
-        <main className="px-4 min-h-screen pt-4 pb-24 lg:pb-8">
+        <main id="main-content" tabIndex={-1} className="px-4 min-h-screen pt-4 pb-24 lg:pb-8">
                 <div className="max-w-7xl mx-auto space-y-6">
                     {/* Summary Metrics Bento Grid */}
                     <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">

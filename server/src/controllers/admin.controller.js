@@ -1,205 +1,303 @@
-const asyncHandler = require('../utils/asyncHandler');
-const Order = require('../models/order.model');
-const Restaurant = require('../models/restaurant.model');
-const Rider = require('../models/rider.model');
-const ApiError = require('../utils/ApiError');
+const mongoose = require("mongoose");
 
+const asyncHandler = require("../utils/asyncHandler");
+const ApiError = require("../utils/ApiError");
+const Order = require("../models/order.model");
+const Restaurant = require("../models/restaurant.model");
+const Rider = require("../models/rider.model");
 
-exports.getAdminOrders = asyncHandler(async (req, res, next) => {
-    const query = req.user.role === 'admin'
-        ? {}
-        : { restaurant: req.user.restaurantId };
+/**
+ * Builds the restaurant filter for the calling admin.
+ *
+ * This is the single most important line in the file. It used to read
+ *
+ *     req.user.role === 'admin' ? {} : { restaurant: req.user.restaurantId }
+ *
+ * and `restaurantId` is undefined for a restaurant_admin who has not created a
+ * restaurant yet. Mongo drops undefined values from a filter, so the query
+ * became `{}` — the platform-wide one. Since anyone could self-register as a
+ * restaurant owner, `GET /api/admin/orders` returned every order on the
+ * platform, and `/reports/sales` exported every customer's name and email as a
+ * CSV, to an account that was seconds old.
+ */
+const scopeFor = (user) => {
+    if (user.role === "admin" || user.role === "super_admin") return {};
 
-    const orders = await Order.find(query)
-        .populate('user', 'name avatar email')
-        .populate('items.menuItem', 'name price')
-        .sort({ createdAt: -1 });
+    if (!user.restaurantId) {
+        throw new ApiError(400, "Set up your restaurant to see orders and analytics");
+    }
+
+    return { restaurant: user.restaurantId };
+};
+
+// @desc    Orders for the caller's restaurant
+// @route   GET /api/admin/orders
+// @access  Private (restaurant owner / admin)
+exports.getAdminOrders = asyncHandler(async (req, res) => {
+    const scope = scopeFor(req.user);
+    const { page, limit, status } = req.query;
+
+    // Unpaginated before: an established restaurant's entire order history, with
+    // every line item populated, in one response.
+    const query = { ...scope, ...(status ? { status } : {}) };
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+        Order.find(query)
+            .select("status paymentStatus paymentMethod totalAmount items rider createdAt deliveryAddress restaurant user")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate("user", "name avatar email")
+            .populate("rider", "name phone")
+            .lean(),
+        Order.countDocuments(query),
+    ]);
 
     res.status(200).json({
         success: true,
-        count: orders.length,
-        data: orders
+        count: items.length,
+        total,
+        page,
+        pages: Math.ceil(total / limit) || 1,
+        data: items,
     });
 });
 
-exports.getAdminAnalytics = asyncHandler(async (req, res, next) => {
-    const isAdmin = req.user.role === 'admin';
-    const query = isAdmin ? {} : { restaurant: req.user.restaurantId };
+/**
+ * Dashboard analytics.
+ *
+ * Previously this loaded every order for the scope into Node — with the
+ * restaurant document populated onto each one — and then computed totals,
+ * per-weekday revenue, top items and top restaurants with nested JavaScript
+ * loops. Memory and latency grew linearly with order history, and the
+ * "excluding cancelled orders" filter compared against `'Cancelled'` while the
+ * schema enum stores `'CANCELLED'`, so cancelled orders were silently counted
+ * as revenue.
+ *
+ * One `$facet` aggregation does the same work in the database, in a single round
+ * trip, over indexed fields.
+ */
+exports.getAdminAnalytics = asyncHandler(async (req, res) => {
+    const scope = scopeFor(req.user);
+    const isPlatformAdmin = Object.keys(scope).length === 0;
 
-    const orders = await Order.find(query).populate('restaurant', 'name rating images cuisine');
+    const EXCLUDED = ["CANCELLED", "REJECTED", "PAYMENT_FAILED", "PENDING_PAYMENT"];
 
-    const totalOrders = orders.length;
-    const validOrders = orders.filter(o => o.status !== 'Cancelled');
-    const revenueSum = validOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-
-    const uniqueUsers = new Set(orders.map(o => o.user?.toString()).filter(Boolean));
-
-    const restaurantsCount = isAdmin ? await Restaurant.countDocuments() : 1;
-
-    // Calculate Trends (Current Month vs Previous Month)
     const now = new Date();
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    let currentMonthOrders = 0;
-    let previousMonthOrders = 0;
-    let currentMonthRevenue = 0;
-    let previousMonthRevenue = 0;
-    const currentMonthUsers = new Set();
-    const previousMonthUsers = new Set();
+    const match = { ...scope };
+    if (scope.restaurant) match.restaurant = new mongoose.Types.ObjectId(String(scope.restaurant));
 
-    validOrders.forEach(o => {
-        const orderDate = new Date(o.createdAt);
-        if (orderDate >= startOfCurrentMonth) {
-            currentMonthOrders++;
-            currentMonthRevenue += (o.totalAmount || 0);
-            if (o.user) currentMonthUsers.add(o.user.toString());
-        } else if (orderDate >= startOfPreviousMonth && orderDate < startOfCurrentMonth) {
-            previousMonthOrders++;
-            previousMonthRevenue += (o.totalAmount || 0);
-            if (o.user) previousMonthUsers.add(o.user.toString());
-        }
-    });
+    const [facets] = await Order.aggregate([
+        { $match: match },
+        {
+            $facet: {
+                totals: [
+                    {
+                        $group: {
+                            _id: null,
+                            totalOrders: { $sum: 1 },
+                            revenue: {
+                                $sum: { $cond: [{ $in: ["$status", EXCLUDED] }, 0, "$totalAmount"] },
+                            },
+                            customers: { $addToSet: "$user" },
+                        },
+                    },
+                    { $project: { totalOrders: 1, revenue: 1, customerCount: { $size: "$customers" } } },
+                ],
+                monthly: [
+                    { $match: { status: { $nin: EXCLUDED }, createdAt: { $gte: startOfPreviousMonth } } },
+                    {
+                        $group: {
+                            _id: { $cond: [{ $gte: ["$createdAt", startOfCurrentMonth] }, "current", "previous"] },
+                            orders: { $sum: 1 },
+                            revenue: { $sum: "$totalAmount" },
+                            customers: { $addToSet: "$user" },
+                        },
+                    },
+                    { $project: { orders: 1, revenue: 1, customerCount: { $size: "$customers" } } },
+                ],
+                byWeekday: [
+                    { $match: { status: { $nin: EXCLUDED } } },
+                    { $group: { _id: { $isoDayOfWeek: "$createdAt" }, revenue: { $sum: "$totalAmount" } } },
+                ],
+                topItems: [
+                    { $match: { status: { $nin: EXCLUDED } } },
+                    { $unwind: "$items" },
+                    {
+                        $group: {
+                            _id: "$items.name",
+                            quantity: { $sum: "$items.quantity" },
+                            revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
+                        },
+                    },
+                    { $sort: { quantity: -1 } },
+                    { $limit: 5 },
+                    { $project: { _id: 0, name: "$_id", quantity: 1, revenue: 1 } },
+                ],
+                topRestaurants: [
+                    { $match: { status: { $nin: EXCLUDED } } },
+                    { $group: { _id: "$restaurant", revenue: { $sum: "$totalAmount" } } },
+                    { $sort: { revenue: -1 } },
+                    { $limit: 5 },
+                    {
+                        $lookup: {
+                            from: "restaurants",
+                            localField: "_id",
+                            foreignField: "_id",
+                            as: "restaurant",
+                            pipeline: [{ $project: { name: 1, rating: 1, "images.logo": 1 } }],
+                        },
+                    },
+                    { $unwind: "$restaurant" },
+                    {
+                        $project: {
+                            _id: 0,
+                            name: "$restaurant.name",
+                            rating: { $ifNull: ["$restaurant.rating", 0] },
+                            image: { $ifNull: ["$restaurant.images.logo", ""] },
+                            revenue: 1,
+                        },
+                    },
+                ],
+            },
+        },
+    ]);
 
-    const calculateGrowth = (current, previous) => {
-        if (previous === 0) return current > 0 ? "+100.0%" : "0.0%";
-        const growth = ((current - previous) / previous) * 100;
-        return `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
+    const totals = facets?.totals?.[0] ?? { totalOrders: 0, revenue: 0, customerCount: 0 };
+    const current = facets?.monthly?.find((entry) => entry._id === "current") ?? {
+        orders: 0,
+        revenue: 0,
+        customerCount: 0,
+    };
+    const previous = facets?.monthly?.find((entry) => entry._id === "previous") ?? {
+        orders: 0,
+        revenue: 0,
+        customerCount: 0,
     };
 
-    const trends = {
-        orders: calculateGrowth(currentMonthOrders, previousMonthOrders),
-        revenue: calculateGrowth(currentMonthRevenue, previousMonthRevenue),
-        customers: calculateGrowth(currentMonthUsers.size, previousMonthUsers.size),
-        restaurants: isAdmin ? "+0 new" : "N/A"
+    // `$isoDayOfWeek` is 1 = Monday … 7 = Sunday, which is already the order the
+    // chart renders. The old code built a Sunday-first map and then re-ordered
+    // it by hand.
+    const revenueByDay = new Map(facets?.byWeekday?.map((entry) => [entry._id, entry.revenue]) ?? []);
+    const timeSeriesData = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((label, index) => ({
+        label,
+        revenue: Math.round((revenueByDay.get(index + 1) ?? 0) * 100) / 100,
+    }));
+
+    const growth = (currentValue, previousValue) => {
+        if (previousValue === 0) return currentValue > 0 ? "+100.0%" : "0.0%";
+        const value = ((currentValue - previousValue) / previousValue) * 100;
+        return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
     };
 
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const timeSeriesMap = {};
-    days.forEach(d => timeSeriesMap[d] = 0);
-
-    validOrders.forEach(o => {
-        const date = new Date(o.createdAt);
-        const dayLabel = days[date.getDay()];
-        timeSeriesMap[dayLabel] += (o.totalAmount || 0);
-    });
-
-    // Order correctly from Mon to Sun
-    const timeSeriesData = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => ({
-        label: day,
-        revenue: timeSeriesMap[day]
-    }));
-
-    const itemStats = {};
-    validOrders.forEach(o => {
-        if (o.items && Array.isArray(o.items)) {
-            o.items.forEach(item => {
-                const name = item.name;
-                if (!itemStats[name]) itemStats[name] = { quantity: 0, revenue: 0 };
-                itemStats[name].quantity += item.quantity;
-                itemStats[name].revenue += (item.price * item.quantity);
-            });
-        }
-    });
-    const topItems = Object.keys(itemStats)
-        .map(name => ({ name, ...itemStats[name] }))
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5);
-
-    const restStats = {};
-    validOrders.forEach(o => {
-        if (o.restaurant) {
-            const id = o.restaurant._id.toString();
-            if (!restStats[id]) {
-                restStats[id] = {
-                    name: o.restaurant.name,
-                    rating: o.restaurant.rating || 0,
-                    image: o.restaurant.images?.logo || '',
-                    revenue: 0,
-                };
-            }
-            restStats[id].revenue += (o.totalAmount || 0);
-        }
-    });
-    const topRestaurants = Object.values(restStats)
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 5);
-
-    const cuisineStats = {};
-    if (isAdmin) {
-        const allRests = await Restaurant.find({}, 'cuisine');
-        allRests.forEach(r => {
-            if (r.cuisine) {
-                r.cuisine.forEach(c => {
-                    cuisineStats[c] = (cuisineStats[c] || 0) + 1;
-                });
-            }
-        });
-    } else {
-        const rest = await Restaurant.findById(req.user.restaurantId);
-        if (rest && rest.cuisine) {
-            rest.cuisine.forEach(c => { cuisineStats[c] = 1; });
-        }
-    }
-    const cuisineDistribution = Object.keys(cuisineStats).map(c => ({
-        name: c,
-        count: cuisineStats[c]
-    }));
+    const [restaurantsCount, cuisineDistribution] = await Promise.all([
+        isPlatformAdmin ? Restaurant.countDocuments() : 1,
+        Restaurant.aggregate([
+            ...(isPlatformAdmin
+                ? []
+                : [{ $match: { _id: new mongoose.Types.ObjectId(String(scope.restaurant)) } }]),
+            { $unwind: "$cuisine" },
+            { $group: { _id: "$cuisine", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 12 },
+            { $project: { _id: 0, name: "$_id", count: 1 } },
+        ]),
+    ]);
 
     res.status(200).json({
         success: true,
         data: {
-            orders: { total: totalOrders, revenue: revenueSum },
-            users: { totalCustomers: uniqueUsers.size },
+            orders: { total: totals.totalOrders, revenue: Math.round(totals.revenue * 100) / 100 },
+            users: { totalCustomers: totals.customerCount },
             restaurants: { active: restaurantsCount, total: restaurantsCount },
             timeSeriesData,
-            topRestaurants,
-            topItems,
+            topRestaurants: facets?.topRestaurants ?? [],
+            topItems: facets?.topItems ?? [],
             cuisineDistribution,
-            trends
-        }
+            trends: {
+                orders: growth(current.orders, previous.orders),
+                revenue: growth(current.revenue, previous.revenue),
+                customers: growth(current.customerCount, previous.customerCount),
+                restaurants: isPlatformAdmin ? "+0 new" : "N/A",
+            },
+        },
     });
 });
 
-exports.getRiders = asyncHandler(async (req, res, next) => {
-    const query = {};
+// @desc    Riders available for assignment
+// @route   GET /api/admin/riders
+// @access  Private (restaurant owner / admin)
+exports.getRiders = asyncHandler(async (req, res) => {
+    scopeFor(req.user);
 
-    const riders = await Rider.find(query).sort({ name: 1 });
+    // Only what the assignment dropdown needs. The whole rider document —
+    // including `totalEarnings` and the full `payoutHistory` — was returned to
+    // every restaurant admin before.
+    const riders = await Rider.find({ status: { $ne: "Offline" } })
+        .select("name phone vehicleDetails status rating totalDeliveries")
+        .sort({ status: 1, name: 1 })
+        .limit(200)
+        .lean();
 
-    res.status(200).json({
-        success: true,
-        count: riders.length,
-        data: riders
-    });
+    res.status(200).json({ success: true, count: riders.length, data: riders });
 });
 
-exports.downloadSalesReport = asyncHandler(async (req, res, next) => {
-    const query = req.user.role === 'admin'
-        ? {}
-        : { restaurant: req.user.restaurantId };
+/**
+ * CSV export.
+ *
+ * The previous implementation quoted values and called that "escaping to prevent
+ * CSV injection" — but quoting is a formatting fix, not a security one. A
+ * customer who registers as `=cmd|'/c calc'!A0` still lands in a cell that Excel
+ * and Sheets evaluate as a formula when the restaurant opens the report. Values
+ * beginning with a formula trigger are prefixed with an apostrophe so the
+ * spreadsheet treats them as text.
+ */
+const csvCell = (value) => {
+    const text = String(value ?? "");
+    const guarded = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+    return `"${guarded.replace(/"/g, '""')}"`;
+};
 
-    const orders = await Order.find(query).populate('user', 'name email').sort({ createdAt: -1 });
+// @desc    Download a sales report
+// @route   GET /api/admin/reports/sales
+// @access  Private (restaurant owner / admin)
+exports.downloadSalesReport = asyncHandler(async (req, res) => {
+    const scope = scopeFor(req.user);
 
-    // Build CSV String
-    let csv = 'Order ID,Date,Customer Name,Customer Email,Status,Items Count,Total Amount\n';
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="sales_report.csv"');
+    res.write("Order ID,Date,Customer Name,Customer Email,Status,Payment,Items,Total\n");
 
-    orders.forEach(order => {
-        const id = order._id;
-        const date = new Date(order.createdAt).toLocaleDateString();
-        const customerName = order.user?.name || 'Guest';
-        const customerEmail = order.user?.email || 'N/A';
-        const status = order.status;
-        const itemsCount = Array.isArray(order.items) ? order.items.length : 0;
-        const totalAmount = (order.totalAmount || 0).toFixed(2);
+    /*
+     * Streamed with a cursor rather than materialised. `Order.find()` on a busy
+     * restaurant built the entire result set, and then an entire CSV string, in
+     * memory before sending a single byte.
+     */
+    const cursor = Order.find(scope)
+        .select("createdAt status paymentStatus items totalAmount user")
+        .sort({ createdAt: -1 })
+        .populate("user", "name email")
+        .lean()
+        .cursor();
 
-        // Escape quotes to prevent CSV injection/formatting issues
-        const safeName = `"${customerName.replace(/"/g, '""')}"`;
-        const safeEmail = `"${customerEmail.replace(/"/g, '""')}"`;
+    for await (const order of cursor) {
+        res.write(
+            [
+                csvCell(order._id),
+                csvCell(new Date(order.createdAt).toISOString().slice(0, 10)),
+                csvCell(order.user?.name ?? "Guest"),
+                csvCell(order.user?.email ?? "N/A"),
+                csvCell(order.status),
+                csvCell(order.paymentStatus),
+                csvCell(Array.isArray(order.items) ? order.items.length : 0),
+                csvCell((order.totalAmount ?? 0).toFixed(2)),
+            ].join(",") + "\n",
+        );
+    }
 
-        csv += `${id},${date},${safeName},${safeEmail},${status},${itemsCount},${totalAmount}\n`;
-    });
-
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=sales_report.csv');
-    res.status(200).send(csv);
+    res.end();
 });

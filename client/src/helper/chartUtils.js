@@ -61,8 +61,10 @@ export const generateChartPaths = (data = [], width = 1000, height = 300, paddin
     // Area path closes the shape to the bottom corners
     let areaPath = '';
     if (points.length > 0) {
+        // Only the left edge is needed: `V${height} H${startX} Z` closes the
+        // shape back along the baseline, so the right edge is implied by the
+        // line path's own end point.
         const startX = points.length === 1 ? points[0].cx - 50 : points[0].cx;
-        const endX = points.length === 1 ? points[0].cx + 50 : points[points.length - 1].cx;
         areaPath = `${linePath} V${height} H${startX} Z`;
     }
 

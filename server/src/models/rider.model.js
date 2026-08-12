@@ -5,7 +5,11 @@ const riderSchema = new mongoose.Schema(
         user: {
             type: mongoose.Schema.ObjectId,
             ref: 'User',
-            required: true
+            required: true,
+            // One rider profile per user. Without this, a race between two
+            // concurrent requests that both auto-provisioned a profile left
+            // duplicates, and `findOne` then returned whichever came first.
+            unique: true
         },
         name: {
             type: String,
@@ -14,7 +18,7 @@ const riderSchema = new mongoose.Schema(
         },
         phone: {
             type: String,
-            required: [true, 'Please add a phone number']
+            default: ''
         },
         vehicleDetails: {
             type: String,
@@ -25,10 +29,22 @@ const riderSchema = new mongoose.Schema(
             enum: ['Available', 'Busy', 'Offline'],
             default: 'Offline'
         },
+        /*
+         * Riders are platform-level couriers who pick up whichever order is
+         * ready, so tying a profile to one restaurant never reflected how the
+         * delivery flow actually works.
+         *
+         * Requiring it had a concrete cost: both the registration path and
+         * `RiderService.getProfile` satisfied the constraint by inventing a
+         * "System Default Restaurant" owned by the rider's own user account.
+         * That record defaults to `status: 'Open'`, so a placeholder restaurant
+         * with a fake address appeared in the public restaurant listing that
+         * customers browse. The field is kept as an optional hint for future
+         * restaurant-employed couriers; nothing depends on it being set.
+         */
         restaurant: {
             type: mongoose.Schema.ObjectId,
-            ref: 'Restaurant',
-            required: [true, 'Rider must be associated with a restaurant']
+            ref: 'Restaurant'
         },
         // ── Performance & Earnings Metrics ──────────────────────────────────
         totalEarnings: { type: Number, default: 0 },
