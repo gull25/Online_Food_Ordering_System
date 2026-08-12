@@ -167,10 +167,12 @@ const AdminMyRestaurantPage = () => {
 
   const { execute: handleStripeConnect, isSubmitting: isStripeConnecting } = useApiAction(async () => {
     try {
-      const res = await api.post('/stripe/onboard');
-      window.location.href = res.data.url;
+      // Mock Stripe Connect Flow
+      await api.put(`/restaurants/${restaurant._id}`, { stripeOnboardingComplete: true });
+      setRestaurant({ ...restaurant, stripeOnboardingComplete: true });
+      toast.success('Bank Account Connected!');
     } catch (err) {
-      toast.error('Failed to initiate Stripe onboarding');
+      toast.error('Failed to connect bank account');
     }
   });
 
@@ -230,9 +232,9 @@ const AdminMyRestaurantPage = () => {
         />
 
         {/* Stripe Connect Warning Banner */}
-        <div className={`mt-8 p-6 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 ${restaurant.stripeOnboardingComplete ? 'bg-tertiary/10 text-on-surface border-tertiary/20' : 'bg-error-container text-on-error-container border-error/30'}`}>
+        <div className={`mt-8 p-6 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 ${restaurant.stripeOnboardingComplete ? 'bg-success-container text-on-success-container border-success/30' : 'bg-warning-container text-on-warning-container border-warning/30'}`}>
           <div className="flex gap-4">
-            <Icon name={restaurant.stripeOnboardingComplete ? "check_circle" : "account_balance"} className={`text-3xl ${restaurant.stripeOnboardingComplete ? "text-tertiary" : ""}`} />
+            <Icon name={restaurant.stripeOnboardingComplete ? "check_circle" : "account_balance"} className={`text-3xl ${restaurant.stripeOnboardingComplete ? "text-success" : ""}`} />
             <div>
               <h3 className="font-h3 text-h3 font-bold mb-1">
                 {restaurant.stripeOnboardingComplete ? 'Bank Account Connected' : 'Action Required: Connect Stripe'}
@@ -247,11 +249,11 @@ const AdminMyRestaurantPage = () => {
           <button
             onClick={restaurant.stripeOnboardingComplete ? undefined : handleStripeConnect}
             disabled={isStripeConnecting || restaurant.stripeOnboardingComplete}
-            className={`px-6 py-3 font-button text-button rounded-xl hover:opacity-90 shadow-md font-bold whitespace-nowrap disabled:opacity-70 flex items-center justify-center gap-2 ${restaurant.stripeOnboardingComplete ? 'bg-surface-variant text-on-surface-variant' : 'bg-error text-white'}`}
+            className={`px-6 py-3 font-button text-button rounded-xl hover:opacity-90 shadow-md font-bold whitespace-nowrap disabled:opacity-70 flex items-center justify-center gap-2 ${restaurant.stripeOnboardingComplete ? 'bg-success text-on-success' : 'bg-warning text-on-warning'}`}
           >
             {isStripeConnecting && <Icon name="sync" className="animate-spin" />}
             {restaurant.stripeOnboardingComplete 
-              ? 'Account Connected' 
+              ? 'Connected!' 
               : (isStripeConnecting ? 'Connecting...' : 'Connect Bank Account')}
           </button>
         </div>

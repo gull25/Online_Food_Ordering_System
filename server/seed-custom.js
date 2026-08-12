@@ -338,6 +338,14 @@ const seedDB = async () => {
     await Rider.create({ user: riderUser2._id, name: riderUser2.name, phone: riderUser2.phone, vehicleDetails: 'Suzuki GS 150 - Plate: LHR-5678', status: 'Available', restaurant: spicyAvenue._id, currentLocation: { type: 'Point', coordinates: [74.4099, 31.4697] } });
     console.log('Rider profiles created (2)');
 
+    // 7.5 Sync Ratings
+    console.log('\nSynchronizing ratings with actual reviews...');
+    const allRestaurants = await Restaurant.find({});
+    for (const r of allRestaurants) {
+        await Review.getAverageRating(r._id);
+    }
+    console.log('All restaurant ratings have been synchronized (reset to 0).');
+
     // 8. Summary
     console.log('\n=====================================================');
     console.log('  Seeding completed successfully!');
