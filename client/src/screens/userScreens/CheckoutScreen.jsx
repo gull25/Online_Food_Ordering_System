@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import Icon from '../../components/common/Icon';
 import { useNavigate, Link } from 'react-router-dom';
-import TopNavBar from '../../components/layout/Navbar';
-import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
-import CartItem from '../../components/ui/CartItem/CartItem';
+import TopNavBar from '../../components/globalComponents/Navbar';
+import HomeFooter from '../../components/globalComponents/HomeFooter';
+import CartItem from '../../components/ui/CartItem';
 import CheckoutProgress from '../../components/homeScreen/checkoutComponents/CheckoutProgress';
 import DeliveryForm from '../../components/homeScreen/checkoutComponents/DeliveryForm';
 import OrderSummary from '../../components/homeScreen/checkoutComponents/OrderSummary';

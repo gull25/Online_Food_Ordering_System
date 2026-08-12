@@ -20,17 +20,17 @@ const ProfileScreen = React.lazy(() => import('./screens/userScreens/ProfileScre
 const OrderHistoryScreen = React.lazy(() => import('./screens/userScreens/OrderHistoryScreen'));
 
 const AdminDashboardPage = React.lazy(() => import('./screens/dashboard/admin/dashboard/AdminDashboardPage'));
-const AdminOrdersPage = React.lazy(() => import('./screens/dashboard/admin/orders/AdminOrdersPage'));
+const AdminOrdersPage = React.lazy(() => import('./screens/dashboard/admin/AdminOrdersPage'));
 const AdminMyRestaurantPage = React.lazy(() => import('./screens/dashboard/admin/restaurant/AdminMyRestaurantPage'));
-const AdminCategoriesPage = React.lazy(() => import('./screens/dashboard/admin/categories/AdminCategoriesPage'));
-const AdminOffersPage = React.lazy(() => import('./screens/dashboard/admin/offers/AdminOffersPage'));
-const AdminProductsPage = React.lazy(() => import('./screens/dashboard/admin/products/AdminProductsPage'));
+const AdminCategoriesPage = React.lazy(() => import('./screens/dashboard/admin/AdminCategoriesPage'));
+const AdminOffersPage = React.lazy(() => import('./screens/dashboard/admin/AdminOffersPage'));
+const AdminProductsPage = React.lazy(() => import('./screens/dashboard/admin/AdminProductsPage'));
 const RestaurantOnboardingPage = React.lazy(() => import('./screens/dashboard/admin/restaurant/RestaurantOnboardingPage'));
 const StripeReturnPage = React.lazy(() => import('./screens/dashboard/admin/dashboard/StripeReturnPage'));
 
-const RiderDashboardPage = React.lazy(() => import('./screens/dashboard/rider/dashboard/RiderDashboard'));
-const ActiveDeliveriesPage = React.lazy(() => import('./screens/dashboard/rider/deliveries/ActiveDeliveries'));
-const EarningsPage = React.lazy(() => import('./screens/dashboard/rider/earnings/Earnings'));
+const RiderDashboardPage = React.lazy(() => import('./screens/dashboard/rider/RiderDashboard'));
+const ActiveDeliveriesPage = React.lazy(() => import('./screens/dashboard/rider/ActiveDeliveries'));
+const EarningsPage = React.lazy(() => import('./screens/dashboard/rider/Earnings'));
 
 const NotFoundPage = React.lazy(() => import('./screens/errorPages/NotFoundPage'));
 const UnauthorizedPage = React.lazy(() => import('./screens/errorPages/UnauthorizedPage'));

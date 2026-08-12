@@ -8,8 +8,8 @@ import {
   orderStatusUpdated,
   fetchMyOrdersThunk,
 } from '../../redux/orderSlice';
-import TopNavBar from '../../components/layout/Navbar';
-import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
+import TopNavBar from '../../components/globalComponents/Navbar';
+import HomeFooter from '../../components/globalComponents/HomeFooter';
 import OrderStatusSteps from '../../components/homeScreen/orderComponents/OrderStatusSteps';
 import OrderMap from '../../components/homeScreen/orderComponents/OrderMap';
 import LiveTracker from '../../components/homeScreen/orderComponents/LiveTracker';

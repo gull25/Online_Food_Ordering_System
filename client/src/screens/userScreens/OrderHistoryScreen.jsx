@@ -3,8 +3,8 @@ import Icon from '../../components/common/Icon';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchMyOrdersThunk } from '../../redux/orderSlice';
 import { Link } from 'react-router-dom';
-import TopNavBar from '../../components/layout/Navbar';
-import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
+import TopNavBar from '../../components/globalComponents/Navbar';
+import HomeFooter from '../../components/globalComponents/HomeFooter';
 import { APP_ROUTES } from '../../constants/appRoutes';
 import {
   getOrderStatusBadgeClass,

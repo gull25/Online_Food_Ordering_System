@@ -50,19 +50,36 @@ const IMG_PATH = {
 const sharp = require('sharp');
 
 const uploadToCloudinary = (filePath, folder) => new Promise(async (resolve, reject) => {
-  let buffer = fs.readFileSync(filePath);
-  if (buffer.length > 9.5 * 1024 * 1024) {
-    console.log(`Compressing large file: ${path.basename(filePath)}`);
-    buffer = await sharp(buffer)
-      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 80 })
-      .toBuffer();
+  try {
+    let uploadPath = filePath;
+    const stat = fs.statSync(filePath);
+    let tempPath = null;
+    
+    // Compress if larger than 1MB to avoid Cloudinary timeouts on slow connections
+    if (stat.size > 1 * 1024 * 1024) {
+      console.log(`Compressing file: ${path.basename(filePath)} (${(stat.size / 1024 / 1024).toFixed(2)}MB)`);
+      tempPath = path.join(__dirname, 'temp_' + path.basename(filePath));
+      await sharp(filePath)
+        .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toFile(tempPath);
+      uploadPath = tempPath;
+    }
+
+    const result = await cloudinary.uploader.upload(uploadPath, {
+      folder, 
+      resource_type: 'image', 
+      transformation: [{ width: 800, height: 800, crop: 'pad' }, { fetch_format: 'auto', quality: 'auto' }] 
+    });
+
+    if (tempPath && fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
+    }
+    
+    resolve(result.secure_url);
+  } catch (error) {
+    reject(error);
   }
-  const stream = cloudinary.uploader.upload_stream(
-    { folder, resource_type: 'image', transformation: [{ width: 800, height: 800, crop: 'pad' }, { fetch_format: 'auto', quality: 'auto' }] },
-    (error, result) => { if (error) return reject(error); resolve(result.secure_url); }
-  );
-  stream.end(buffer);
 });
 
 const seedDB = async () => {
@@ -80,44 +97,52 @@ const seedDB = async () => {
 
     // 2. Upload all images to Cloudinary in parallel
     console.log('Uploading 28 images to Cloudinary (may take 1-2 minutes)...');
+    const uploadTasks = [
+      () => uploadToCloudinary(IMG_PATH.owner1, 'users'),
+      () => uploadToCloudinary(IMG_PATH.owner2, 'users'),
+      () => uploadToCloudinary(IMG_PATH.customer1, 'users'),
+      () => uploadToCloudinary(IMG_PATH.customer2, 'users'),
+      () => uploadToCloudinary(IMG_PATH.rider1, 'users'),
+      () => uploadToCloudinary(IMG_PATH.rider2, 'users'),
+      () => uploadToCloudinary(IMG_PATH.fb_cover, 'restaurants'),
+      () => uploadToCloudinary(IMG_PATH.fb_logo, 'restaurants'),
+      () => uploadToCloudinary(IMG_PATH.fb_zinger, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.fb_wrap, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.fb_crispy, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.fb_wings, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.fb_club, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.fb_rings, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.fb_pizza, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.fb_pasta, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.fb_fries, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.fb_lava, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_cover, 'restaurants'),
+      () => uploadToCloudinary(IMG_PATH.sa_logo, 'restaurants'),
+      () => uploadToCloudinary(IMG_PATH.sa_biryani, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_pulao, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_karahi, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_haleem, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_tikka, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_seekh, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_nihari, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_paratha, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_chaat, 'menu'),
+      () => uploadToCloudinary(IMG_PATH.sa_gulab, 'menu'),
+    ];
+    
+    const results = [];
+    for (let i = 0; i < uploadTasks.length; i++) {
+        console.log(`Uploading image ${i + 1} of ${uploadTasks.length}...`);
+        results.push(await uploadTasks[i]());
+    }
+
     const [
       urlOwner1, urlOwner2, urlCustomer1, urlCustomer2, urlRider1, urlRider2,
       urlFbCover, urlFbLogo, urlFbZinger, urlFbWrap, urlFbCrispy, urlFbWings,
       urlFbClub, urlFbRings, urlFbPizza, urlFbPasta, urlFbFries, urlFbLava,
       urlSaCover, urlSaLogo, urlSaBiryani, urlSaPulao, urlSaKarahi, urlSaHaleem,
       urlSaTikka, urlSaSeekh, urlSaNihari, urlSaParatha, urlSaChaat, urlSaGulab,
-    ] = await Promise.all([
-      uploadToCloudinary(IMG_PATH.owner1, 'users'),
-      uploadToCloudinary(IMG_PATH.owner2, 'users'),
-      uploadToCloudinary(IMG_PATH.customer1, 'users'),
-      uploadToCloudinary(IMG_PATH.customer2, 'users'),
-      uploadToCloudinary(IMG_PATH.rider1, 'users'),
-      uploadToCloudinary(IMG_PATH.rider2, 'users'),
-      uploadToCloudinary(IMG_PATH.fb_cover, 'restaurants'),
-      uploadToCloudinary(IMG_PATH.fb_logo, 'restaurants'),
-      uploadToCloudinary(IMG_PATH.fb_zinger, 'menu'),
-      uploadToCloudinary(IMG_PATH.fb_wrap, 'menu'),
-      uploadToCloudinary(IMG_PATH.fb_crispy, 'menu'),
-      uploadToCloudinary(IMG_PATH.fb_wings, 'menu'),
-      uploadToCloudinary(IMG_PATH.fb_club, 'menu'),
-      uploadToCloudinary(IMG_PATH.fb_rings, 'menu'),
-      uploadToCloudinary(IMG_PATH.fb_pizza, 'menu'),
-      uploadToCloudinary(IMG_PATH.fb_pasta, 'menu'),
-      uploadToCloudinary(IMG_PATH.fb_fries, 'menu'),
-      uploadToCloudinary(IMG_PATH.fb_lava, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_cover, 'restaurants'),
-      uploadToCloudinary(IMG_PATH.sa_logo, 'restaurants'),
-      uploadToCloudinary(IMG_PATH.sa_biryani, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_pulao, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_karahi, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_haleem, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_tikka, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_seekh, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_nihari, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_paratha, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_chaat, 'menu'),
-      uploadToCloudinary(IMG_PATH.sa_gulab, 'menu'),
-    ]);
+    ] = results;
     console.log('All 28 images uploaded to Cloudinary');
 
     // 3. Create Users
@@ -326,8 +351,8 @@ const seedDB = async () => {
     console.log('  rider2@mail.com           =>  Rider - Spicy Ave   (Hassan Raza)');
     console.log('=====================================================\n');
     process.exit(0);
-  } catch (err) {
-    console.error('Seeding failed:', err.message);
+  } catch (error) {
+    console.error('Seeding failed:', error);
     process.exit(1);
   }
 };

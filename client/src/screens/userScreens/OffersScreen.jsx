@@ -4,8 +4,8 @@ import Icon from '../../components/common/Icon';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useDebounce } from '../../helper/useDebounce';
-import TopNavBar from '../../components/layout/Navbar';
-import HomeFooter from '../../components/homeScreen/homeScreenComponents/HomeFooter';
+import TopNavBar from '../../components/globalComponents/Navbar';
+import HomeFooter from '../../components/globalComponents/HomeFooter';
 import NewsletterSignup from '../../components/homeScreen/offersComponents/NewsletterSignup';
 import FlashSaleBanner from '../../components/homeScreen/offersComponents/FlashSaleBanner';
 import OffersFilter from '../../components/homeScreen/offersComponents/OffersFilter';
@@ -13,6 +13,7 @@ import NewUserDiscounts from '../../components/homeScreen/offersComponents/NewUs
 import api from '../../api/axios';
 import { OfferGridSkeleton, Skeleton } from '../../components/common/Skeleton';
 import { Reveal } from '../../components/common/Reveal';
+import FastBitesLogo from '../../assets/images/FastBitesLogo.png';
 
 /**
  * Resolves a usable image for an offer card.
@@ -187,9 +188,19 @@ const OffersPage = () => {
             <Link to={`/restaurant/${restaurant._id}`} className="flex items-center gap-3 group">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-outline-variant/30 bg-surface-container flex-shrink-0 group-hover:border-primary transition-colors">
                 <img
-                  src={restaurant.images?.logo || restaurant.image || 'https://via.placeholder.com/100'}
+                  src={
+                    (restaurant.images?.logo && restaurant.images.logo !== 'no-photo.jpg')
+                      ? restaurant.images.logo
+                      : (restaurant.image && restaurant.image !== 'no-photo.jpg')
+                        ? restaurant.image
+                        : FastBitesLogo
+                  }
                   alt={restaurant.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = FastBitesLogo;
+                  }}
                 />
               </div>
               <div>

@@ -1,6 +1,9 @@
 import React from 'react';
 
 import Icon from '../../common/Icon';
+import FastBitesLogo from '../../../assets/images/FastBitesLogo.png';
+import RatingStars from '../../ui/RatingStars';
+
 const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, restaurant, loading }) => {
   return (
     <header className="relative w-full min-h-[200px] bg-background">
@@ -20,7 +23,17 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, r
               <img
                 className="w-full h-full object-contain"
                 alt={`${restaurant?.name || 'Restaurant'} Logo`}
-                src={(!restaurant?.images?.logo || restaurant.images.logo === 'no-photo.jpg') ? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100" : restaurant.images.logo}
+                src={
+                  (restaurant?.images?.logo && restaurant.images.logo !== 'no-photo.jpg')
+                    ? restaurant.images.logo
+                    : (restaurant?.image && restaurant.image !== 'no-photo.jpg')
+                      ? restaurant.image
+                      : FastBitesLogo
+                }
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = FastBitesLogo;
+                }}
               />
             )}
           </div>
@@ -34,9 +47,19 @@ const RestaurantHeader = ({ handleShare, shareText, isFavorite, setIsFavorite, r
               </h1>
             )}
             <div className="flex items-center gap-3 flex-wrap text-white/90 font-body text-body opacity-90">
-              <span className="flex items-center gap-1">
-                <Icon name="star" filled className="text-lg text-primary-fixed" />{' '}
-                {restaurant?.rating || 'New'} {restaurant?.numReviews > 0 ? `(${restaurant.numReviews} rating${restaurant.numReviews > 1 ? 's' : ''})` : ''}
+              <span className="flex items-center gap-2">
+                {restaurant?.rating ? (
+                  <>
+                    <RatingStars rating={restaurant.rating} colorClass="text-primary-fixed" />
+                    <span className="font-bold">{restaurant.rating.toFixed(1)}</span>
+                    {restaurant.numReviews > 0 && `(${restaurant.numReviews} rating${restaurant.numReviews > 1 ? 's' : ''})`}
+                  </>
+                ) : (
+                  <>
+                    <Icon name="star" filled className="text-lg text-primary-fixed" />
+                    New
+                  </>
+                )}
               </span>
               <span className="w-1 h-1 rounded-full bg-white/50"></span>
               <span>{restaurant?.priceRange || '$$'}</span>
