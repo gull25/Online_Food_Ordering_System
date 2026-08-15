@@ -56,26 +56,8 @@ import {
   MdFilterList, MdOutlineFilterList,
 } from 'react-icons/md';
 
-/**
- * Icon — the app's single icon surface, backed by react-icons.
- *
- * This replaces the Material Symbols webfont. That font drew icons from
- * ligatures, so the markup literally read
- * `<span class="material-symbols-outlined">receipt_long</span>`. Until the
- * 1.1MB font finished downloading, the browser painted the ligature name as
- * plain text — which is why the sidebar and toolbars spelled out "dashboard",
- * "receipt_long" and "expand_less" on every cold load. SVG components have no
- * such failure mode: there is no font to fetch, and nothing renders until the
- * icon itself renders.
- *
- * Names stay as the original Material Symbol tokens so call sites read the same
- * and data tables (sidebar links, footer socials) keep working untouched. Each
- * maps to an outline and a filled variant; outline is the default because that
- * is what the design used.
- *
- * Sizing follows font-size — react-icons render at 1em — so existing utilities
- * such as text-[18px] and text-4xl keep controlling icon size exactly as before.
- */
+/*
+  Icon — the app's single icon surface, backed by react-icons. */
 const ICONS = {
   'account_balance': [MdOutlineAccountBalance, MdAccountBalance],
   'account_balance_wallet': [MdOutlineAccountBalanceWallet, MdAccountBalanceWallet],

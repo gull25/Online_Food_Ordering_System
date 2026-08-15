@@ -270,14 +270,9 @@ const ActiveDeliveries = () => {
                                         </button>
                                         
                                         {activeOrder.status === 'RIDER_ASSIGNED' && (
-                                            <div className="flex gap-2">
-                                                <button disabled={isAccepting} onClick={handleAcceptDelivery} className="flex-1 bg-primary text-on-primary font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
-                                                    {isAccepting && <Icon name="sync" className="animate-spin text-sm" />} ACCEPT
-                                                </button>
-                                                <button disabled={isPickingUp} onClick={handleConfirmPickup} className="flex-1 bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
-                                                    {isPickingUp && <Icon name="sync" className="animate-spin text-sm" />} CONFIRM PICKUP
-                                                </button>
-                                            </div>
+                                            <button disabled={isPickingUp} onClick={handleConfirmPickup} className="w-full bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
+                                                {isPickingUp && <Icon name="sync" className="animate-spin text-sm" />} CONFIRM PICKUP
+                                            </button>
                                         )}
                                         {activeOrder.status === 'PICKED_UP' && (
                                             <button disabled={isStarting} onClick={handleStartDelivery} className="w-full bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">

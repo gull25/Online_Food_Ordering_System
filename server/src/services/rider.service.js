@@ -24,27 +24,12 @@ const startOfWeek = () => {
 
 /**
  * What a delivery pays the courier.
- *
- * `confirmDelivery` credited `order.riderEarning`, while the dashboard and the
- * earnings screen each recomputed `totalAmount * 0.10` independently — so the
- * figure a rider saw on their dashboard did not match the balance they were
- * actually paid whenever an order predated the `riderEarning` field or the rate
- * changed.
  */
 const earningFor = (order) => order.riderEarning ?? pricing.riderEarning(order.totalAmount ?? 0);
 
 class RiderService {
     /**
      * The signed-in courier's profile.
-     *
-     * This used to lazily create a profile on read — and, because the schema
-     * required a restaurant, it also created a "System Default Restaurant" owned
-     * by the rider's own user account when none existed. That placeholder
-     * defaults to `status: 'Open'`, so it appeared in the customer-facing
-     * restaurant list with a fake Berlin address.
-     *
-     * Rider profiles are created at registration now. This still self-heals for
-     * accounts created before that, but without inventing a restaurant.
      */
     async getProfile(userId) {
         let rider = await riderRepository.findByUserId(userId);
@@ -104,12 +89,6 @@ class RiderService {
 
     /**
      * Claims an unassigned delivery.
-     *
-     * The old version required `order.rider` to *already* be this rider, so the
-     * "available deliveries" list it was paired with could never be acted on —
-     * every claim answered "You are not assigned to this order". The conditional
-     * update below both fixes that and makes the claim atomic: two riders tapping
-     * the same order at once produce one winner, not a double assignment.
      */
     async acceptDelivery(userId, orderId) {
         const rider = await this.getProfile(userId);

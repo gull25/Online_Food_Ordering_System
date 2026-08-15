@@ -11,6 +11,7 @@ const Rider = require('./src/models/rider.model');
 const Order = require('./src/models/order.model');
 const Offer = require('./src/models/offer.model');
 const Review = require('./src/models/review.model');
+const ItemReview = require('./src/models/itemReview.model');
 
 const COLLECTION = 'C:\\Users\\gulr8\\Downloads\\Collection';
 

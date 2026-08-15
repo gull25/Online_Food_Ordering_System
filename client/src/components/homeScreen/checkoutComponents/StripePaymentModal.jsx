@@ -1,32 +1,38 @@
-import React, { useState } from 'react';
-import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import Icon from '../../common/Icon';
-import Modal from '../../Modals/Modal';
-import { useApiAction } from '../../../hooks/useApiAction';
+import React, { useState } from "react";
+import {
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import Icon from "../../common/Icon";
+import Modal from "../../Modals/Modal";
+import { useApiAction } from "../../../hooks/useApiAction";
 
 const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
   const stripe = useStripe();
   const elements = useElements();
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const { execute: handleSubmit, isSubmitting: isProcessing } = useApiAction(async (event) => {
-    event.preventDefault();
-    if (!stripe || !elements) return;
+  const { execute: handleSubmit, isSubmitting: isProcessing } = useApiAction(
+    async (event) => {
+      event.preventDefault();
+      if (!stripe || !elements) return;
 
-    setError('');
+      setError("");
 
-    const { error: submitError } = await stripe.confirmPayment({
-      elements,
-      // Success is handled locally rather than via a redirect round trip.
-      redirect: 'if_required',
-    });
+      const { error: submitError } = await stripe.confirmPayment({
+        elements,
+        // Success is handled locally rather than via a redirect round trip.
+        redirect: "if_required",
+      });
 
-    if (submitError) {
-      setError(submitError.message);
-    } else {
-      onSuccess();
-    }
-  });
+      if (submitError) {
+        setError(submitError.message);
+      } else {
+        onSuccess();
+      }
+    },
+  );
 
   return (
     <Modal
@@ -45,7 +51,9 @@ const StripePaymentModal = ({ amount, onSuccess, onCancel }) => {
           <span className="font-label text-label uppercase tracking-wide text-on-surface">
             Total to pay
           </span>
-          <span className="font-h3 text-h3 font-bold text-primary">${amount.toFixed(2)}</span>
+          <span className="font-h3 text-h3 font-bold text-primary">
+            ${amount.toFixed(2)}
+          </span>
         </div>
 
         {error && (

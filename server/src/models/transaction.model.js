@@ -8,7 +8,7 @@ const transactionSchema = new mongoose.Schema({
     },
     gateway: {
         type: String,
-        enum: ['stripe', 'easypaisa', 'jazzcash', 'cod', 'meezan', 'ubl'],
+        enum: ['stripe', 'cod', 'meezan', 'ubl'],
         required: true
     },
     transactionId: {

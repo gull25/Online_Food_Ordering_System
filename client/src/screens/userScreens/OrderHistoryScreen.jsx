@@ -3,8 +3,7 @@ import Icon from '../../components/common/Icon';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchMyOrdersThunk } from '../../redux/orderSlice';
 import { Link } from 'react-router-dom';
-import TopNavBar from '../../components/globalComponents/Navbar';
-import HomeFooter from '../../components/globalComponents/HomeFooter';
+
 import { APP_ROUTES } from '../../constants/appRoutes';
 import {
   getOrderStatusBadgeClass,
@@ -30,7 +29,7 @@ const OrderHistoryScreen = () => {
 
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col relative">
-      <TopNavBar />
+
       <main id="main-content" tabIndex={-1} className="grow w-full max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg">
         <div className="flex items-end justify-between gap-4 mb-stack_lg">
           <h1 className="font-h2-mobile md:font-h2 text-h2-mobile md:text-h2 text-on-surface">
@@ -150,8 +149,7 @@ const OrderHistoryScreen = () => {
           </div>
         )}
       </main>
-      <HomeFooter />
-    </div>
+          </div>
   );
 };
 

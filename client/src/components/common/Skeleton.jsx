@@ -2,15 +2,9 @@ import React from 'react';
 
 /**
  * Skeleton primitives.
- *
- * Every skeleton here is built from theme tokens (`surface-container-*`) rather
- * than hardcoded greys, so the shimmer reads correctly in both light and dark
- * mode. The shape of each skeleton deliberately mirrors the real component it
- * stands in for — same heights, same radii, same grid — so content swapping in
- * causes no layout shift.
  */
 
-// ── Base block ───────────────────────────────────────────────────────────────
+// ── Base block
 export const Skeleton = ({ className = '', style, rounded = 'rounded-lg', ...rest }) => (
   <div
     aria-hidden="true"
@@ -42,7 +36,7 @@ export const SkeletonText = ({ lines = 3, className = '', lineClassName = 'h-3.5
   </div>
 );
 
-// ── Wrapper that fades a whole skeleton group in ──────────────────────────────
+// ── Wrapper that fades a whole skeleton group in 
 const Group = ({ className = '', children }) => (
   <div
     role="status"
@@ -55,7 +49,7 @@ const Group = ({ className = '', children }) => (
   </div>
 );
 
-// ── Restaurant card ──────────────────────────────────────────────────────────
+// ── Restaurant card 
 export const RestaurantCardSkeleton = () => (
   <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
     <Skeleton rounded="rounded-none" className="h-52 w-full" />
@@ -81,7 +75,7 @@ export const RestaurantGridSkeleton = ({ count = 3 }) => (
   </Group>
 );
 
-// ── Trending / horizontal carousel card ──────────────────────────────────────
+// ── Trending / horizontal carousel card 
 export const TrendingCardSkeleton = () => (
   <div className="min-w-[280px] bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden flex flex-col">
     <Skeleton rounded="rounded-none" className="h-48 w-full" />
@@ -93,7 +87,7 @@ export const TrendingCardSkeleton = () => (
   </div>
 );
 
-// ── Menu item (FoodCard) ─────────────────────────────────────────────────────
+// ── Menu item (FoodCard) 
 export const FoodCardSkeleton = () => (
   <div className="bg-surface-container-lowest rounded-16 border border-surface-variant overflow-hidden flex flex-col sm:flex-row">
     <Skeleton
@@ -132,7 +126,7 @@ export const MenuSectionSkeleton = ({ sections = 2, itemsPerSection = 4 }) => (
   </Group>
 );
 
-// ── Offer card ───────────────────────────────────────────────────────────────
+// ── Offer card 
 export const OfferCardSkeleton = () => (
   <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-16 overflow-hidden flex flex-col">
     <Skeleton rounded="rounded-none" className="h-48 w-full" />
@@ -159,7 +153,7 @@ export const OfferGridSkeleton = ({ count = 4 }) => (
   </Group>
 );
 
-// ── Stat card ────────────────────────────────────────────────────────────────
+// ── Stat card 
 export const StatCardSkeleton = () => (
   <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20">
     <div className="flex justify-between items-start mb-4">
@@ -179,14 +173,7 @@ export const StatGridSkeleton = ({ count = 4 }) => (
   </Group>
 );
 
-// ── Table ────────────────────────────────────────────────────────────────────
-/**
- * Renders skeleton <tr> rows for an existing table body, so the real header and
- * column widths stay in place while data loads.
- *
- * `columns` accepts either a count or an array of width classes for finer
- * control over how each cell reads.
- */
+
 export const TableRowsSkeleton = ({ rows = 6, columns = 5, firstColAvatar = true }) => {
   const widths = Array.isArray(columns)
     ? columns
@@ -226,7 +213,7 @@ export const TableSkeleton = ({ rows = 6, columns = 5, className = '' }) => (
   </Group>
 );
 
-// ── Order history row ────────────────────────────────────────────────────────
+
 export const OrderCardSkeleton = () => (
   <div className="bg-surface-container-lowest p-6 rounded-xl border border-surface-variant flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
     <div className="flex-grow w-full">
@@ -252,7 +239,6 @@ export const OrderListSkeleton = ({ count = 4 }) => (
   </Group>
 );
 
-// ── Generic card grid (categories, products as cards, etc.) ──────────────────
 export const CardGridSkeleton = ({ count = 6, className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter' }) => (
   <Group className={className}>
     {Array.from({ length: count }).map((_, i) => (
@@ -270,7 +256,6 @@ export const CardGridSkeleton = ({ count = 6, className = 'grid grid-cols-1 md:g
   </Group>
 );
 
-// ── Chart panel ──────────────────────────────────────────────────────────────
 export const ChartSkeleton = ({ height = 360 }) => (
   <Group className="bg-surface-container-lowest p-gutter rounded-2xl border border-outline-variant/20">
     <div className="flex items-center justify-between mb-stack_lg gap-4">
@@ -289,12 +274,6 @@ export const ChartSkeleton = ({ height = 360 }) => (
   </Group>
 );
 
-// ── Rider dashboard shell ────────────────────────────────────────────────────
-/**
- * The rider screens previously showed a lone spinning icon on an empty
- * viewport, which looked nothing like the skeletons used everywhere else and
- * gave no hint of the layout about to appear.
- */
 export const RiderPageSkeleton = () => (
   <Group className="px-4 pt-4 pb-24 lg:pb-8">
     <div className="max-w-7xl mx-auto space-y-6">

@@ -130,10 +130,9 @@ const Navbar = () => {
       : 'text-on-surface hover:text-primary transition-colors font-body text-body flex items-center h-full mt-[2px]';
 
   const mobileLinkClass = (path) =>
-    `flex items-center gap-3 px-4 py-3.5 rounded-xl font-body text-body transition-colors ${
-      isActivePath(path)
-        ? 'bg-primary/10 text-primary font-bold'
-        : 'text-on-surface hover:bg-surface-variant/50'
+    `flex items-center gap-3 px-4 py-3.5 rounded-xl font-body text-body transition-colors ${isActivePath(path)
+      ? 'bg-primary/10 text-primary font-bold'
+      : 'text-on-surface hover:bg-surface-variant/50'
     }`;
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -168,15 +167,13 @@ const Navbar = () => {
                 onClick={() => setIsResDropdownOpen((open) => !open)}
                 aria-expanded={isResDropdownOpen}
                 aria-haspopup="true"
-                className={`text-on-surface hover:text-primary transition-colors font-body text-body flex items-center h-full ${
-                  location.pathname.includes('/restaurant')
+                className={`text-on-surface hover:text-primary transition-colors font-body text-body flex items-center h-full ${location.pathname.includes('/restaurant')
                     ? 'text-primary border-b-2 border-primary font-bold pb-1 mt-[2px]'
                     : 'mt-[2px]'
-                }`}
+                  }`}
               >
                 Restaurants
-                <Icon name="expand_more" className={`text-[18px] ml-1 transition-transform duration-200 ${
-                    isResDropdownOpen ? 'rotate-180' : ''
+                <Icon name="expand_more" className={`text-[18px] ml-1 transition-transform duration-200 ${isResDropdownOpen ? 'rotate-180' : ''
                   }`} />
               </button>
 
@@ -298,6 +295,15 @@ const Navbar = () => {
                       >
                         <Icon name="dashboard" className="text-[20px]" />
                         Admin Dashboard
+                      </button>
+                    )}
+                    {user?.role === USER_ROLES.RIDER && (
+                      <button
+                        onClick={() => { setIsDropdownOpen(false); navigate(APP_ROUTES.RIDER_DASHBOARD); }}
+                        className="text-left px-4 py-2.5 hover:bg-surface-variant font-body text-body text-on-surface transition-colors flex items-center gap-3"
+                      >
+                        <Icon name="two_wheeler" className="text-[20px]" />
+                        Rider Dashboard
                       </button>
                     )}
                     <div className="h-px bg-outline-variant/30 my-1 mx-3" />
@@ -425,6 +431,12 @@ const Navbar = () => {
                       <Link to={APP_ROUTES.ADMIN_DASHBOARD} className={mobileLinkClass(APP_ROUTES.ADMIN_DASHBOARD)}>
                         <Icon name="dashboard" className="text-[20px]" />
                         Admin Dashboard
+                      </Link>
+                    )}
+                    {user?.role === USER_ROLES.RIDER && (
+                      <Link to={APP_ROUTES.RIDER_DASHBOARD} className={mobileLinkClass(APP_ROUTES.RIDER_DASHBOARD)}>
+                        <Icon name="two_wheeler" className="text-[20px]" />
+                        Rider Dashboard
                       </Link>
                     )}
                     <button

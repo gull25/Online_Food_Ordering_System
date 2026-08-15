@@ -43,11 +43,6 @@ const MenuSection = ({ MENU_CATEGORIES, itemsByCategory, searchQuery, cart, addT
               </h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-stack_md">
                 {categoryItems.map((item) => {
-                  // For a base item in the cart, count total quantity across all variations
-                  // This allows the + / - on the food card to still function if there are no variations,
-                  // or just show "total in cart" if there are variations.
-                  // Actually, for variation items, the FoodCard should probably just show an Add button.
-                  // But for now, we'll pass cartQty = 0 so it always shows "+ Add" if it has variations.
                   const hasVariations = (item.sizes && item.sizes.length > 0) || (item.addOns && item.addOns.length > 0);
                   const cartQty = hasVariations ? 0 : (cart[item._id || item.id]?.quantity || 0);
                   

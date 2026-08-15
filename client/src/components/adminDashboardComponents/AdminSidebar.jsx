@@ -14,10 +14,6 @@ const AdminSidebar = ({ activeTab, isOpen = false, onClose }) => {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
-
-  // Close the popup on outside click or Escape. Escape was missing, so the menu
-  // could only be dismissed with the mouse — inconsistent with the customer
-  // navbar, which honours it.
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
@@ -49,25 +45,8 @@ const AdminSidebar = ({ activeTab, isOpen = false, onClose }) => {
     navigate(APP_ROUTES.HOME);
   };
 
-  /**
-   * Nav item styling.
-   *
-   * The active state used to add `border-r-4` — a border that sits in the
-   * layout flow, so activating a tab shrank its content box by 4px and pushed
-   * the label sideways. `transition-all` then animated that shift over 200ms,
-   * which is what read as the sidebar "glitching" on every navigation.
-   *
-   * The indicator is now absolutely positioned (out of flow) and only colours
-   * transition, so nothing moves. Padding is `px-4` inside a `px-2` nav, which
-   * lines the labels up with the `px-6` header instead of sitting 8px right of
-   * it.
-   */
+  /* Nav item styling.*/
   const getTabClass = (tabName) => {
-    // `text-label` (12px, 0.05em tracking) is overline styling meant for badges
-    // and eyebrow text. Applied to primary navigation it read far smaller than
-    // the section heading above it, and the icons — which size from font-size —
-    // shrank with it. `text-body` puts the labels on the app's 14→16px reading
-    // scale and drops the wide tracking.
     const base =
       'relative flex items-center gap-3.5 px-4 py-3.5 rounded-xl w-full text-left font-body text-body cursor-pointer transition-colors duration-200 active:scale-100';
 
@@ -78,8 +57,6 @@ const AdminSidebar = ({ activeTab, isOpen = false, onClose }) => {
 
   return (
     <aside
-      // Off-canvas drawer below lg, static rail from lg up. `transform` is the
-      // only animated property so the slide never reflows the page behind it.
       className={`fixed inset-y-0 left-0 z-50 h-screen w-64 bg-surface-container-low border-r border-outline-variant/30 flex flex-col shrink-0 transition-transform duration-300 ease-out lg:static lg:translate-x-0 ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
@@ -111,16 +88,12 @@ const AdminSidebar = ({ activeTab, isOpen = false, onClose }) => {
               aria-current={isActive ? 'page' : undefined}
               className={getTabClass(link.id)}
             >
-              {/* Out-of-flow accent bar — matches the rider sidebar's left
-                  indicator so both dashboards read the same way. */}
               {isActive && (
                 <span
                   aria-hidden="true"
                   className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-r-full bg-primary"
                 />
               )}
-              {/* Sized explicitly so the icon stays proportionate to the label
-                  rather than inheriting whatever the text scale happens to be. */}
               <Icon name={link.icon} filled={isActive} className="text-[22px]" />
               <span>{link.label}</span>
             </button>
@@ -131,9 +104,6 @@ const AdminSidebar = ({ activeTab, isOpen = false, onClose }) => {
         <div className="p-6">
           <button
             onClick={() => navigate(APP_ROUTES.ADMIN_ONBOARDING)}
-            // `hover:scale-[1.02]` grew a full-width button inside a fixed
-            // 256px column, so it pushed past its container on hover. Colour
-            // feedback only keeps it inside the rail.
             className="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-button text-button hover:brightness-105 transition-[filter,box-shadow] flex items-center justify-center gap-2 shadow-sm"
           >
             <Icon name="add_circle" />
@@ -147,6 +117,16 @@ const AdminSidebar = ({ activeTab, isOpen = false, onClose }) => {
         {/* Profile popup — opens above the avatar */}
         {isProfileOpen && (
           <div className="absolute bottom-full left-4 right-4 mb-2 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg flex flex-col py-2 animate-in fade-in zoom-in-95 duration-150">
+            <button 
+              onClick={() => {
+                setIsProfileOpen(false);
+                navigate(APP_ROUTES.HOME);
+              }}
+              className="text-left px-4 py-3 hover:bg-surface-variant font-body text-body font-medium text-on-surface transition-colors cursor-pointer flex items-center gap-3"
+            >
+              <Icon name="storefront" className="text-[20px]" />
+              Customer Dashboard
+            </button>
             <button 
               onClick={() => {
                 setIsProfileOpen(false);
@@ -167,10 +147,6 @@ const AdminSidebar = ({ activeTab, isOpen = false, onClose }) => {
             </button>
           </div>
         )}
-
-        {/* Clickable profile row.
-            Was a bare <div onClick>, so it couldn't be reached or activated by
-            keyboard and announced nothing to assistive tech. */}
         <button
           type="button"
           onClick={() => setIsProfileOpen((prev) => !prev)}

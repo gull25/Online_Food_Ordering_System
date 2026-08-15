@@ -2,15 +2,6 @@ import React, { useEffect, useState } from 'react';
 
 /**
  * RouteProgress — the Suspense fallback for lazily-loaded routes.
- *
- * This replaces the old full-page grey card grid. That skeleton claimed the
- * entire viewport for a chunk fetch that usually resolves in well under a
- * frame, so every navigation flashed a wireframe of a page that was never
- * about to appear. A 3px top bar communicates the same thing without
- * repainting the screen or shifting layout.
- *
- * It also waits ~180ms before showing anything: on a warm cache the chunk is
- * already there, and a bar that flickers on and off is worse than no bar.
  */
 const RouteProgress = () => {
   const [visible, setVisible] = useState(false);

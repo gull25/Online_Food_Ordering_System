@@ -1,8 +1,3 @@
-/*
- * Runs once, the first time the mongo container starts with an empty data volume.
- * Creates a least-privilege application user scoped to the app database, so the
- * API never has to connect with the root account.
- */
 const dbName = process.env.MONGO_INITDB_DATABASE || "foodora";
 const user = process.env.MONGO_APP_USER;
 const pwd = process.env.MONGO_APP_PASSWORD;

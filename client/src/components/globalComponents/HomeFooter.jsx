@@ -39,20 +39,6 @@ const SOCIAL_LINKS = [
   { label: 'Share Foodora', icon: 'share' },
 ];
 
-/**
- * Site footer.
- *
- * Deliberately dark in both themes: `--color-inverse-surface` is not remapped
- * by the dark palette, so this stays a dark slate panel whether the app is in
- * light or dark mode, and `inverse-on-surface` is its matching light ink.
- *
- * The previous version painted white text over a background that swapped to
- * the lowest surface container under a dark-mode variant. Because Tailwind's
- * dark variant keys off the OS rather than this app's theme class, that
- * background could resolve to white while the text stayed white — an entirely
- * invisible footer. Using a token pair that is correct in both themes removes
- * the possibility rather than patching the symptom.
- */
 const HomeFooter = () => {
   const linkClass =
     'text-inverse-on-surface/75 hover:text-primary-fixed hover:underline transition-colors text-small w-fit';

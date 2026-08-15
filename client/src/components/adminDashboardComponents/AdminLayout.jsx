@@ -5,12 +5,6 @@ import AdminSidebar from './AdminSidebar';
 
 /**
  * AdminLayout — wrapper for all /admin/* pages.
- *
- * The sidebar is a static rail from `lg` up and an off-canvas drawer below it.
- * Previously it was a hard 256px column at every width, so on a phone it took
- * two thirds of the viewport and squeezed every admin page into a ~119px
- * gutter — tables, charts and headers all crushed against the edge with no way
- * to dismiss the rail.
  */
 const AdminLayout = () => {
   const location = useLocation();
@@ -25,13 +19,10 @@ const AdminLayout = () => {
   else if (path.includes('products')) activeTab = 'products';
   else if (path.includes('analytics')) activeTab = 'analytics';
 
-  // Close the drawer whenever the route changes, so it never covers the page
-  // the user just navigated to.
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [path]);
 
-  // Escape closes the drawer, matching the other overlays in the app.
   useEffect(() => {
     if (!isSidebarOpen) return;
     const handleKeyDown = (e) => {

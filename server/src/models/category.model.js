@@ -36,7 +36,6 @@ const categorySchema = new mongoose.Schema(
     }
 );
 
-// Prevent duplicate category names within the same restaurant
 categorySchema.index({ name: 1, restaurantId: 1 }, { unique: true });
 
 module.exports = mongoose.model('Category', categorySchema);

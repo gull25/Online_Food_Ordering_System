@@ -1,266 +1,63 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import Icon from '../../components/common/Icon';
 import { useNavigate, Link } from 'react-router-dom';
-import TopNavBar from '../../components/globalComponents/Navbar';
-import HomeFooter from '../../components/globalComponents/HomeFooter';
+
 import CartItem from '../../components/ui/CartItem';
 import CheckoutProgress from '../../components/homeScreen/checkoutComponents/CheckoutProgress';
 import DeliveryForm from '../../components/homeScreen/checkoutComponents/DeliveryForm';
 import OrderSummary from '../../components/homeScreen/checkoutComponents/OrderSummary';
 import PaymentMethods from '../../components/homeScreen/checkoutComponents/PaymentMethods';
-
-import { useSelector, useDispatch } from 'react-redux';
-import { clearCart, removeFromCart, addToCart, removeItemCompletely } from '../../redux/cartSlice';
-import { createOrderThunk } from '../../redux/orderSlice';
 import StripePaymentModal from '../../components/homeScreen/checkoutComponents/StripePaymentModal';
+import EmptyCartState from '../../components/homeScreen/checkoutComponents/EmptyCartState';
+import PaymentSuccessModal from '../../components/homeScreen/checkoutComponents/PaymentSuccessModal';
+
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
-import api from '../../api/axios';
-import { useApiAction } from '../../hooks/useApiAction';
-import { calculateTotals, unitPrice } from '../../helper/pricing';
+import { useCheckout } from '../../hooks/useCheckout';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // Initialize Stripe outside component to avoid recreating the object on every render
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const CheckoutPage = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-
-  // Read cart from Redux
-  const cartItemsObj = useSelector((state) => state.cart.items);
-  const cartRestaurantId = useSelector((state) => state.cart.restaurantId);
-  // Convert { itemId: { item, quantity } } to an array for rendering
-  const cartItems = useMemo(() => {
-    return Object.values(cartItemsObj).map(cartItem => ({
-      ...cartItem.item,
-      quantity: cartItem.quantity,
-      cartItemId: cartItem.cartItemId
-    }));
-  }, [cartItemsObj]);
-
-  // State Management
-  const [promoInput, setPromoInput] = useState('');
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [promoMessage, setPromoMessage] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('stripe');
-  const [deliveryPreference, setDeliveryPreference] = useState('meet');
-  const [formError, setFormError] = useState('');
-  const [currentStep, setCurrentStep] = useState(1);
-  const [idempotencyKey] = useState(() => self.crypto.randomUUID ? self.crypto.randomUUID() : Date.now().toString());
-
-  // Payment Modal State
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentSuccessModalOpen, setPaymentSuccessModalOpen] = useState(false);
-  const [clientSecret, setClientSecret] = useState(null);
-  const [pendingOrderId, setPendingOrderId] = useState(null);
-  const [restaurantData, setRestaurantData] = useState(null);
-
-  // Keyed on the restaurant id rather than the cart array: the previous version
-  // re-fetched the restaurant every time a quantity changed, purely to read a
-  // delivery fee that cannot change between those renders.
-  React.useEffect(() => {
-    if (!cartRestaurantId) {
-      setRestaurantData(null);
-      return;
-    }
-
-    let cancelled = false;
-    const fetchRestaurant = async () => {
-      try {
-        const { default: api } = await import('../../api/axios');
-        const res = await api.get(`/restaurants/${cartRestaurantId}`);
-        if (!cancelled) setRestaurantData(res.data.data);
-      } catch (err) {
-        console.error('Failed to fetch restaurant for checkout', err);
-      }
-    };
-    fetchRestaurant();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cartRestaurantId]);
-
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    city: '',
-    streetAddress: '',
-    instructions: '',
-  });
-
-  // Event Handlers
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (formError) setFormError('');
-    // Only step backwards if the user has moved past the details step —
-    // this previously reset the progress indicator to 1 on every keystroke,
-    // so the indicator jumped backwards while typing an address.
-    setCurrentStep((step) => (step > 1 ? 1 : step));
-  };
-
-  const handleDeliveryPreferenceChange = (pref) => {
-    setDeliveryPreference(pref);
-  };
-
-  const handlePaymentMethodChange = (method) => {
-    setPaymentMethod(method);
-    setCurrentStep(2);
-  };
-
-  const updateQuantity = (cartItemId, delta) => {
-    const cartItem = cartItems.find(i => i.cartItemId === cartItemId);
-    if (!cartItem) return;
-
-    if (delta > 0) {
-      dispatch(addToCart(cartItem));
-    } else {
-      dispatch(removeFromCart(cartItemId));
-    }
-  };
-
-  /**
-   * Removes a line in one action.
-   *
-   * This used to dispatch `removeFromCart` once per unit in a loop, so deleting
-   * a quantity-8 line fired eight store updates and eight re-renders of the
-   * whole checkout.
-   */
-  const deleteItem = (cartItemId) => {
-    dispatch(removeItemCompletely(cartItemId));
-  };
-
-  const handleApplyPromo = async () => {
-    const code = promoInput.trim().toUpperCase();
-    if (!code) return;
-
-    try {
-      if (!cartRestaurantId) {
-        setPromoMessage('Please add items to your cart first.');
-        return;
-      }
-      setPromoMessage('Validating...');
-      const { default: api } = await import('../../api/axios');
-      const response = await api.get(`/public/offers/validate/${code}?restaurantId=${cartRestaurantId}`);
-
-      setDiscountPercent(response.data.data.discountPercentage);
-      setPromoMessage(`Promo code ${code} applied! ${response.data.data.discountPercentage}% discount on subtotal.`);
-    } catch (error) {
-      setDiscountPercent(0);
-      setPromoMessage(error.response?.data?.message || 'Invalid or expired Promo Code.');
-    }
-  };
-
-  const { execute: handleSubmitOrder, isSubmitting } = useApiAction(async (e) => {
-    e.preventDefault();
-
-    // Basic address form validation
-    const { firstName, lastName, phone, city, streetAddress } = formData;
-    if (!firstName || !lastName || !phone || !city || !streetAddress) {
-      setFormError('Please fill in all required delivery details.');
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      setFormError('Your cart is empty. Please add items to checkout.');
-      return;
-    }
-
-    // We assume all cart items are from the same restaurant in this UI flow.
-    const restaurantId = cartItems[0]?.restaurant?._id || cartItems[0]?.restaurant;
-
-    const orderPayload = {
-      restaurant: restaurantId,
-      /*
-       * Only the customer's choices are sent. `name`, `price` and `totalAmount`
-       * used to be included and are now rejected outright by the server's
-       * schema -- it prices every line from the database, so sending them only
-       * created the impression that the client had a say in what things cost.
-       */
-      items: cartItems.map((item) => ({
-        menuItem: item._id || item.id,
-        quantity: item.quantity,
-        ...(item.selectedSize ? { selectedSize: { name: item.selectedSize.name } } : {}),
-        selectedAddOns: (item.selectedAddOns ?? []).map((addOn) => ({ name: addOn.name })),
-      })),
-      deliveryAddress: formData,
-      paymentMethod,
-      ...(promoInput.trim() ? { promoCode: promoInput.trim().toUpperCase() } : {}),
-      idempotencyKey
-    };
-
-    try {
-      const resultAction = await dispatch(createOrderThunk(orderPayload)).unwrap();
-
-      setCurrentStep(3);
-
-      if (resultAction.paymentUrl) {
-        // Redirect to Easypaisa or JazzCash
-        dispatch(clearCart());
-        window.location.href = resultAction.paymentUrl;
-      } else if (resultAction.clientSecret) {
-        // Open the Stripe modal
-        setClientSecret(resultAction.clientSecret);
-        setPendingOrderId(resultAction.order._id);
-        setPaymentModalOpen(true);
-      } else {
-        // Cash on delivery or fully discounted
-        dispatch(clearCart());
-        navigate(`/track-order?orderId=${resultAction.order._id}`);
-      }
-    } catch (err) {
-      setFormError(err || 'Failed to place order.');
-    }
-  });
-
-  const handlePaymentSuccess = async () => {
-    try {
-      await api.post('/payments/verify-stripe', { orderId: pendingOrderId });
-    } catch (err) {
-      console.error('Failed to verify payment with backend:', err);
-    }
-    setPaymentModalOpen(false);
-    setPaymentSuccessModalOpen(true);
-  };
-
-  const handleContinueAfterSuccess = () => {
-    setPaymentSuccessModalOpen(false);
-    dispatch(clearCart());
-    navigate(`/track-order?orderId=${pendingOrderId}`);
-  };
-
-  const handlePaymentCancel = () => {
-    setPaymentModalOpen(false);
-    setFormError('Payment was cancelled. You can try again.');
-  };
-
-  /*
-   * Totals come from the shared helper that mirrors the server's arithmetic
-   * exactly (helper/pricing.js). This screen used to compute them inline and
-   * round only at the very end, so the figure shown to the customer could differ
-   * by a cent or more from the amount the server calculated and the gateway
-   * charged.
-   */
-  const subtotal = useMemo(
-    () => cartItems.reduce((sum, item) => sum + unitPrice(item) * item.quantity, 0),
-    [cartItems]
-  );
-
-  const { discountAmount, tax, serviceFee, deliveryFee, total } = useMemo(
-    () =>
-      calculateTotals({
-        subtotal,
-        discountPercent,
-        deliveryFee: restaurantData?.deliveryFee || 0,
-      }),
-    [subtotal, discountPercent, restaurantData?.deliveryFee]
-  );
+  const { theme } = useTheme();
+  const {
+    cartItems,
+    formData,
+    promoInput,
+    setPromoInput,
+    discountPercent,
+    promoMessage,
+    paymentMethod,
+    setPaymentMethod,
+    deliveryPreference,
+    setDeliveryPreference,
+    formError,
+    currentStep,
+    paymentModalOpen,
+    paymentSuccessModalOpen,
+    clientSecret,
+    subtotal,
+    discountAmount,
+    tax,
+    serviceFee,
+    deliveryFee,
+    total,
+    handleInputChange,
+    handleDeliveryPreferenceChange,
+    handlePaymentMethodChange,
+    updateQuantity,
+    deleteItem,
+    handleApplyPromo,
+    handleSubmitOrder,
+    isSubmitting,
+    handlePaymentSuccess,
+    handleContinueAfterSuccess,
+    handlePaymentCancel,
+  } = useCheckout();
 
   return (
     <div className="bg-background text-on-background min-h-screen relative flex flex-col">
-      <TopNavBar />
-
       <main id="main-content" tabIndex={-1} className="pt-24 pb-16 px-margin_mobile md:px-margin_desktop max-w-container_max mx-auto flex-grow w-full">
         {/* Progress Indicator */}
         <CheckoutProgress currentStep={currentStep} />
@@ -273,7 +70,6 @@ const CheckoutPage = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-
           {/* Left Column: Cart items and forms */}
           <div className="lg:col-span-8 flex flex-col gap-stack_lg">
 
@@ -282,17 +78,7 @@ const CheckoutPage = () => {
               <h2 className="font-h3 text-h3 mb-6 font-bold text-on-surface">Review Your Order</h2>
 
               {cartItems.length === 0 ? (
-                <div className="py-16 flex flex-col items-center justify-center text-center bg-surface-container-lowest rounded-xl">
-                  <div className="w-24 h-24 bg-surface-variant rounded-full flex items-center justify-center mb-6">
-                    <Icon name="shopping_cart_off" className="text-5xl text-on-surface-variant" />
-                  </div>
-                  <h3 className="text-h3 font-h3 mb-2 text-on-surface">Your Cart is Empty</h3>
-                  <p className="text-body font-body text-secondary max-w-md mx-auto mb-6">Looks like you haven't added any delicious items to your cart yet.</p>
-                  <Link to="/" className="px-6 h-12 bg-primary text-on-primary rounded-xl font-button text-button flex items-center gap-2 hover:opacity-90 transition-opacity">
-                    <span>Browse Restaurants</span>
-                    <Icon name="arrow_forward" />
-                  </Link>
-                </div>
+                <EmptyCartState />
               ) : (
                 <div className="space-y-6">
                   {cartItems.map((item) => (
@@ -361,14 +147,12 @@ const CheckoutPage = () => {
               </p>
             </div>
           </div>
-
         </div>
       </main>
 
-      <HomeFooter />
-
+      
       {paymentModalOpen && clientSecret && (
-        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: theme === 'dark' ? 'night' : 'stripe' } }}>
           <StripePaymentModal
             amount={total}
             onSuccess={handlePaymentSuccess}
@@ -378,23 +162,7 @@ const CheckoutPage = () => {
       )}
 
       {paymentSuccessModalOpen && (
-        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-surface-container-lowest w-full max-w-sm rounded-2xl p-8 shadow-2xl animate-in zoom-in-95 flex flex-col items-center text-center">
-            <div className="w-20 h-20 bg-primary-container text-on-primary-container rounded-full flex items-center justify-center mb-6">
-              <Icon name="check_circle" className="text-5xl" />
-            </div>
-            <h2 className="font-h3 text-h3 font-bold text-on-surface mb-2">Payment Successful!</h2>
-            <p className="font-body text-body text-secondary mb-8">
-              Your order has been securely placed and payment is confirmed.
-            </p>
-            <button
-              onClick={handleContinueAfterSuccess}
-              className="w-full h-14 bg-primary text-on-primary font-button text-button rounded-xl hover:opacity-90 transition-opacity shadow-lg"
-            >
-              Track Order
-            </button>
-          </div>
-        </div>
+        <PaymentSuccessModal handleContinueAfterSuccess={handleContinueAfterSuccess} />
       )}
     </div>
   );

@@ -1,14 +1,5 @@
 /**
  * SVG markup for Leaflet map pins.
- *
- * Leaflet DivIcons take an HTML string, not JSX, so they cannot use the <Icon>
- * component. These paths are the exact react-icons output for the same icons,
- * extracted at authoring time, so the map pins match the rest of the UI without
- * pulling react-dom/server into the browser bundle just to render three shapes.
- *
- * Previously these were Material Symbols ligature spans, which rendered the raw
- * words "restaurant" and "two_wheeler" inside the map markers until the icon
- * font loaded.
  */
 const PATHS = {
   "restaurant": "<path fill=\"none\" d=\"M0 0h24v24H0z\"></path><path d=\"M16 6v8h3v8h2V2c-2.76 0-5 2.24-5 4m-5 3H9V2H7v7H5V2H3v7c0 2.21 1.79 4 4 4v9h2v-9c2.21 0 4-1.79 4-4V2h-2z\"></path>",

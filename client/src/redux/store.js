@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
-import cartReducer, { persistCart } from './cartSlice';
+import cartReducer from './cartSlice';
+import { persistCart } from '../helper/cartStorage';
 import orderReducer from './orderSlice';
 import wishlistReducer from './wishlistSlice';
 import userReducer from './userSlice';

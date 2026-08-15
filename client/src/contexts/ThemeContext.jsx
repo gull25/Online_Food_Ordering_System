@@ -16,8 +16,6 @@ const readInitialTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // The inline script in index.html has already applied this class to <html>
-  // before first paint; this just keeps React's copy of the value in sync.
   const [theme, setTheme] = useState(readInitialTheme);
 
   useEffect(() => {

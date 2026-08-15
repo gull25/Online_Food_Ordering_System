@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchRiderProfileThunk } from '../../redux/riderSlice';
-import RiderSidebar from './RiderSidebar';
-import RiderHeader from './RiderHeader';
-import RiderBottomNav from './RiderBottomNav';
+import { fetchRiderProfileThunk } from '../redux/riderSlice';
+import RiderSidebar from '../components/riderDashboardComponents/RiderSidebar';
+import RiderHeader from '../components/riderDashboardComponents/RiderHeader';
+import RiderBottomNav from '../components/riderDashboardComponents/RiderBottomNav';
 
 const RiderLayout = () => {
     const location = useLocation();

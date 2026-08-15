@@ -87,8 +87,7 @@ const TrendingSection = () => {
             <h2 className="font-h2 text-h2-mobile md:text-h2 text-on-background">Trending Now</h2>
             <p className="text-body font-body text-secondary">The most ordered dishes in your area right now</p>
           </div>
-          {/* Arrows are hidden when there is nothing to scroll, and disabled at
-              each end, so they never invite a click that does nothing. */}
+        
           {!loading && trendingItems.length > 0 && (
             <div className="hidden sm:flex gap-stack_sm shrink-0">
               <button
@@ -174,8 +173,7 @@ const TrendingSection = () => {
                         e.stopPropagation();
                         openRestaurant(item);
                       }}
-                      // tabIndex -1: the whole card is already focusable, so a
-                      // second stop here would just double every tab press.
+                  
                       tabIndex={-1}
                       className="mt-auto w-full py-2.5 border-2 border-primary-container text-primary-container font-button text-button rounded-xl hover:bg-primary-container hover:text-on-primary transition-all"
                     >

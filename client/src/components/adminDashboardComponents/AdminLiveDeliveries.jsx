@@ -18,10 +18,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-/**
- * Frames the map on the selected delivery once per order selection.
- * Does NOT re-run on every GPS ping so the admin can pan/zoom freely.
- */
+
 const FitBounds = ({ activeOrder }) => {
   const map = useMap();
   const orderId = activeOrder?._id;
@@ -40,7 +37,7 @@ const FitBounds = ({ activeOrder }) => {
     if (bounds.length > 0) {
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [map, orderId]);
 
   return null;
@@ -55,9 +52,7 @@ const MapUpdater = () => {
   return null;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Inner map panel — receives the active order and rider positions map
-// ─────────────────────────────────────────────────────────────────────────────
+
 const LiveMap = ({ activeOrder, riderPositions }) => {
   const rawRiderTarget = activeOrder ? riderPositions[activeOrder._id] : null;
   const { animatedPos: riderPos, isStale } = useAnimatedMarker(rawRiderTarget || null);
@@ -237,9 +232,6 @@ const LiveMap = ({ activeOrder, riderPositions }) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main AdminLiveDeliveries component
-// ─────────────────────────────────────────────────────────────────────────────
 const AdminLiveDeliveries = () => {
   const { orders } = useSelector((state) => state.admin);
   const { user } = useSelector((state) => state.auth);

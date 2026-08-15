@@ -56,11 +56,6 @@ const schema = z
 
         STRIPE_SECRET_KEY: z.string().optional(),
         STRIPE_WEBHOOK_SECRET: z.string().optional(),
-        // Shared secrets for the local wallet gateways. Without these the
-        // corresponding callback endpoints refuse every request rather than
-        // trusting an unauthenticated caller's word that an order was paid.
-        EASYPAISA_HASH_KEY: z.string().optional(),
-        JAZZCASH_INTEGRITY_SALT: z.string().optional(),
 
         SMTP_HOST: z.string().optional(),
         SMTP_PORT: z.coerce.number().int().positive().default(587),

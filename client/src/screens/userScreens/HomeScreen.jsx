@@ -1,6 +1,5 @@
 import React from 'react';
-import Navbar from '../../components/globalComponents/Navbar';
-import HomeFooter from '../../components/globalComponents/HomeFooter';
+
 import HeroSection from '../../components/homeScreen/homeScreenComponents/HeroSection';
 import TrendingSection from '../../components/homeScreen/homeScreenComponents/TrendingSection';
 import HowItWorksSection from '../../components/homeScreen/homeScreenComponents/HowItWorksSection';
@@ -22,7 +21,7 @@ import { Reveal } from '../../components/common/Reveal';
 const HomePage = () => {
   return (
     <>
-      <Navbar />
+
       <main id="main-content" tabIndex={-1}>
         <HeroSection />
         <Reveal>
@@ -38,8 +37,7 @@ const HomePage = () => {
           <FeaturedRestaurantsSection />
         </Reveal>
       </main>
-      <HomeFooter />
-    </>
+          </>
   );
 };
 

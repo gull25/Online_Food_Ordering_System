@@ -1,17 +1,7 @@
-import React from 'react';
-import Icon from './Icon';
+import React from "react";
+import Icon from "./Icon";
 
-/**
- * Catches render-time exceptions so one broken component cannot blank the app.
- *
- * Without a boundary, React 19 unmounts the entire tree on an uncaught render
- * error — the user is left looking at a white page with no explanation and no
- * way forward. A thrown error in, say, the order-status badge would take the
- * whole checkout down with it.
- *
- * `resetKey` lets a parent clear the error state on navigation, so moving to
- * another route recovers instead of staying stuck on the fallback.
- */
+/* Catches render-time exceptions so one broken component cannot blank the app.*/
 class ErrorBoundary extends React.Component {
   state = { error: null };
 
@@ -26,9 +16,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    // The place to forward to an error reporter. Logged unconditionally so a
-    // production white-screen leaves a trace in the console rather than nothing.
-    console.error('[ErrorBoundary]', error, info?.componentStack);
+    console.error("[ErrorBoundary]", error, info?.componentStack);
   }
 
   handleReload = () => {
@@ -50,10 +38,12 @@ class ErrorBoundary extends React.Component {
         </div>
 
         <div className="max-w-md">
-          <h1 className="font-h3 text-h3 text-on-surface mb-2">Something went wrong</h1>
+          <h1 className="font-h3 text-h3 text-on-surface mb-2">
+            Something went wrong
+          </h1>
           <p className="font-body text-body text-secondary">
-            This part of the page failed to load. Reloading usually clears it — if it keeps
-            happening, please let us know.
+            This part of the page failed to load. Reloading usually clears it —
+            if it keeps happening, please let us know.
           </p>
         </div>
 

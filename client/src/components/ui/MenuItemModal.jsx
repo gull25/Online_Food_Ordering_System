@@ -146,7 +146,7 @@ const MenuItemModal = ({ item, isOpen, onClose, onAddToCart }) => {
             src={item.image}
             alt=""
             loading="lazy"
-            className="aspect-video w-full object-contain p-4 drop-shadow-md"
+            className="aspect-video w-full object-cover drop-shadow-md"
           />
         </div>
 

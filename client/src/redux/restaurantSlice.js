@@ -32,13 +32,7 @@ export const fetchRestaurantDetails = createAsyncThunk(
 );
 
 /**
- * List and detail track their own loading/error state.
- *
- * They previously shared one `loading` flag, so a detail fetch resolving would
- * flip the featured list out of its loading state (and vice versa) — the two
- * requests raced and whichever finished last dictated both spinners. Splitting
- * them means each surface reflects only its own request.
- */
+ * List and detail track their own loading/error state.*/
 const initialState = {
     featuredRestaurants: [],
     currentRestaurant: null,

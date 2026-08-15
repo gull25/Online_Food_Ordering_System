@@ -81,16 +81,6 @@ class OrderService {
 
     /**
      * Re-prices the cart against the database.
-     *
-     * Two bugs are fixed relative to the previous implementation:
-     *
-     *   - It compared `menuItemsFromDb.length !== itemIds.length` to detect
-     *     unknown items. A cart holding the same dish in two sizes sends that id
-     *     twice, so the counts legitimately differed and the whole order was
-     *     rejected with "one or more items are invalid".
-     *   - Item `name` came from the request and was stored verbatim, so the name
-     *     printed on the receipt, the kitchen ticket and the admin CSV was
-     *     whatever the client chose to send.
      */
     async #priceItems(cartItems, restaurantId) {
         const uniqueIds = [...new Set(cartItems.map((item) => item.menuItem))];
@@ -159,11 +149,6 @@ class OrderService {
 
     /**
      * Looks up a promo code.
-     *
-     * The code was previously interpolated into `new RegExp(\`^${code}$\`, 'i')`.
-     * Since offer codes are stored uppercase and the schema now restricts them to
-     * `[A-Z0-9_-]`, an exact equality match is both correct and immune to the
-     * regex injection that let `.*` match any live offer.
      */
     async #resolveDiscount(promoCode, restaurantId) {
         if (!promoCode) return 0;
@@ -191,13 +176,6 @@ class OrderService {
 
     /**
      * Writes the order, relying on the unique index for idempotency.
-     *
-     * The old flow did `findOne({ idempotencyKey })` and then `create(...)`. Two
-     * requests arriving together both saw no existing order and both proceeded —
-     * exactly the double-submit the key exists to prevent. Letting the index
-     * arbitrate makes the check atomic, and a retry of a request whose response
-     * was lost now returns the original order instead of a 409 the client cannot
-     * act on.
      */
     async #persist(payload) {
         try {
@@ -222,10 +200,6 @@ class OrderService {
                 amount: amountInCents,
                 currency: "usd",
                 automatic_payment_methods: { enabled: true },
-                // Set up front rather than in a follow-up `update` call. The old
-                // code created the intent without an order id and patched it
-                // afterwards; if that second call failed, the webhook had no way
-                // to identify the order and a successful payment was stranded.
                 metadata: { orderId: order._id.toString() },
             };
 
@@ -242,14 +216,9 @@ class OrderService {
 
             return { clientSecret: intent.client_secret, paymentUrl: null };
         }
-
-        // Wallet and bank redirects. These remain mocked; the corresponding
-        // callbacks refuse to confirm anything without a verified signature (see
-        // payment.controller).
         const amount = totals.totalAmount;
         const urls = {
-            easypaisa: `https://easypaisa.com.pk/checkout?amount=${amount}&store=Foodora`,
-            jazzcash: `https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform?amount=${amount}&store=Foodora`,
+
             meezan: `/bank-transfer?bank=meezan&amount=${amount}`,
             ubl: `/bank-transfer?bank=ubl&amount=${amount}`,
         };
@@ -264,11 +233,6 @@ class OrderService {
      */
     async recordOrderPlaced(order) {
         try {
-            /*
-             * One bulk write instead of one round trip per line item. A ten-item
-             * order previously issued ten sequential `findByIdAndUpdate` calls
-             * while the customer waited on the response.
-             */
             await MenuItem.bulkWrite(
                 order.items.map((item) => ({
                     updateOne: {
@@ -298,20 +262,12 @@ class OrderService {
 
     /**
      * Fetches one order, enforcing that the caller is a party to it.
-     *
-     * The previous check let through *any* `restaurant_admin` — including one
-     * whose restaurant had nothing to do with the order — so an owner could walk
-     * the id space and read every customer's name, phone number and home address
-     * across the whole platform. Riders were not handled at all, so the courier
-     * delivering an order could not open it.
      */
     async getOrderById(orderId, user) {
         const order = await orderRepository.findById(orderId);
         if (!order) throw new ApiError(404, "Order not found");
 
         if (!this.#canView(order, user)) {
-            // 404 rather than 403: confirming an id exists is itself information
-            // when the endpoint is being enumerated.
             throw new ApiError(404, "Order not found");
         }
 
@@ -339,13 +295,7 @@ class OrderService {
 
     /**
      * Advances an order's status.
-     *
-     * This endpoint previously did no ownership check whatsoever: the route
-     * allowed `customer`, and the state machine allows a customer to CANCEL, so
-     * any signed-in user could cancel any stranger's order by id. Likewise a
-     * restaurant owner could accept, reject or cancel orders belonging to other
-     * restaurants. The state machine governs *which* transitions a role may make;
-     * it never had anything to say about *whose* order.
+    
      */
     async updateOrderStatus(orderId, newStatus, user, extra = {}) {
         // Raw document, not lean: it is mutated and saved below.

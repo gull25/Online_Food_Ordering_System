@@ -1,15 +1,5 @@
 /**
  * Order pricing — the client-side mirror of `server/src/utils/pricing.js`.
- *
- * The checkout screen computed these figures inline with its own rounding, so
- * the total it quoted could differ from the authoritative total the server
- * calculated and the gateway actually charged — by a cent on most orders, and by
- * more once the delivery fee was involved. Keeping the two implementations
- * identical (same constants, same rounding at the same points) means the summary
- * the customer agrees to is the amount that leaves their card.
- *
- * These values are display-only. The server never trusts a price from the
- * client; it re-derives every one from the database.
  */
 
 export const TAX_RATE = 0.087;
@@ -23,13 +13,6 @@ export const unitPrice = (item) =>
   item.price +
   (item.selectedSize?.additionalPrice ?? 0) +
   (item.selectedAddOns ?? []).reduce((sum, addOn) => sum + addOn.price, 0);
-
-/**
- * @param {object} input
- * @param {number} input.subtotal
- * @param {number} [input.discountPercent] 0-100
- * @param {number} [input.deliveryFee]
- */
 export const calculateTotals = ({ subtotal, discountPercent = 0, deliveryFee = 0 }) => {
   const safeSubtotal = round(Math.max(0, subtotal));
   const discountAmount = round(safeSubtotal * (Math.min(100, Math.max(0, discountPercent)) / 100));

@@ -22,7 +22,7 @@ const { objectId, phone, safeText, pagination } = require("./common.validation")
  * on it. Both spellings are accepted and normalised below rather than changing
  * one side and silently breaking every stored order that used the other.
  */
-const PAYMENT_METHODS = ["cash", "cod", "stripe", "easypaisa", "jazzcash", "meezan", "ubl"];
+const PAYMENT_METHODS = ["cash", "cod", "stripe", "meezan", "ubl"];
 
 const orderItemSchema = z.object({
     menuItem: objectId,

@@ -3,8 +3,6 @@ const { z } = require("zod");
 
 const {
     webhook,
-    easypaisaCallback,
-    jazzcashCallback,
     verifyStripePayment,
 } = require("../controllers/payment.controller");
 const { protect } = require("../middlewares/auth.middleware");
@@ -19,9 +17,7 @@ const router = express.Router();
  */
 router.post("/webhook", webhook);
 
-// Gateway-to-server callbacks. Signature-verified in the controller.
-router.post("/easypaisa/callback", express.json(), easypaisaCallback);
-router.post("/jazzcash/callback", express.json(), jazzcashCallback);
+
 
 router.post(
     "/verify-stripe",

@@ -16,12 +16,6 @@ class RestaurantService {
 
     /**
      * Restaurant detail.
-     *
-     * The old signature was `getRestaurantDetails(id)` while the controller
-     * called it as `getRestaurantDetails(id, options)` — so `includeUnapproved`
-     * was silently dropped and the repository always filtered on
-     * `status: 'Open'`. An owner who closed their restaurant for the evening got
-     * a 404 on their own management screens and could not reopen it.
      */
     async getRestaurantDetails(id, options = {}) {
         const restaurant = await restaurantRepository.findById(id, options);
@@ -38,11 +32,6 @@ class RestaurantService {
 
     /**
      * Creates the caller's restaurant.
-     *
-     * `owner` comes from the session. The controller previously wrote
-     * `req.body.owner = req.body.owner || req.user.id`, so a request that
-     * included an `owner` field created a restaurant registered to somebody
-     * else's account.
      */
     async createRestaurant(ownerId, data, images = {}) {
         const existing = await restaurantRepository.findByOwner(ownerId);
@@ -65,12 +54,6 @@ class RestaurantService {
 
     /**
      * Updates a restaurant.
-     *
-     * `images` is merged with dot-notation rather than replaced. The controller
-     * used to set `req.body.images = req.body.images || {}` on every request;
-     * with multipart bodies that is always `{}`, so `findByIdAndUpdate` reset the
-     * whole subdocument to its defaults — saving any field on the settings form
-     * silently wiped the restaurant's logo and banner back to `no-photo.jpg`.
      */
     async updateRestaurant(id, data, images = {}) {
         const existing = await restaurantRepository.findById(id, { includeUnapproved: true, includeInternal: true });
@@ -99,11 +82,6 @@ class RestaurantService {
 
     /**
      * Deletes a restaurant and everything that belongs to it.
-     *
-     * Deleting only the restaurant document left its menu items, categories and
-     * offers behind as unreachable rows that still surfaced through
-     * `/api/public/trending` and `/api/offers/active`, pointing at a restaurant
-     * that no longer existed.
      */
     async deleteRestaurant(id) {
         const restaurant = await restaurantRepository.findById(id, { includeUnapproved: true });

@@ -129,7 +129,7 @@ const orderSchema = new mongoose.Schema({
         // `meezan` and `ubl` were offered by the checkout screen and set by the
         // order service, but were missing from this enum -- so choosing either
         // bank transfer failed validation and the order was never created.
-        enum: ['cod', 'stripe', 'easypaisa', 'jazzcash', 'meezan', 'ubl']
+        enum: ['cod', 'stripe', 'meezan', 'ubl']
     },
     paymentStatus: {
         type: String,

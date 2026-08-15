@@ -1,12 +1,9 @@
 import { useState, useCallback } from 'react';
 
 /**
- * useApiAction
- * A custom hook to prevent duplicate API requests for single operations (e.g., forms, checkout).
- * 
  * @param {Function} actionFn The async function to execute.
  * @returns {Object} { execute, isSubmitting }
- */
+*/
 export const useApiAction = (actionFn) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 

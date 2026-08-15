@@ -1,14 +1,3 @@
-/**
- * Order status vocabulary — mirrors the `status` enum on the server's Order
- * model exactly.
- *
- * This file previously held a Title-Case set ('Pending', 'Delivered', …) that no
- * longer matched the API's UPPER_SNAKE values. Because screens compared against
- * those literals directly, several checks could never be true: the "Leave a
- * review" prompt never appeared, and the admin Pending/Completed counters and
- * revenue total silently read zero. Keeping one authoritative map here prevents
- * that class of drift.
- */
 export const ORDER_STATUS = {
   PENDING_PAYMENT: 'PENDING_PAYMENT',
   PAYMENT_FAILED: 'PAYMENT_FAILED',
@@ -45,7 +34,7 @@ export const ORDER_STATUS_LABELS = {
 export const getOrderStatusLabel = (status) =>
   ORDER_STATUS_LABELS[status] || (status ? String(status).replace(/_/g, ' ') : 'Unknown');
 
-/** Statuses where the order is finished — no further progress is expected. */
+/** Statuses where the order is finished. */
 export const TERMINAL_ORDER_STATUSES = [
   ORDER_STATUS.DELIVERED,
   ORDER_STATUS.CANCELLED,
@@ -68,11 +57,7 @@ export const ACTIVE_ORDER_STATUSES = [
 export const isActiveOrder = (status) => ACTIVE_ORDER_STATUSES.includes(status);
 export const isTerminalOrder = (status) => TERMINAL_ORDER_STATUSES.includes(status);
 
-/**
- * Badge styling per status, resolved from theme tokens so it tracks dark mode
- * instead of the hardcoded `bg-green-100 text-green-700` pairs that stayed
- * light-mode-only.
- */
+
 export const getOrderStatusBadgeClass = (status) => {
   switch (status) {
     case ORDER_STATUS.DELIVERED:
