@@ -4,13 +4,7 @@ import { Link } from 'react-router-dom';
 import { RIDER_SIDEBAR_LINKS } from '../../data';
 
 /**
- * Rider navigation rail.
- *
- * Deliberately mirrors AdminSidebar: same type scale, same icon size, same
- * out-of-flow active indicator. The two dashboards previously disagreed on all
- * three — this one used 12px bold labels and an in-flow `border-l-4`, which
- * shifted the row's content by 4px whenever a tab became active.
- */
+ * Rider navigation rail.*/
 const RiderSidebar = ({ activeTab }) => {
   const getTabClass = (isActive) => {
     const base =

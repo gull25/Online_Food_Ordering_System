@@ -3,11 +3,6 @@ import React from 'react';
 import Icon from '../../common/Icon';
 const FlashSaleBanner = ({ formattedTime, copyPromoCode, copiedCode, offer }) => {
   // Render nothing without a real offer.
-  //
-  // This used to fall back to an invented deal ("FLASH80", "Today's Top Deals").
-  // Those codes don't exist in the database, so anyone who copied one hit
-  // "Invalid promo code" at checkout. An absent banner is honest; a fake one
-  // isn't.
   if (!offer?.code) return null;
 
   const bgImage = offer.image && offer.image !== 'no-photo.jpg'

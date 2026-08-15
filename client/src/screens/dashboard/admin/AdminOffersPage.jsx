@@ -39,7 +39,7 @@ const AdminOffersPage = () => {
     try {
       const res = await api.get(`/offers/restaurant/${user.restaurantId}`);
       setOffers(res.data.data || []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load offers');
     } finally {
       setLoading(false);
@@ -121,7 +121,7 @@ const AdminOffersPage = () => {
 
   return (
     <div className="bg-surface text-on-surface min-h-screen relative flex">
-      <main className="p-margin_desktop flex-1">
+      <main id="main-content" tabIndex={-1} className="p-margin_desktop flex-1">
         <AdminHeader
           title="Offers & Promotions"
           subtitle="Manage your promotional deals."
@@ -207,7 +207,7 @@ const AdminOffersPage = () => {
               <h3 className="font-h3 text-h3 font-bold text-on-surface">
                 {editingOffer ? 'Edit Offer' : 'New Offer'}
               </h3>
-              <button onClick={closeModal} className="text-secondary hover:text-on-surface transition-colors">
+              <button type="button" onClick={closeModal} aria-label="Close offer form" className="text-secondary hover:text-on-surface transition-colors">
                 <Icon name="close" />
               </button>
             </div>

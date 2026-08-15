@@ -1,11 +1,5 @@
 /**
  * Currency formatting.
- *
- * The app was rendering a mix of `$` and `€` for the same values — menu cards
- * and the whole rider dashboard used `€` while the cart, checkout, receipts and
- * admin tables used `$`. Stripe is charged in USD (`currency: 'usd'`), so `$`
- * is the correct symbol and the euro signs were misreporting real amounts.
- *
  * Routing every price through one helper keeps that consistent.
  */
 export const CURRENCY_CODE = 'USD';

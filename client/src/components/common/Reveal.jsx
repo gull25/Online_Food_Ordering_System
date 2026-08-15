@@ -3,15 +3,6 @@ import { motion, useReducedMotion } from 'framer-motion';
 
 /**
  * Scroll-reveal helpers built on framer-motion.
- *
- * These replace the previous approach of an IntersectionObserver that queried
- * the DOM once on mount and mutated Tailwind classes directly. That pattern had
- * two failure modes: elements mounted after the initial query (anything behind
- * a fetch) were never observed, and any observed element that never intersected
- * stayed permanently at opacity-0 — invisible content with no way to recover.
- *
- * Here the animation is owned by the element itself, so late-mounting and
- * never-visible sections both behave correctly.
  */
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -44,8 +35,7 @@ export const Reveal = ({
       className={className}
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
-      // A negative bottom margin holds the reveal until the section is
-      // meaningfully on screen, rather than firing on the first stray pixel.
+     
       viewport={{ once, margin: '0px 0px -80px 0px' }}
       transition={{ duration, delay, ease: EASE }}
       {...rest}
@@ -55,10 +45,7 @@ export const Reveal = ({
   );
 };
 
-/**
- * Staggers direct children into view. Children must be `RevealItem` (or any
- * motion element declaring the same `hidden`/`visible` variants).
- */
+
 export const RevealGroup = ({
   children,
   className = '',
@@ -119,10 +106,7 @@ export const RevealItem = ({ children, className = '', y = 20, ...rest }) => {
   );
 };
 
-/**
- * Page-level entrance. Deliberately subtle (fade + 8px rise, 320ms): a page
- * transition the user notices is a page transition that slows them down.
- */
+
 export const PageTransition = ({ children, className = '' }) => {
   const reduceMotion = useReducedMotion();
 

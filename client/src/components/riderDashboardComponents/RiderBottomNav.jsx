@@ -5,14 +5,6 @@ import { RIDER_SIDEBAR_LINKS } from '../../data';
 
 /**
  * Mobile navigation for the rider dashboard.
- *
- * This used to hardcode four links, one of which pointed at `/rider/ratings` —
- * a route that does not exist. Tapping "Ratings" dropped the rider onto the
- * 404 page, outside the rider layout, with no bottom nav to get back.
- *
- * It now renders from `RIDER_SIDEBAR_LINKS`, the same source the desktop
- * sidebar uses, so the two can't drift apart and every destination is a real
- * registered route.
  */
 const RiderBottomNav = () => {
   const linkClass = ({ isActive }) =>

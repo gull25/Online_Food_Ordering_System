@@ -11,6 +11,7 @@ const Rider = require('./src/models/rider.model');
 const Order = require('./src/models/order.model');
 const Offer = require('./src/models/offer.model');
 const Review = require('./src/models/review.model');
+const ItemReview = require('./src/models/itemReview.model');
 
 const COLLECTION = 'C:\\Users\\gulr8\\Downloads\\Collection';
 
@@ -337,6 +338,14 @@ const seedDB = async () => {
     await Rider.create({ user: riderUser1._id, name: riderUser1.name, phone: riderUser1.phone, vehicleDetails: 'Honda CD 70 - Plate: LHR-1234', status: 'Available', restaurant: fastBites._id, currentLocation: { type: 'Point', coordinates: [74.3587, 31.5204] } });
     await Rider.create({ user: riderUser2._id, name: riderUser2.name, phone: riderUser2.phone, vehicleDetails: 'Suzuki GS 150 - Plate: LHR-5678', status: 'Available', restaurant: spicyAvenue._id, currentLocation: { type: 'Point', coordinates: [74.4099, 31.4697] } });
     console.log('Rider profiles created (2)');
+
+    // 7.5 Sync Ratings
+    console.log('\nSynchronizing ratings with actual reviews...');
+    const allRestaurants = await Restaurant.find({});
+    for (const r of allRestaurants) {
+        await Review.getAverageRating(r._id);
+    }
+    console.log('All restaurant ratings have been synchronized (reset to 0).');
 
     // 8. Summary
     console.log('\n=====================================================');

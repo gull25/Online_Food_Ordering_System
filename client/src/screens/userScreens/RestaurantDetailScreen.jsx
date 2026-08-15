@@ -1,14 +1,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import Icon from '../../components/common/Icon';
 import { useNavigate, useParams } from 'react-router-dom';
-import TopNavBar from '../../components/globalComponents/Navbar';
-import HomeFooter from '../../components/globalComponents/HomeFooter';
+
 import RestaurantHeader from '../../components/homeScreen/restaurantDetailComponents/RestaurantHeader';
 import CategorySidebar from '../../components/homeScreen/restaurantDetailComponents/CategorySidebar';
 import MobileCategoryNav from '../../components/homeScreen/restaurantDetailComponents/MobileCategoryNav';
 import MenuSection from '../../components/homeScreen/restaurantDetailComponents/MenuSection';
 import FloatingCartSummary from '../../components/homeScreen/restaurantDetailComponents/FloatingCartSummary';
 import ReviewsSection from '../../components/homeScreen/restaurantDetailComponents/ReviewsSection';
+import RestaurantErrorFallback from '../../components/homeScreen/restaurantDetailComponents/RestaurantErrorFallback';
+import MenuSearchBar from '../../components/homeScreen/restaurantDetailComponents/MenuSearchBar';
+import MenuEmptyState from '../../components/homeScreen/restaurantDetailComponents/MenuEmptyState';
 import { useSelector, useDispatch } from 'react-redux';
 import { useDebounce } from '../../helper/useDebounce';
 import { addToCart, removeFromCart, resolveRestaurantId } from '../../redux/cartSlice';
@@ -35,10 +37,6 @@ const RestaurantDetailPage = () => {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
   const handleAddToCart = useCallback((item) => {
-    // `item.restaurant` may be a populated document rather than an id string.
-    // The previous expression (`item.restaurant || …`) kept the object, so this
-    // compared an object to a string and always mismatched — blocking a second
-    // item from the very same restaurant with a "different restaurant" error.
     const itemRestId = resolveRestaurantId(item);
     if (cartRestaurantId && itemRestId && cartRestaurantId !== itemRestId) {
       toast.error('Your cart contains items from another restaurant. Please clear your cart first.');
@@ -64,9 +62,6 @@ const RestaurantDetailPage = () => {
 
   React.useEffect(() => {
     if (!id) return;
-
-    // Guards against a stale response from a previously viewed restaurant
-    // landing after the user has already navigated to a different one.
     let cancelled = false;
 
     dispatch(fetchRestaurantDetails(id));
@@ -195,28 +190,12 @@ const RestaurantDetailPage = () => {
   // A bad/stale restaurant id previously rendered an endless shell of empty
   // sections. Surface it explicitly with a way back.
   if (detailError && !restaurantLoading && !currentRestaurant) {
-    return (
-      <div className="font-body text-body bg-background min-h-screen flex flex-col">
-        <TopNavBar />
-        <main className="grow flex flex-col items-center justify-center text-center px-margin_mobile py-stack_lg">
-          <Icon name="storefront" className="text-6xl text-surface-variant mb-4" />
-          <h1 className="font-h2 text-h2-mobile md:text-h2 text-on-surface mb-2">Restaurant unavailable</h1>
-          <p className="font-body text-body text-secondary max-w-md mb-6">{detailError}</p>
-          <button
-            onClick={() => navigate(APP_ROUTES.HOME)}
-            className="px-6 h-12 bg-primary text-on-primary rounded-xl font-button text-button hover:opacity-90 transition-opacity"
-          >
-            Back to restaurants
-          </button>
-        </main>
-        <HomeFooter />
-      </div>
-    );
+    return <RestaurantErrorFallback detailError={detailError} />;
   }
 
   return (
     <div className="font-body text-body bg-background antialiased relative min-h-screen">
-      <TopNavBar />
+
 
       {/* Header Section */}
       <RestaurantHeader
@@ -242,27 +221,7 @@ const RestaurantDetailPage = () => {
         <div className="md:col-span-9 pb-24 md:pb-0">
           {/* Search & Mobile Categories */}
           <div className="mb-stack_lg">
-            <div className="relative mb-stack_md">
-              <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-on-secondary-container" />
-              <input
-                className="w-full h-12 pl-12 pr-11 rounded-12 border border-surface-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body text-body transition-shadow"
-                placeholder="Search in this menu..."
-                type="search"
-                aria-label="Search this menu"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors"
-                >
-                  <Icon name="close" className="text-[18px]" />
-                </button>
-              )}
-            </div>
+            <MenuSearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
             {/* Mobile Categories Scrollbar */}
             <MobileCategoryNav
@@ -276,11 +235,7 @@ const RestaurantDetailPage = () => {
           {menuLoading ? (
             <MenuSectionSkeleton sections={2} itemsPerSection={4} />
           ) : (!menuItems || menuItems.length === 0) ? (
-            <div className="py-20 flex flex-col items-center justify-center text-center">
-              <Icon name="menu_book" className="text-6xl text-surface-variant mb-4" />
-              <h3 className="text-h3 font-h3 mb-2 text-on-surface">Menu Unavailable</h3>
-              <p className="text-body font-body text-secondary max-w-md mx-auto">This restaurant hasn't added any menu items yet or is currently updating their offerings.</p>
-            </div>
+            <MenuEmptyState />
           ) : (
             <MenuSection
               MENU_CATEGORIES={dynamicCategories}
@@ -305,8 +260,7 @@ const RestaurantDetailPage = () => {
         totalCartPrice={totalCartPrice}
       />
 
-      <HomeFooter />
-    </div>
+          </div>
   );
 };
 

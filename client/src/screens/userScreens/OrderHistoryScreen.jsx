@@ -3,8 +3,7 @@ import Icon from '../../components/common/Icon';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchMyOrdersThunk } from '../../redux/orderSlice';
 import { Link } from 'react-router-dom';
-import TopNavBar from '../../components/globalComponents/Navbar';
-import HomeFooter from '../../components/globalComponents/HomeFooter';
+
 import { APP_ROUTES } from '../../constants/appRoutes';
 import {
   getOrderStatusBadgeClass,
@@ -15,35 +14,42 @@ import { OrderListSkeleton } from '../../components/common/Skeleton';
 
 const OrderHistoryScreen = () => {
   const dispatch = useDispatch();
-  const { orders, loading, error } = useSelector((state) => state.orders);
+  const { orders, ordersPage, ordersPages, ordersTotal, loading, error } = useSelector(
+    (state) => state.orders
+  );
 
   useEffect(() => {
-    dispatch(fetchMyOrdersThunk());
+    dispatch(fetchMyOrdersThunk({ page: 1 }));
   }, [dispatch]);
+
+  const hasMore = ordersPage < ordersPages;
+  // The first page shows skeletons; loading a further page must not replace the
+  // orders already on screen with a wireframe.
+  const isInitialLoad = loading && orders.length === 0;
 
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col relative">
-      <TopNavBar />
-      <main className="grow w-full max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg">
+
+      <main id="main-content" tabIndex={-1} className="grow w-full max-w-container_max mx-auto px-margin_mobile md:px-margin_desktop py-stack_lg">
         <div className="flex items-end justify-between gap-4 mb-stack_lg">
           <h1 className="font-h2-mobile md:font-h2 text-h2-mobile md:text-h2 text-on-surface">
             My Orders
           </h1>
-          {!loading && !error && orders.length > 0 && (
+          {!isInitialLoad && !error && orders.length > 0 && (
             <p className="font-body text-small text-secondary">
-              {orders.length} {orders.length === 1 ? 'order' : 'orders'}
+              Showing {orders.length} of {ordersTotal} {ordersTotal === 1 ? 'order' : 'orders'}
             </p>
           )}
         </div>
 
-        {loading ? (
+        {isInitialLoad ? (
           <OrderListSkeleton count={4} />
         ) : error ? (
           <div className="bg-error/10 text-error p-4 rounded-xl border border-error/20 flex gap-3 items-center animate-in fade-in">
             <Icon name="error" />
             <span className="grow">{error}</span>
             <button
-              onClick={() => dispatch(fetchMyOrdersThunk())}
+              onClick={() => dispatch(fetchMyOrdersThunk({ page: 1 }))}
               className="shrink-0 px-4 py-2 rounded-lg border border-error/40 font-button text-small hover:bg-error/10 transition-colors"
             >
               Retry
@@ -119,11 +125,31 @@ const OrderHistoryScreen = () => {
                 </div>
               </div>
             ))}
+
+            {hasMore && (
+              <button
+                type="button"
+                onClick={() => dispatch(fetchMyOrdersThunk({ page: ordersPage + 1 }))}
+                disabled={loading}
+                className="mx-auto mt-stack_sm inline-flex items-center gap-2 px-6 h-12 rounded-xl border border-outline-variant bg-surface-container-lowest font-button text-button text-on-surface transition-all hover:border-primary hover:text-primary disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <Icon name="sync" className="text-[20px] animate-spin" />
+                    <span>Loading…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Load older orders</span>
+                    <Icon name="expand_more" className="text-[20px]" />
+                  </>
+                )}
+              </button>
+            )}
           </div>
         )}
       </main>
-      <HomeFooter />
-    </div>
+          </div>
   );
 };
 

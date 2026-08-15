@@ -45,7 +45,7 @@ const AdminProductsPage = () => {
       ]);
       setCategories(catsRes.data.data || []);
       setProducts(prodsRes.data.data || []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load products');
     } finally {
       setLoading(false);
@@ -136,7 +136,7 @@ const AdminProductsPage = () => {
 
   return (
     <div className="bg-surface text-on-surface min-h-screen relative flex">
-      <main className="p-margin_desktop flex-1">
+      <main id="main-content" tabIndex={-1} className="p-margin_desktop flex-1">
         <AdminHeader 
           title="Products"
           subtitle="Manage your menu items."
@@ -215,7 +215,7 @@ const AdminProductsPage = () => {
               <h3 className="font-h3 text-h3 font-bold text-on-surface">
                 {editingProduct ? 'Edit Product' : 'New Product'}
               </h3>
-              <button onClick={closeModal} className="text-secondary hover:text-on-surface transition-colors">
+              <button type="button" onClick={closeModal} aria-label="Close product form" className="text-secondary hover:text-on-surface transition-colors">
                 <Icon name="close" />
               </button>
             </div>

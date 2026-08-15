@@ -1,16 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { LOCAL_STORAGE_KEYS } from '../constants/localStorageKeys';
 
-/**
- * Auth state is rehydrated from localStorage *synchronously*, while the store is
- * being created — before React renders a single frame.
- *
- * This previously happened in an effect inside App.jsx, which meant the very
- * first render always had `isInitialized: false`. Route guards had nothing to
- * decide on yet, so they rendered a full-page loading skeleton on every cold
- * open — a wireframe flash before content that was already available locally.
- * Reading storage up front removes the indeterminate frame entirely.
- */
+
 const readPersistedAuth = () => {
   try {
     const token = localStorage.getItem(LOCAL_STORAGE_KEYS.TOKEN);
@@ -44,10 +35,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    /**
-     * Kept for explicit re-hydration (e.g. after a cross-tab storage event).
-     * Passing `null` marks the user as a confirmed guest.
-     */
+    
     initializeAuth: (state, action) => {
       state.isInitialized = true;
       if (action.payload) {

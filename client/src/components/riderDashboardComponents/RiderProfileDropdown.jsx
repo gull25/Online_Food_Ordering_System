@@ -47,6 +47,16 @@ const RiderProfileDropdown = () => {
                     <button 
                         onClick={() => {
                             setIsOpen(false);
+                            navigate(APP_ROUTES.HOME);
+                        }}
+                        className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-on-surface transition-colors cursor-pointer flex items-center gap-3 w-full"
+                    >
+                        <Icon name="storefront" className="text-[18px]" />
+                        Customer Dashboard
+                    </button>
+                    <button 
+                        onClick={() => {
+                            setIsOpen(false);
                             navigate('/profile');
                         }}
                         className="text-left px-4 py-3 hover:bg-surface-variant font-label text-label text-on-surface transition-colors cursor-pointer flex items-center gap-3 w-full"

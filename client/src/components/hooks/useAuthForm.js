@@ -12,13 +12,34 @@ import { useApiAction } from '../../hooks/useApiAction';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  // No strength rules on the login form: they would reject a valid existing
+  // password and advertise the policy to anyone probing the form.
+  password: z.string().min(1, { message: 'Password is required' }),
 });
 
-const registerSchema = loginSchema.extend({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  phone: z.string().optional(),
-  role: z.enum(['customer', 'restaurant_admin', 'rider']).optional(),
+/*
+ * Mirrors the server's registration rules exactly (server/src/validations/
+ * auth.validation.js). The client previously asked for 6 characters while the
+ * server required 6 too -- but the server has since moved to 8 with a letter and
+ * a digit, and a client that under-validates just turns a preventable mistake
+ * into a round trip and a red banner.
+ */
+const registerSchema = z.object({
+  email: z.string().email({ message: 'Invalid email address' }),
+  password: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters' })
+    .max(128, { message: 'Password must be at most 128 characters' })
+    .regex(/[a-zA-Z]/, { message: 'Password must contain a letter' })
+    .regex(/\d/, { message: 'Password must contain a number' }),
+  name: z.string().trim().min(2, { message: 'Name must be at least 2 characters' }),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?\d[\d\s()-]{5,}$/, { message: 'Please enter a valid phone number' })
+    .optional()
+    .or(z.literal('')),
+  role: z.enum(['customer', 'restaurant_admin', 'rider']).default('customer'),
 });
 
 export const useAuthForm = () => {
@@ -61,7 +82,12 @@ export const useAuthForm = () => {
     
     try {
       if (isRegister) {
-        const response = await authService.register(data);
+        // An empty optional phone must not be sent as "" -- the server's schema
+        // accepts the field as absent, not as a blank string.
+        const payload = { ...data };
+        if (!payload.phone) delete payload.phone;
+
+        const response = await authService.register(payload);
         dispatch(loginFailure(null)); // just to stop loading
         setSuccessMsg(response?.message || 'Account created! You can log in now.');
         reset();

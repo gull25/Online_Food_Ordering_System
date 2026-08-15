@@ -1,33 +1,50 @@
-const express = require('express');
+const router = require("express").Router();
+const { z } = require("zod");
+
 const {
     createOffer,
-    getOffersByRestaurant,
+    getMyOffers,
     updateOffer,
     deleteOffer,
-    getActiveOffers
-} = require('../controllers/offer.controller');
+    getActiveOffers,
+} = require("../controllers/offer.controller");
+const { protect } = require("../middlewares/auth.middleware");
+const { authorize, requireRestaurant } = require("../middlewares/authorize.middleware");
+const validate = require("../middlewares/validate.middleware");
+const upload = require("../middlewares/upload.middleware");
+const { uploadLimiter } = require("../middlewares/rateLimit.middleware");
+const { idParam, objectId } = require("../validations/common.validation");
+const { createOfferSchema, updateOfferSchema } = require("../validations/catalog.validation");
 
-const { protect } = require('../middlewares/auth.middleware');
-const { authorize } = require('../middlewares/authorize.middleware');
-const upload = require('../middlewares/upload.middleware');
+router.get(
+    "/active",
+    validate({ query: z.object({ restaurantId: objectId.optional() }) }),
+    getActiveOffers,
+);
 
-const router = express.Router();
+router.use(protect, authorize("restaurant_admin", "admin"), requireRestaurant);
 
-// Public routes
-router.get('/active', getActiveOffers);
+router.get("/mine", getMyOffers);
 
-// Protected routes (Admin / Restaurant Admin)
-router.use(protect);
-router.use(authorize('restaurant_admin', 'admin'));
+/*
+ * Kept as an alias of /mine so existing clients keep working. The path parameter
+ * is ignored deliberately: the previous handler compared it against the caller's
+ * own restaurant and rejected anything else, so it could only ever be the
+ * caller's id — an input that exists only to be validated against the session is
+ * better read from the session.
+ */
+router.get("/restaurant/:restaurantId", getMyOffers);
 
-router.route('/')
-    .post(upload.single('image'), createOffer); 
+router.post("/", uploadLimiter, upload.single("image"), validate({ body: createOfferSchema }), createOffer);
 
-router.route('/restaurant/:restaurantId')
-    .get(getOffersByRestaurant);
+router.put(
+    "/:id",
+    uploadLimiter,
+    upload.single("image"),
+    validate({ params: idParam, body: updateOfferSchema }),
+    updateOffer,
+);
 
-router.route('/:id')
-    .put(upload.single('image'), updateOffer) 
-    .delete(deleteOffer);
+router.delete("/:id", validate({ params: idParam }), deleteOffer);
 
 module.exports = router;

@@ -10,8 +10,7 @@ import { useState, useCallback, useRef } from 'react';
 export const useItemApiAction = (actionFn) => {
   const [submittingIds, setSubmittingIds] = useState(new Set());
   
-  // Use a ref to ensure the execute function has the latest submittingIds state immediately
-  // preventing a race condition where multiple rapid clicks read the same previous state.
+  
   const activeIdsRef = useRef(new Set());
 
   const execute = useCallback(async (id, ...args) => {

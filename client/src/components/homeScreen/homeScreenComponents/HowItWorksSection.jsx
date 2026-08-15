@@ -1,6 +1,7 @@
 import React from 'react';
-
 import Icon from '../../common/Icon';
+import { HOW_IT_WORKS_STEPS } from '../../../data/homeData';
+
 const HowItWorksSection = () => {
   return (
     <section className="py-stack_lg bg-surface-container-low">
@@ -10,27 +11,19 @@ const HowItWorksSection = () => {
               <p className="text-body font-body text-secondary">Getting your favorite food has never been simpler</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter text-center">
-              <div className="flex flex-col items-center p-stack_md">
-                <div className="w-20 h-20 rounded-full bg-primary-fixed flex items-center justify-center mb-stack_md text-primary">
-                  <Icon name="restaurant_menu" className="text-[40px]" />
-                </div>
-                <h3 className="font-h3 text-h3 mb-2">Select Your Meal</h3>
-                <p className="text-body text-secondary">Browse through thousands of menus to find what you crave.</p>
-              </div>
-              <div className="flex flex-col items-center p-stack_md">
-                <div className="w-20 h-20 rounded-full bg-tertiary-fixed flex items-center justify-center mb-stack_md text-tertiary">
-                  <Icon name="shopping_bag" className="text-[40px]" />
-                </div>
-                <h3 className="font-h3 text-h3 mb-2">Easy Checkout</h3>
-                <p className="text-body text-secondary">Pay securely with multiple options and track your order live.</p>
-              </div>
-              <div className="flex flex-col items-center p-stack_md">
-                <div className="w-20 h-20 rounded-full bg-secondary-fixed flex items-center justify-center mb-stack_md text-secondary">
-                  <Icon name="delivery_dining" className="text-[40px]" />
-                </div>
-                <h3 className="font-h3 text-h3 mb-2">Enjoy Your Food</h3>
-                <p className="text-body text-secondary">Sit back and relax while we bring the restaurant experience to you.</p>
-              </div>
+              {HOW_IT_WORKS_STEPS.map((step, index) => {
+                const bgColors = ['bg-primary-fixed', 'bg-tertiary-fixed', 'bg-secondary-fixed'];
+                const textColors = ['text-primary', 'text-tertiary', 'text-secondary'];
+                return (
+                  <div key={index} className="flex flex-col items-center p-stack_md">
+                    <div className={`w-20 h-20 rounded-full ${bgColors[index]} flex items-center justify-center mb-stack_md ${textColors[index]}`}>
+                      <Icon name={step.icon} className="text-[40px]" />
+                    </div>
+                    <h3 className="font-h3 text-h3 mb-2">{step.title}</h3>
+                    <p className="text-body text-secondary">{step.description}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>

@@ -1,150 +1,177 @@
-const asyncHandler = require('../utils/asyncHandler');
-const Review = require('../models/review.model');
-const Order = require('../models/order.model');
+const asyncHandler = require("../utils/asyncHandler");
+const ApiError = require("../utils/ApiError");
+const Review = require("../models/review.model");
+const ItemReview = require("../models/itemReview.model");
+const Order = require("../models/order.model");
 
-// @desc    Create a review for a restaurant
+/**
+ * Loads a delivered order the caller owns.
+ *
+ * `restaurantId` was previously taken from the request body and then compared
+ * against the order — a round trip that existed only because the value came from
+ * the client at all. It is read off the order here instead, which removes both
+ * the extra field and the mismatch error it could produce.
+ */
+const loadReviewableOrder = async (orderId, userId) => {
+    const order = await Order.findOne({ _id: orderId, user: userId });
+
+    if (!order) throw new ApiError(404, "Order not found");
+    if (order.status !== "DELIVERED") throw new ApiError(400, "You can only review delivered orders");
+
+    return order;
+};
+
+// @desc    Review a restaurant
 // @route   POST /api/reviews
-// @access  Private
-exports.createReview = asyncHandler(async (req, res, next) => {
-    const { restaurantId, orderId, rating, comment } = req.body;
+// @access  Private (customer who placed the order)
+exports.createReview = asyncHandler(async (req, res) => {
+    const { orderId, rating, comment } = req.body;
 
-    // Validate order belongs to user and is delivered
-    const order = await Order.findOne({ _id: orderId, user: req.user.id });
-    if (!order) {
-        return res.status(404).json({ success: false, message: 'Order not found' });
-    }
-
-    if (order.status !== 'DELIVERED') {
-        return res.status(400).json({ success: false, message: 'Can only review delivered orders' });
-    }
-
-    if (order.isReviewed) {
-        return res.status(400).json({ success: false, message: 'Order has already been reviewed' });
-    }
-
-    // Ensure restaurant matches order
-    if (order.restaurant.toString() !== restaurantId) {
-        return res.status(400).json({ success: false, message: 'Restaurant ID does not match order' });
-    }
+    const order = await loadReviewableOrder(orderId, req.user.id);
+    if (order.isReviewed) throw new ApiError(409, "You have already reviewed this order");
 
     const review = await Review.create({
-        restaurantId,
-        orderId,
+        restaurantId: order.restaurant,
+        orderId: order._id,
         user: req.user.id,
         rating,
-        comment
+        comment,
     });
 
-    // Mark order as reviewed
     order.isReviewed = true;
     await order.save();
 
-    res.status(201).json({
-        success: true,
-        data: review
-    });
+    res.status(201).json({ success: true, data: review });
 });
 
-// @desc    Get reviews for a restaurant
-// @route   GET /api/reviews/restaurant/:restaurantId
-// @access  Public
-exports.getRestaurantReviews = asyncHandler(async (req, res, next) => {
-    const ItemReview = require('../models/itemReview.model');
-    
-    // Fetch general restaurant reviews
-    const generalReviews = await Review.find({ restaurantId: req.params.restaurantId })
-        .populate({
-            path: 'user',
-            select: 'name avatar'
-        })
-        .lean();
-
-    // Fetch item reviews for this restaurant
-    const itemReviews = await ItemReview.find({ restaurantId: req.params.restaurantId })
-        .populate({
-            path: 'user',
-            select: 'name avatar'
-        })
-        .lean();
-
-    // Merge and sort by newest
-    const allReviews = [...generalReviews, ...itemReviews]
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    res.status(200).json({
-        success: true,
-        count: allReviews.length,
-        data: allReviews
-    });
-});
-
-const ItemReview = require('../models/itemReview.model');
-
-// @desc    Create a review for a food item
+// @desc    Review one dish from an order
 // @route   POST /api/reviews/item
-// @access  Private
-exports.createItemReview = asyncHandler(async (req, res, next) => {
-    const { menuItemId, restaurantId, orderId, rating, comment } = req.body;
+// @access  Private (customer who placed the order)
+exports.createItemReview = asyncHandler(async (req, res) => {
+    const { orderId, menuItemId, rating, comment } = req.body;
 
-    // Validate order belongs to user and is delivered
-    const order = await Order.findOne({ _id: orderId, user: req.user.id });
-    if (!order) {
-        return res.status(404).json({ success: false, message: 'Order not found' });
-    }
+    const order = await loadReviewableOrder(orderId, req.user.id);
 
-    if (order.status !== 'DELIVERED') {
-        return res.status(400).json({ success: false, message: 'Can only review delivered orders' });
-    }
-
-    // Ensure restaurant matches order
-    if (order.restaurant.toString() !== restaurantId) {
-        return res.status(400).json({ success: false, message: 'Restaurant ID does not match order' });
-    }
-
-    // Verify the menuItemId actually exists in the order
-    const orderItem = order.items.find(item => item.menuItem.toString() === menuItemId);
-    if (!orderItem) {
-        return res.status(400).json({ success: false, message: 'Food item not found in this order' });
-    }
-
-    if (orderItem.isReviewed) {
-        return res.status(400).json({ success: false, message: 'You have already reviewed this item' });
-    }
+    const orderItem = order.items.find((item) => item.menuItem.toString() === menuItemId);
+    if (!orderItem) throw new ApiError(400, "That item is not part of this order");
+    if (orderItem.isReviewed) throw new ApiError(409, "You have already reviewed this item");
 
     const review = await ItemReview.create({
         menuItemId,
-        restaurantId,
-        orderId,
+        restaurantId: order.restaurant,
+        orderId: order._id,
         user: req.user.id,
         rating,
-        comment
+        comment,
     });
 
-    // Mark specific order item as reviewed
     orderItem.isReviewed = true;
     await order.save();
 
-    res.status(201).json({
-        success: true,
-        data: review
-    });
+    res.status(201).json({ success: true, data: review });
 });
 
-// @desc    Get reviews for a specific food item
-// @route   GET /api/reviews/item/:menuItemId
-// @access  Public
-exports.getItemReviews = asyncHandler(async (req, res, next) => {
-    const reviews = await ItemReview.find({ menuItemId: req.params.menuItemId })
-        .populate({
-            path: 'user',
-            select: 'name avatar'
-        })
-        .sort('-createdAt');
+/**
+ * All reviews for a restaurant, newest first.
+ *
+ * The old handler fetched *every* restaurant review and *every* item review for
+ * the restaurant, concatenated both arrays in Node and sorted the result — then
+ * returned the lot. `$unionWith` merges, sorts and paginates the two collections
+ * in the database, so the response size no longer grows with the restaurant's
+ * lifetime.
+ */
+exports.getRestaurantReviews = asyncHandler(async (req, res) => {
+    const mongoose = require("mongoose");
+    const restaurantId = new mongoose.Types.ObjectId(req.params.restaurantId);
+    const { page, limit } = req.query;
+
+    const projection = {
+        rating: 1,
+        comment: 1,
+        createdAt: 1,
+        user: 1,
+        menuItemId: 1,
+        restaurantId: 1,
+    };
+
+    const [result] = await Review.aggregate([
+        { $match: { restaurantId } },
+        { $project: projection },
+        {
+            $unionWith: {
+                coll: "itemreviews",
+                pipeline: [{ $match: { restaurantId } }, { $project: projection }],
+            },
+        },
+        { $sort: { createdAt: -1 } },
+        {
+            $facet: {
+                items: [
+                    { $skip: (page - 1) * limit },
+                    { $limit: limit },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "user",
+                            foreignField: "_id",
+                            as: "user",
+                            pipeline: [{ $project: { name: 1, avatar: 1 } }],
+                        },
+                    },
+                    { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+                    {
+                        $lookup: {
+                            from: "menuitems",
+                            localField: "menuItemId",
+                            foreignField: "_id",
+                            as: "menuItem",
+                            pipeline: [{ $project: { name: 1 } }],
+                        },
+                    },
+                    { $unwind: { path: "$menuItem", preserveNullAndEmptyArrays: true } },
+                ],
+                total: [{ $count: "value" }],
+            },
+        },
+    ]);
+
+    const items = result?.items ?? [];
+    const total = result?.total?.[0]?.value ?? 0;
 
     res.status(200).json({
         success: true,
-        count: reviews.length,
-        data: reviews
+        count: items.length,
+        total,
+        page,
+        pages: Math.ceil(total / limit) || 1,
+        data: items,
     });
 });
 
+// @desc    Reviews for one dish
+// @route   GET /api/reviews/item/:menuItemId
+// @access  Public
+exports.getItemReviews = asyncHandler(async (req, res) => {
+    const { page, limit } = req.query;
+    const filter = { menuItemId: req.params.menuItemId };
+
+    const [items, total] = await Promise.all([
+        ItemReview.find(filter)
+            .select("rating comment createdAt user")
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .populate("user", "name avatar")
+            .lean(),
+        ItemReview.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+        success: true,
+        count: items.length,
+        total,
+        page,
+        pages: Math.ceil(total / limit) || 1,
+        data: items,
+    });
+});

@@ -1,5 +1,4 @@
 const ApiError = require('./ApiError');
-
 const VALID_TRANSITIONS = {
   PENDING_PAYMENT: ['PLACED', 'PAYMENT_FAILED', 'CANCELLED'],
   PAYMENT_FAILED: ['PENDING_PAYMENT', 'CANCELLED'],

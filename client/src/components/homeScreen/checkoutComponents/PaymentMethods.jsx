@@ -29,45 +29,6 @@ const PaymentMethods = ({ paymentMethod, setPaymentMethod }) => {
           />
         </label>
 
-        <label
-          onClick={() => setPaymentMethod('easypaisa')}
-          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'easypaisa'
-              ? 'border-primary bg-surface-container-low'
-              : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
-            }`}
-        >
-          <div className="flex items-center gap-3">
-            <Icon name="phone_iphone" className="text-secondary" />
-            <span className="font-bold text-small text-on-surface">Easypaisa</span>
-          </div>
-          <input
-            checked={paymentMethod === 'easypaisa'}
-            onChange={() => setPaymentMethod('easypaisa')}
-            className="w-5 h-5 text-primary border-outline focus:ring-primary accent-primary"
-            name="payment"
-            type="radio"
-          />
-        </label>
-
-        <label
-          onClick={() => setPaymentMethod('jazzcash')}
-          className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'jazzcash'
-              ? 'border-primary bg-surface-container-low'
-              : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
-            }`}
-        >
-          <div className="flex items-center gap-3">
-            <Icon name="phone_iphone" className="text-secondary" />
-            <span className="font-bold text-small text-on-surface">JazzCash</span>
-          </div>
-          <input
-            checked={paymentMethod === 'jazzcash'}
-            onChange={() => setPaymentMethod('jazzcash')}
-            className="w-5 h-5 text-primary border-outline focus:ring-primary accent-primary"
-            name="payment"
-            type="radio"
-          />
-        </label>
 
         <label
           onClick={() => setPaymentMethod('cod')}

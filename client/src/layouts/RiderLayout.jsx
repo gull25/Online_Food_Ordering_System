@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchRiderProfileThunk } from '../../redux/riderSlice';
-import RiderSidebar from './RiderSidebar';
-import RiderHeader from './RiderHeader';
-import RiderBottomNav from './RiderBottomNav';
+import { fetchRiderProfileThunk } from '../redux/riderSlice';
+import RiderSidebar from '../components/riderDashboardComponents/RiderSidebar';
+import RiderHeader from '../components/riderDashboardComponents/RiderHeader';
+import RiderBottomNav from '../components/riderDashboardComponents/RiderBottomNav';
 
 const RiderLayout = () => {
     const location = useLocation();
     const dispatch = useDispatch();
-    const { profile, loading } = useSelector((state) => state.rider);
+    const { profile } = useSelector((state) => state.rider);
 
     useEffect(() => {
         if (!profile) {
@@ -31,7 +31,7 @@ const RiderLayout = () => {
 
             {/* Bottom padding clears the mobile nav bar; lg drops it since the
                 sidebar takes over there. */}
-            <main className="pt-[72px] lg:pl-64 pb-24 lg:pb-0 min-h-screen flex flex-col">
+            <main id="main-content" tabIndex={-1} className="pt-[72px] lg:pl-64 pb-24 lg:pb-0 min-h-screen flex flex-col">
                 <Outlet />
             </main>
 

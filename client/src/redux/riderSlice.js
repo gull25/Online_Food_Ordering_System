@@ -228,7 +228,7 @@ const riderSlice = createSlice({
                 if (state.activeOrder) state.activeOrder = action.payload;
             })
 
-            .addCase(confirmDeliveryThunk.fulfilled, (state, action) => {
+            .addCase(confirmDeliveryThunk.fulfilled, (state) => {
                 state.activeOrder = null; // Clear active order after delivery
                 if (state.profile) state.profile.status = 'Available';
             })

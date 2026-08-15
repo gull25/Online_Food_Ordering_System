@@ -155,7 +155,19 @@ const restaurantSchema = new mongoose.Schema(
     }
 );
 
-// Geospatial index for location
+// ---------------------------------------------------------------------------
+// Indexes.
+//
+// Only the 2dsphere index existed, so the home page's "open restaurants sorted
+// by rating" -- the most-requested query in the app -- was a full collection
+// scan plus an in-memory sort on every anonymous page load.
+// ---------------------------------------------------------------------------
 restaurantSchema.index({ location: '2dsphere' });
+restaurantSchema.index({ status: 1, rating: -1 });
+restaurantSchema.index({ status: 1, isFeatured: 1 });
+// `findOne({ owner })` runs on every authenticated restaurant-admin request.
+restaurantSchema.index({ owner: 1 }, { unique: true, sparse: true });
+// Backs the name/cuisine search box.
+restaurantSchema.index({ name: 'text', cuisine: 'text' });
 
 module.exports = mongoose.model('Restaurant', restaurantSchema);

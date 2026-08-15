@@ -63,20 +63,7 @@ const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {
       <div className="flex-1 flex flex-col justify-center relative z-10 py-4">
         <div className="relative">
           {/* The connector is drawn per step rather than as one absolutely
-              positioned track.
-
-              The old version pinned a line at `top-6 bottom-6`, assuming each
-              dot's centre sat 24px from the container edge. But rows are sized
-              by their text block (~68px), not the 48px dot, and the dot is
-              vertically centred — so its centre is ~34px in. The track
-              therefore started above the first dot and, more visibly, trailed
-              off below the last one. The progress fill measured against that
-              same wrong reference, so it never landed on the current dot.
-
-              Splitting the line into an above/below pair inside each row makes
-              it meet dot centres exactly, whatever height the text happens to
-              be. `gap` is dropped because a gap cannot be spanned by a
-              connector; row padding provides the same rhythm. */}
+              positioned track. */}
           <div className="flex flex-col relative z-10">
             {STATUS_STEPS.map((step, idx) => {
               const isCompleted = idx < activeIndex;
@@ -88,10 +75,7 @@ const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {
               return (
                 <div
                   key={step.status}
-                  // No vertical padding on the row: it would sit outside the
-                  // connector's box and break the line between steps. The
-                  // vertical rhythm comes from the card's own padding instead,
-                  // which keeps the connector continuous end to end.
+
                   className={`flex items-stretch gap-4 cursor-pointer group transition-opacity duration-300 ${isPending ? 'opacity-50 hover:opacity-100' : 'opacity-100'}`}
                   onClick={() => {
                     // Prevent moving backwards or clicking the same status
@@ -99,9 +83,7 @@ const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {
                     handleUpdateStatus(activeOrder.originalId, step.status);
                   }}
                 >
-                  {/* Dot column: [connector above] [dot] [connector below].
-                      The flex-1 segments absorb whatever height the text needs,
-                      so the line always terminates at the dot's edge. */}
+                  {/* Dot column: [connector above] [dot] [connector below]. */}
                   <div className="w-12 shrink-0 flex flex-col items-center self-stretch">
                     <span
                       aria-hidden="true"
@@ -109,11 +91,6 @@ const OrderStatusSimulator = ({ activeOrder, handleUpdateStatus }) => {
                         isFirst ? 'bg-transparent' : idx <= activeIndex ? 'bg-primary' : 'bg-surface-variant'
                       }`}
                     />
-                    {/* Fixed-size well around the dot. `scale-110` on the dot
-                        itself used to change the flex item's footprint, so every
-                        status change nudged the whole row and the labels beside
-                        it — visible as a jolt down the list. The well holds the
-                        layout steady while only the dot scales. */}
                     <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-300 shadow-sm ${
                         isCompleted ? 'bg-primary text-on-primary scale-90' :

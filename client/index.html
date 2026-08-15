@@ -7,14 +7,7 @@
     <meta name="description" content="Foodora — order from the best local restaurants with fast delivery, live order tracking and exclusive offers." />
     <title>Foodora - Delicious food delivered</title>
 
-    <!--
-      Resolve the theme before first paint.
-
-      The <html> element used to ship with class="light" and was corrected by a
-      React effect, so dark-mode users saw a white flash on every load. Doing it
-      here, synchronously in <head>, means the first painted frame is already the
-      right theme.
-    -->
+   
     <script>
       (function () {
         try {
@@ -32,17 +25,7 @@
 
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <!--
-      Poppins is the only webfont the app loads now.
-
-      The Material Symbols icon font (1.1MB) has been removed entirely — icons
-      are React SVG components via react-icons. That deletes a render-blocking
-      CDN request and, with it, the failure mode where unloaded ligatures were
-      painted as literal words ("dashboard", "receipt_long") on first load.
-
-      `display=swap` is right for prose: readable fallback text beats invisible
-      text while the face downloads.
-    -->
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   </head>
   <body class="bg-background text-on-surface font-body text-body antialiased selection:bg-primary-container selection:text-on-primary-container">

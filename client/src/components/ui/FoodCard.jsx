@@ -27,9 +27,7 @@ const FoodCard = ({ item, cartQty, onAdd, onRemove }) => {
             <h3 className="text-[20px] font-semibold text-on-surface leading-tight">
               {item.name}
             </h3>
-            {/* Every other price in the app (cart, checkout, receipts, admin)
-                is in $. This card alone rendered €, so the same dish appeared
-                to change currency between the menu and the cart. */}
+          
             <span className="text-primary font-button text-button ml-2 whitespace-nowrap">
               ${Number(item.price || 0).toFixed(2)}
             </span>

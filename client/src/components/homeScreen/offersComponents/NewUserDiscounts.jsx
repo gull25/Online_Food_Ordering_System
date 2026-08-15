@@ -5,9 +5,6 @@ const NewUserDiscounts = ({ copyPromoCode, copiedCode, offers }) => {
   const welcomeOffer = offers?.welcome;
   const deliveryOffer = offers?.delivery;
 
-  // Only surface offers that actually exist. The previous version substituted
-  // invented codes ('HELLO50', 'FREEDELIVERY') whenever the API returned fewer
-  // than two offers, promising discounts the backend would then reject.
   if (!welcomeOffer?.code && !deliveryOffer?.code) return null;
 
   const welcomeTitle = welcomeOffer?.discountPercentage

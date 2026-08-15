@@ -18,12 +18,7 @@ const getStripe = () => {
     return client;
 };
 
-/*
- * Lazy proxy: callers keep using `stripe.accounts.create(...)` as before, but
- * the SDK is only built on first use. Constructing it at require-time made the
- * whole server refuse to boot when no key was set, taking down every unrelated
- * route with it. Missing config now surfaces as a 503 on payment routes only.
- */
+
 module.exports = new Proxy(
     {},
     {

@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Icon from '../../../components/common/Icon';
-import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchActiveOrderThunk, confirmPickupThunk, confirmDeliveryThunk, acceptDeliveryThunk, startDeliveryThunk } from '../../../redux/riderSlice';
 import { RiderPageSkeleton } from '../../../components/common/Skeleton';
-import { socket } from '../../../helper/socket';
+import { socket, connectSocket, emitRiderLocation, joinRiderRoom } from '../../../helper/socket';
 import LiveTracker from '../../../components/homeScreen/orderComponents/LiveTracker';
 import { haversineMetres } from '../../../helper/osrm';
 import { useApiAction } from '../../../hooks/useApiAction';
@@ -25,6 +24,17 @@ const ActiveDeliveries = () => {
 
     useEffect(() => {
         dispatch(fetchActiveOrderThunk());
+
+        /*
+         * The socket is created with `autoConnect: false`, and this screen never
+         * opened it -- so every `socket.emit` below was queued into a connection
+         * that was never established, and the live-tracking events it listens
+         * for never arrived either. The rider's own room is joined here rather
+         * than passed a client-supplied id; the server resolves it from the
+         * session.
+         */
+        connectSocket();
+        joinRiderRoom();
 
         if (socket) {
             socket.on('rider:new_delivery', () => {
@@ -66,14 +76,14 @@ const ActiveDeliveries = () => {
 
                         // Only emit if moved enough OR enough time passed
                         if (movedM >= GPS_EMIT_DISTANCE_M || timeSinceLast >= GPS_EMIT_INTERVAL_MS) {
-                            if (socket) {
-                                socket.emit('rider:location_update', {
-                                    orderId: activeOrder._id,
-                                    riderId: user?._id,
-                                    lat: latitude,
-                                    lng: longitude,
-                                });
-                            }
+                            // `riderId` is no longer sent: the server derives the
+                            // courier from the authenticated socket, so a client
+                            // cannot report a position on another rider's behalf.
+                            emitRiderLocation({
+                                orderId: activeOrder._id,
+                                lat: latitude,
+                                lng: longitude,
+                            });
                             lastEmittedPos.current = newPos;
                             lastEmitTime.current = now;
                         }
@@ -140,7 +150,7 @@ const ActiveDeliveries = () => {
     }
 
     return (
-        <main className="flex-grow relative flex flex-col pb-20 lg:pb-0">
+        <main id="main-content" tabIndex={-1} className="flex-grow relative flex flex-col pb-20 lg:pb-0">
                 <div className="absolute inset-0 z-0">
                     <div className="w-full h-full bg-surface-dim relative">
                         {/* Interactive Map */}
@@ -161,15 +171,10 @@ const ActiveDeliveries = () => {
                         )}
                         {/* UI Overlays for the Map */}
                         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent from-0% to-40% pointer-events-none"></div>
-                        {/* Floating Map Controls */}
-                        <div className="absolute top-4 right-4 flex-col gap-2 z-10 hidden lg:flex">
-                            <button className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant shadow-lg text-on-surface hover:bg-surface-container-low">
-                                <Icon name="my_location" />
-                            </button>
-                            <button className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant shadow-lg text-on-surface hover:bg-surface-container-low">
-                                <Icon name="layers" />
-                            </button>
-                        </div>
+                        {/* The "recentre" and "layers" buttons that sat here had no
+                            onClick handler at all -- they looked like map controls and
+                            did nothing when tapped. Removed rather than left as
+                            decoration a rider would reach for mid-delivery. */}
                     </div>
                 </div>
 
@@ -240,9 +245,19 @@ const ActiveDeliveries = () => {
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
-                                                <button className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-primary border border-outline-variant transition-transform active:scale-95">
-                                                    <Icon name="call" />
-                                                </button>
+                                                {/* Was a button with no handler. The customer's
+                                                    number is already on the order, so it is a real
+                                                    `tel:` link now -- and hidden entirely when there
+                                                    is no number to call. */}
+                                                {activeOrder.user?.phone && (
+                                                    <a
+                                                        href={`tel:${activeOrder.user.phone}`}
+                                                        aria-label={`Call ${activeOrder.user?.name || 'the customer'}`}
+                                                        className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-primary border border-outline-variant transition-transform active:scale-95 hover:border-primary"
+                                                    >
+                                                        <Icon name="call" />
+                                                    </a>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -255,14 +270,9 @@ const ActiveDeliveries = () => {
                                         </button>
                                         
                                         {activeOrder.status === 'RIDER_ASSIGNED' && (
-                                            <div className="flex gap-2">
-                                                <button disabled={isAccepting} onClick={handleAcceptDelivery} className="flex-1 bg-primary text-on-primary font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
-                                                    {isAccepting && <Icon name="sync" className="animate-spin text-sm" />} ACCEPT
-                                                </button>
-                                                <button disabled={isPickingUp} onClick={handleConfirmPickup} className="flex-1 bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
-                                                    {isPickingUp && <Icon name="sync" className="animate-spin text-sm" />} CONFIRM PICKUP
-                                                </button>
-                                            </div>
+                                            <button disabled={isPickingUp} onClick={handleConfirmPickup} className="w-full bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">
+                                                {isPickingUp && <Icon name="sync" className="animate-spin text-sm" />} CONFIRM PICKUP
+                                            </button>
                                         )}
                                         {activeOrder.status === 'PICKED_UP' && (
                                             <button disabled={isStarting} onClick={handleStartDelivery} className="w-full bg-surface-container-highest text-on-surface font-inter text-xs font-bold leading-4 py-4 rounded-xl border border-outline-variant transition-transform active:scale-95 disabled:opacity-50 flex justify-center items-center gap-1">

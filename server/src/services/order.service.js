@@ -1,355 +1,399 @@
-const orderRepository = require('../repositories/order.repository');
-const MenuItem = require('../models/menuItem.model');
-const Offer = require('../models/offer.model');
-const Restaurant = require('../models/restaurant.model');
-const ApiError = require('../utils/ApiError');
-const { geocodeAddress } = require('../utils/geocoder');
+const orderRepository = require("../repositories/order.repository");
+const Order = require("../models/order.model");
+const MenuItem = require("../models/menuItem.model");
+const Offer = require("../models/offer.model");
+const Restaurant = require("../models/restaurant.model");
+const Rider = require("../models/rider.model");
+const ApiError = require("../utils/ApiError");
+const { geocodeAddress } = require("../utils/geocoder");
+const { enforceTransition } = require("../utils/orderStatusMachine");
+const pricing = require("../utils/pricing");
+const socketManager = require("../socket");
 
-const socketManager = require('../socket');
+/** Fallback map centre when geocoding is unavailable. */
+const DEFAULT_COORDS = { lat: 31.5204, lng: 74.3587 };
 
 class OrderService {
-    async createOrder(data) {
-        if (data.idempotencyKey) {
-            const Order = require('../models/order.model');
-            const existingOrder = await Order.findOne({ idempotencyKey: data.idempotencyKey });
-            if (existingOrder) {
-                throw new ApiError(409, 'An order with this ID has already been created. Please check your active orders.');
-            }
+    /**
+     * Prices an order from the database and creates it.
+     *
+     * `data` has already been through `createOrderSchema`, so it contains only
+     * the customer's genuine choices — no prices, totals, status or rider. Every
+     * monetary figure below is derived here; nothing about money is trusted from
+     * the request.
+     */
+    async createOrder(userId, data) {
+        const restaurant = await Restaurant.findById(data.restaurant)
+            .select("_id name owner deliveryFee minOrder status stripeAccountId stripeOnboardingComplete")
+            .lean();
+
+        if (!restaurant) throw new ApiError(404, "Restaurant not found");
+        if (restaurant.status !== "Open") {
+            throw new ApiError(409, `${restaurant.name} is not accepting orders right now`);
         }
 
-        if (!data.items || data.items.length === 0) {
-            throw new ApiError(400, 'Order must contain items');
-        }
+        const { items, subtotal } = await this.#priceItems(data.items, restaurant._id);
 
-        // 1. Fetch real prices from the DB
-        const itemIds = data.items.map(item => item.menuItem);
-        const menuItemsFromDb = await MenuItem.find({ _id: { $in: itemIds } });
-
-        if (menuItemsFromDb.length !== itemIds.length) {
-            throw new ApiError(400, 'One or more items in your cart are invalid or no longer exist.');
-        }
-
-        // Single Restaurant Context Enforcement:
-        // Ensure all menu items actually belong to the restaurant specified in the order
-        const allItemsValid = menuItemsFromDb.every(
-            item => item.restaurant.toString() === data.restaurant.toString()
-        );
-        if (!allItemsValid) {
-            throw new ApiError(400, 'Your cart contains items from multiple restaurants. You can only order from one restaurant at a time.');
-        }
-
-        // 2. Map items to a dictionary for quick lookup
-        const dbItems = {};
-        menuItemsFromDb.forEach(item => {
-            dbItems[item._id.toString()] = item;
+        const discountPercent = await this.#resolveDiscount(data.promoCode, restaurant._id);
+        const totals = pricing.calculateTotals({
+            subtotal,
+            discountPercent,
+            deliveryFee: restaurant.deliveryFee || 0,
         });
 
-        // 3. Calculate secure subtotal
+        if (restaurant.minOrder && totals.subtotal < restaurant.minOrder) {
+            throw new ApiError(
+                400,
+                `Minimum order for ${restaurant.name} is ${restaurant.minOrder.toFixed(2)}`,
+            );
+        }
+
+        const deliveryAddress = { ...data.deliveryAddress, ...(await this.#resolveCoords(data.deliveryAddress)) };
+
+        // `cash` and `cod` are the same choice spelled two ways (see the note in
+        // order.validation.js); both normalise to the `cod` gateway.
+        const gateway = data.paymentMethod === "cash" ? "cod" : data.paymentMethod;
+        const isCod = gateway === "cod";
+
+        const order = await this.#persist({
+            user: userId,
+            restaurant: restaurant._id,
+            items,
+            deliveryAddress,
+            promoCode: data.promoCode,
+            paymentMethod: data.paymentMethod,
+            paymentGateway: gateway,
+            idempotencyKey: data.idempotencyKey,
+            ...totals,
+            riderEarning: pricing.riderEarning(totals.totalAmount),
+            status: isCod ? "PLACED" : "PENDING_PAYMENT",
+            paymentStatus: isCod ? "COD_PENDING" : "PENDING",
+        });
+
+        const payment = await this.#preparePayment({ order, restaurant, gateway, totals });
+
+        if (isCod) {
+            await this.recordOrderPlaced(order);
+        }
+
+        return { order, ...payment };
+    }
+
+    /**
+     * Re-prices the cart against the database.
+     */
+    async #priceItems(cartItems, restaurantId) {
+        const uniqueIds = [...new Set(cartItems.map((item) => item.menuItem))];
+
+        const menuItems = await MenuItem.find({ _id: { $in: uniqueIds } })
+            .select("_id name price sizes addOns restaurant isAvailable")
+            .lean();
+
+        const byId = new Map(menuItems.map((item) => [item._id.toString(), item]));
+
+        const missing = uniqueIds.filter((id) => !byId.has(id));
+        if (missing.length > 0) {
+            throw new ApiError(400, "Some items in your cart are no longer available");
+        }
+
+        for (const item of menuItems) {
+            // Cross-restaurant carts would otherwise bill one restaurant for
+            // another's food.
+            if (item.restaurant.toString() !== restaurantId.toString()) {
+                throw new ApiError(400, "You can only order from one restaurant at a time");
+            }
+            if (item.isAvailable === false) {
+                throw new ApiError(409, `${item.name} is currently unavailable`);
+            }
+        }
+
         let subtotal = 0;
-        data.items = data.items.map(cartItem => {
-            const dbItem = dbItems[cartItem.menuItem.toString()];
-            let securePrice = dbItem.price;
 
-            // Validate and apply size price
-            if (cartItem.selectedSize && cartItem.selectedSize.name) {
-                const sizeFromDb = dbItem.sizes?.find(s => s.name === cartItem.selectedSize.name);
-                if (sizeFromDb) {
-                    securePrice += sizeFromDb.additionalPrice;
-                    cartItem.selectedSize.additionalPrice = sizeFromDb.additionalPrice; // Override with DB price
-                } else {
-                    throw new ApiError(400, `Invalid size ${cartItem.selectedSize.name} for item ${dbItem.name}`);
+        const items = cartItems.map((cartItem) => {
+            const dbItem = byId.get(cartItem.menuItem);
+            let unitPrice = dbItem.price;
+
+            let selectedSize;
+            if (cartItem.selectedSize?.name) {
+                const size = dbItem.sizes?.find((option) => option.name === cartItem.selectedSize.name);
+                if (!size) {
+                    throw new ApiError(400, `"${cartItem.selectedSize.name}" is not an option for ${dbItem.name}`);
                 }
+                unitPrice += size.additionalPrice;
+                selectedSize = { name: size.name, additionalPrice: size.additionalPrice };
             }
 
-            // Validate and apply add-ons prices
-            if (cartItem.selectedAddOns && cartItem.selectedAddOns.length > 0) {
-                cartItem.selectedAddOns.forEach(addOn => {
-                    const addOnFromDb = dbItem.addOns?.find(a => a.name === addOn.name);
-                    if (addOnFromDb) {
-                        securePrice += addOnFromDb.price;
-                        addOn.price = addOnFromDb.price; // Override with DB price
-                    } else {
-                        throw new ApiError(400, `Invalid add-on ${addOn.name} for item ${dbItem.name}`);
-                    }
-                });
-            }
+            const selectedAddOns = (cartItem.selectedAddOns ?? []).map((requested) => {
+                const addOn = dbItem.addOns?.find((option) => option.name === requested.name);
+                if (!addOn) {
+                    throw new ApiError(400, `"${requested.name}" is not an add-on for ${dbItem.name}`);
+                }
+                unitPrice += addOn.price;
+                return { name: addOn.name, price: addOn.price };
+            });
 
-            subtotal += securePrice * cartItem.quantity;
-            // Overwrite frontend price with DB price
+            subtotal += unitPrice * cartItem.quantity;
+
             return {
-                ...cartItem,
-                price: securePrice
+                menuItem: dbItem._id,
+                name: dbItem.name,
+                quantity: cartItem.quantity,
+                price: pricing.round(unitPrice),
+                ...(selectedSize ? { selectedSize } : {}),
+                selectedAddOns,
             };
         });
 
-        // 4. Apply Promo Codes
-        let discountPercent = 0;
-        if (data.promoCode) {
-            const code = data.promoCode.trim();
-            const offer = await Offer.findOne({
-                code: new RegExp(`^${code}$`, 'i'),
-                isActive: true,
-                validUntil: { $gte: new Date() },
-                restaurantId: data.restaurant
-            });
+        return { items, subtotal: pricing.round(subtotal) };
+    }
 
-            if (offer) {
-                discountPercent = offer.discountPercentage;
-            } else {
-                throw new ApiError(400, 'Invalid, expired, or inapplicable promo code');
+    /**
+     * Looks up a promo code.
+     */
+    async #resolveDiscount(promoCode, restaurantId) {
+        if (!promoCode) return 0;
+
+        const offer = await Offer.findOne({
+            code: promoCode,
+            isActive: true,
+            validUntil: { $gte: new Date() },
+            restaurantId,
+        })
+            .select("discountPercentage")
+            .lean();
+
+        if (!offer) throw new ApiError(400, "That promo code is invalid, expired, or not valid here");
+
+        return offer.discountPercentage;
+    }
+
+    async #resolveCoords(address) {
+        if (!address?.streetAddress) return DEFAULT_COORDS;
+
+        const coords = await geocodeAddress(`${address.streetAddress}, ${address.city}`);
+        return coords ?? DEFAULT_COORDS;
+    }
+
+    /**
+     * Writes the order, relying on the unique index for idempotency.
+     */
+    async #persist(payload) {
+        try {
+            return await orderRepository.create(payload);
+        } catch (error) {
+            if (error.code === 11000 && payload.idempotencyKey) {
+                const existing = await Order.findOne({ idempotencyKey: payload.idempotencyKey });
+                if (existing) return existing;
             }
+            throw error;
         }
+    }
 
-        // The restaurant is needed for the delivery fee before totals are
-        // computed, so fetch it once here rather than only in the Stripe path.
-        const restaurant = await Restaurant.findById(data.restaurant);
-        if (!restaurant) throw new ApiError(404, 'Restaurant not found');
+    async #preparePayment({ order, restaurant, gateway, totals }) {
+        if (gateway === "cod") return { clientSecret: null, paymentUrl: null };
 
-        const discountAmount = subtotal * (discountPercent / 100);
-        const taxableAmount = Math.max(0, subtotal - discountAmount);
-        const tax = taxableAmount * 0.087; // 8.7%
-        const serviceFee = subtotal > 0 ? 2.50 : 0;
+        if (gateway === "stripe") {
+            const stripe = require("../config/stripe");
+            const amountInCents = Math.round(totals.totalAmount * 100);
 
-        // Delivery fee comes from the restaurant record — the same value the
-        // checkout screen shows the customer.
-        //
-        // It was previously left out of the server-side total entirely, so the
-        // order summary quoted (subtotal − discount + tax + service + delivery)
-        // while the customer was actually charged that figure minus the delivery
-        // fee, and the restaurant was never credited for delivery.
-        const deliveryFee = subtotal > 0 ? (restaurant.deliveryFee || 0) : 0;
-
-        const calculatedTotal = subtotal - discountAmount + tax + serviceFee + deliveryFee;
-
-        data.subtotal = subtotal;
-        data.discountAmount = discountAmount;
-        data.tax = tax;
-        data.serviceFee = serviceFee;
-        data.deliveryFee = deliveryFee;
-        // Round to cents so the stored total matches what the gateway charges
-        // exactly, rather than differing by a floating-point remainder.
-        data.totalAmount = Math.max(0, Math.round(calculatedTotal * 100) / 100);
-        data.riderEarning = Math.max(0, Math.round(data.totalAmount * 0.10 * 100) / 100);
-
-        // 5. Setup Payment Gateway
-        let clientSecret = null;
-        let paymentUrl = null;
-        data.paymentGateway = data.paymentMethod === 'cash' ? 'cod' : data.paymentMethod;
-
-        if (data.paymentGateway === 'stripe') {
-            const stripe = require('../config/stripe');
-            const amountInCents = Math.round(data.totalAmount * 100);
-
-            const customer = await stripe.customers.create();
-            const paymentIntentPayload = {
+            const payload = {
                 amount: amountInCents,
-                currency: 'usd',
-                customer: customer.id,
+                currency: "usd",
                 automatic_payment_methods: { enabled: true },
-                metadata: { integration_check: 'accept_a_payment' }
+                metadata: { orderId: order._id.toString() },
             };
 
             if (restaurant.stripeAccountId && restaurant.stripeOnboardingComplete) {
-                const platformFee = (subtotal * 0.10) + serviceFee;
-                const finalFeeInCents = Math.min(Math.round(platformFee * 100), amountInCents);
-
-                paymentIntentPayload.application_fee_amount = finalFeeInCents;
-                paymentIntentPayload.transfer_data = { destination: restaurant.stripeAccountId };
+                const platformFee = pricing.platformFee(totals);
+                payload.application_fee_amount = Math.min(Math.round(platformFee * 100), amountInCents);
+                payload.transfer_data = { destination: restaurant.stripeAccountId };
             }
 
-            const paymentIntent = await stripe.paymentIntents.create(paymentIntentPayload);
-            data.stripePaymentIntentId = paymentIntent.id;
-            clientSecret = paymentIntent.client_secret;
-            data.paymentStatus = 'PENDING';
-            data.status = 'PENDING_PAYMENT';
+            const intent = await stripe.paymentIntents.create(payload);
 
-        } else if (data.paymentGateway === 'easypaisa') {
-            // Mock Easypaisa deep link / URL
-            paymentUrl = `https://easypaisa.com.pk/checkout?amount=${data.totalAmount}&store=Foodora`;
-            data.paymentStatus = 'PENDING';
-            data.status = 'PENDING_PAYMENT';
+            order.stripePaymentIntentId = intent.id;
+            await order.save();
 
-        } else if (data.paymentGateway === 'jazzcash') {
-            // Mock JazzCash deep link / URL
-            paymentUrl = `https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform?amount=${data.totalAmount}&store=Foodora`;
-            data.paymentStatus = 'PENDING';
-            data.status = 'PENDING_PAYMENT';
-
-        } else if (data.paymentGateway === 'meezan') {
-            paymentUrl = `/bank-transfer?bank=meezan&amount=${data.totalAmount}`;
-            data.paymentStatus = 'PENDING';
-            data.status = 'PENDING_PAYMENT';
-
-        } else if (data.paymentGateway === 'ubl') {
-            paymentUrl = `/bank-transfer?bank=ubl&amount=${data.totalAmount}`;
-            data.paymentStatus = 'PENDING';
-            data.status = 'PENDING_PAYMENT';
-
-        } else {
-            // COD
-            data.paymentStatus = 'COD_PENDING';
-            data.status = 'PLACED';
+            return { clientSecret: intent.client_secret, paymentUrl: null };
         }
+        const amount = totals.totalAmount;
+        const urls = {
 
-        // 6. Geocode Delivery Address
-        if (data.deliveryAddress && data.deliveryAddress.streetAddress) {
-            const fullAddress = `${data.deliveryAddress.streetAddress}, ${data.deliveryAddress.city || 'Lahore'}`;
-            const coords = await geocodeAddress(fullAddress);
-            if (coords) {
-                data.deliveryAddress.lat = coords.lat;
-                data.deliveryAddress.lng = coords.lng;
-            } else {
-                // Fallback to a default location if geocoding fails (e.g., Lahore center)
-                data.deliveryAddress.lat = 31.5204;
-                data.deliveryAddress.lng = 74.3587;
-            }
-        }
-
-        // 7. Initialize Status History
-        data.statusHistory = [{ status: data.status, timestamp: new Date() }];
-
-        const newOrder = await orderRepository.create(data);
-
-        // Update Stripe Payment Intent metadata with the real MongoDB Order ID
-        if (data.stripePaymentIntentId) {
-            const stripe = require('../config/stripe');
-            await stripe.paymentIntents.update(data.stripePaymentIntentId, {
-                metadata: { orderId: newOrder._id.toString() }
-            });
-        }
-
-        // Only increment order counts and notify restaurant if it's COD
-        // Online payments will do this in the webhook upon success.
-        if (data.paymentGateway === 'cod') {
-            try {
-                for (const cartItem of data.items) {
-                    await MenuItem.findByIdAndUpdate(cartItem.menuItem, {
-                        $inc: { orderCount: cartItem.quantity }
-                    });
-                }
-            } catch (err) {
-                console.error('[OrderService] Failed to increment order counts:', err.message);
-            }
-
-            try {
-                const populatedRestaurant = await Restaurant.findById(data.restaurant).select('owner');
-                if (populatedRestaurant?.owner) {
-                    socketManager.emitToUser(
-                        populatedRestaurant.owner.toString(),
-                        'order:new',
-                        { order: newOrder }
-                    );
-                }
-            } catch (err) {
-                console.error('[Socket.io] Failed to emit order:new:', err.message);
-            }
-        }
-
-        // Return order with clientSecret or paymentUrl so frontend can proceed
-        return {
-            order: newOrder,
-            clientSecret,
-            paymentUrl
+            meezan: `/bank-transfer?bank=meezan&amount=${amount}`,
+            ubl: `/bank-transfer?bank=ubl&amount=${amount}`,
         };
+
+        return { clientSecret: null, paymentUrl: urls[gateway] ?? null };
     }
 
-    async getMyOrders(userId) {
-        return await orderRepository.findByUser(userId);
-    }
-
-    async getAllOrders() {
-        return await orderRepository.findAll();
-    }
-
-    async getOrderById(orderId, userId, role) {
-        const order = await orderRepository.findById(orderId);
-
-        if (!order) {
-            throw new ApiError(404, 'Order not found');
+    /**
+     * Side effects that happen once an order actually enters the kitchen —
+     * shared by the COD path and the payment-confirmation path so the two can
+     * never drift.
+     */
+    async recordOrderPlaced(order) {
+        try {
+            await MenuItem.bulkWrite(
+                order.items.map((item) => ({
+                    updateOne: {
+                        filter: { _id: item.menuItem },
+                        update: { $inc: { orderCount: item.quantity } },
+                    },
+                })),
+                { ordered: false },
+            );
+        } catch (error) {
+            console.error("[OrderService] Failed to increment order counts:", error.message);
         }
 
-        // Only the user who placed the order or an admin can view it
-        const orderUserId = order.user?._id ? order.user._id.toString() : order.user?.toString();
-        if (orderUserId !== userId.toString() && role !== 'admin' && role !== 'super_admin' && role !== 'restaurant_admin') {
-            throw new ApiError(403, 'Not authorized to access this order');
+        try {
+            const restaurant = await Restaurant.findById(order.restaurant).select("owner").lean();
+            if (restaurant?.owner) {
+                socketManager.emitToUser(restaurant.owner.toString(), "order:new", { order });
+            }
+        } catch (error) {
+            console.error("[OrderService] Failed to emit order:new:", error.message);
+        }
+    }
+
+    async getMyOrders(userId, { page, limit }) {
+        return orderRepository.findByUser(userId, { page, limit });
+    }
+
+    /**
+     * Fetches one order, enforcing that the caller is a party to it.
+     */
+    async getOrderById(orderId, user) {
+        const order = await orderRepository.findById(orderId);
+        if (!order) throw new ApiError(404, "Order not found");
+
+        if (!this.#canView(order, user)) {
+            throw new ApiError(404, "Order not found");
         }
 
         return order;
     }
 
-    async updateOrderStatus(orderId, newStatus, role = 'admin', additionalData = {}) {
-        const Order = require('../models/order.model');
-        const { enforceTransition } = require('../utils/orderStatusMachine');
+    #canView(order, user) {
+        if (user.role === "admin" || user.role === "super_admin") return true;
 
-        let order = await Order.findById(orderId);
-        if (!order) throw new ApiError(404, 'Order not found');
+        const orderUserId = (order.user?._id ?? order.user)?.toString();
+        if (orderUserId === user.id) return true;
 
-        // Enforce state machine rules
-        enforceTransition(order.status, newStatus, role);
+        if (user.role === "restaurant_admin" && user.restaurantId) {
+            const restaurantId = (order.restaurant?._id ?? order.restaurant)?.toString();
+            if (restaurantId === user.restaurantId) return true;
+        }
 
-        // Update fields
+        if (user.role === "rider" && user.riderId) {
+            const riderId = (order.rider?._id ?? order.rider)?.toString();
+            if (riderId === user.riderId) return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Advances an order's status.
+    
+     */
+    async updateOrderStatus(orderId, newStatus, user, extra = {}) {
+        // Raw document, not lean: it is mutated and saved below.
+        const order = await orderRepository.findRawById(orderId);
+        if (!order) throw new ApiError(404, "Order not found");
+
+        this.#assertCanTransition(order, user);
+        enforceTransition(order.status, newStatus, user.role);
+
         order.status = newStatus;
         order.statusHistory.push({ status: newStatus, timestamp: new Date() });
 
-        if (additionalData.estimatedDeliveryTime) order.estimatedDeliveryTime = additionalData.estimatedDeliveryTime;
-        if (additionalData.rejectionReason) order.rejectionReason = additionalData.rejectionReason;
-        if (additionalData.cancelledBy) order.cancelledBy = additionalData.cancelledBy;
-        if (additionalData.rider) order.rider = additionalData.rider;
-
-        await order.save();
-        order = await orderRepository.findById(orderId); // get populated version
-
-        // Socket notifications based on status
-        try {
-            socketManager.emitToOrderRoom(orderId, 'orderStatusUpdate', order);
-
-            switch (newStatus) {
-                case 'ACCEPTED':
-                    socketManager.emitToOrderRoom(orderId, 'order:accepted', { orderId });
-                    break;
-                case 'REJECTED':
-                    socketManager.emitToOrderRoom(orderId, 'order:rejected', { orderId, reason: additionalData.rejectionReason });
-                    break;
-                case 'PREPARING':
-                    socketManager.emitToOrderRoom(orderId, 'order:preparing', { orderId });
-                    break;
-                case 'READY_FOR_PICKUP':
-                    socketManager.emitToOrderRoom(orderId, 'order:ready', { orderId });
-                    // In a real app, emit to nearby riders. For now, we rely on riders polling available deliveries.
-                    break;
-                case 'CANCELLED':
-                    socketManager.emitToOrderRoom(orderId, 'order:cancelled', { orderId });
-                    break;
-            }
-        } catch (err) {
-            console.error('[Socket.io] Failed to emit order updates:', err.message);
+        if (newStatus === "REJECTED" && extra.rejectionReason) {
+            order.rejectionReason = extra.rejectionReason;
         }
 
-        return order;
+        if (newStatus === "CANCELLED") {
+            // Derived from who is calling, not from a client-supplied field.
+            order.cancelledBy = user.role === "customer" ? "customer" : "restaurant";
+        }
+
+        if (extra.rider) order.rider = extra.rider;
+
+        await order.save();
+
+        const populated = await orderRepository.findById(orderId);
+        this.#broadcastStatus(orderId, newStatus, populated, extra);
+
+        return populated;
     }
 
-    async assignRider(orderId, riderId, role = 'admin') {
-        const Rider = require('../models/rider.model');
-        const rider = await Rider.findById(riderId);
-        if (!rider) throw new ApiError(404, 'Rider not found');
+    #assertCanTransition(order, user) {
+        if (user.role === "admin" || user.role === "super_admin") return;
 
-        // Update order status to RIDER_ASSIGNED
-        const order = await this.updateOrderStatus(orderId, 'RIDER_ASSIGNED', role, { rider: riderId });
+        if (user.role === "customer") {
+            if (order.user.toString() !== user.id) throw new ApiError(404, "Order not found");
+            return;
+        }
 
-        // Notify customer
+        if (user.role === "restaurant_admin") {
+            if (!user.restaurantId || order.restaurant.toString() !== user.restaurantId) {
+                throw new ApiError(404, "Order not found");
+            }
+            return;
+        }
+
+        if (user.role === "rider") {
+            if (!user.riderId || order.rider?.toString() !== user.riderId) {
+                throw new ApiError(403, "You are not assigned to this delivery");
+            }
+            return;
+        }
+
+        throw new ApiError(403, "You do not have permission to update this order");
+    }
+
+    #broadcastStatus(orderId, newStatus, order, extra) {
         try {
-            socketManager.emitToOrderRoom(orderId, 'order:rider_assigned', {
+            socketManager.emitToOrderRoom(orderId, "orderStatusUpdate", order);
+
+            const events = {
+                ACCEPTED: "order:accepted",
+                REJECTED: "order:rejected",
+                PREPARING: "order:preparing",
+                READY_FOR_PICKUP: "order:ready",
+                CANCELLED: "order:cancelled",
+            };
+
+            const event = events[newStatus];
+            if (event) {
+                socketManager.emitToOrderRoom(orderId, event, {
+                    orderId,
+                    ...(newStatus === "REJECTED" ? { reason: extra.rejectionReason } : {}),
+                });
+            }
+        } catch (error) {
+            console.error("[OrderService] Failed to emit order updates:", error.message);
+        }
+    }
+
+    /** Assigns a courier. Only the owning restaurant (or an admin) may do this. */
+    async assignRider(orderId, riderId, user) {
+        const rider = await Rider.findById(riderId).select("_id user name phone vehicleDetails status").lean();
+        if (!rider) throw new ApiError(404, "Rider not found");
+
+        const order = await this.updateOrderStatus(orderId, "RIDER_ASSIGNED", user, { rider: riderId });
+
+        try {
+            socketManager.emitToOrderRoom(orderId, "order:rider_assigned", {
                 orderId,
                 riderName: rider.name,
                 riderPhone: rider.phone,
                 vehicleDetails: rider.vehicleDetails,
-                status: 'RIDER_ASSIGNED'
+                status: "RIDER_ASSIGNED",
             });
-
-            // Notify the rider directly
-            socketManager.emitToUser(rider.user.toString(), 'rider:new_delivery', { order });
-        } catch (err) {
-            console.error('[Socket.io] Failed to emit assignment:', err.message);
+            socketManager.emitToUser(rider.user.toString(), "rider:new_delivery", { order });
+        } catch (error) {
+            console.error("[OrderService] Failed to emit rider assignment:", error.message);
         }
 
         return { order, rider };
@@ -357,6 +401,3 @@ class OrderService {
 }
 
 module.exports = new OrderService();
-
-
-

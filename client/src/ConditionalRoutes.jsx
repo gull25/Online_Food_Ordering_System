@@ -4,10 +4,12 @@ import { APP_ROUTES, USER_ROLES } from './constants';
 
 import { ProtectedRoute, GuestRoute } from './ProtectedRoute';
 
-import AdminLayout from './components/adminDashboardComponents/AdminLayout';
-import RiderLayout from './components/riderDashboardComponents/RiderLayout';
+import AdminLayout from './layouts/AdminLayout';
+import RiderLayout from './layouts/RiderLayout';
+import MainLayout from './layouts/MainLayout';
 
 import RouteProgress from './components/common/RouteProgress';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 const HomeScreen = React.lazy(() => import('./screens/userScreens/HomeScreen'));
 const AuthScreen = React.lazy(() => import('./screens/userScreens/AuthPage')); // To be split
@@ -35,43 +37,39 @@ const EarningsPage = React.lazy(() => import('./screens/dashboard/rider/Earnings
 const NotFoundPage = React.lazy(() => import('./screens/errorPages/NotFoundPage'));
 const UnauthorizedPage = React.lazy(() => import('./screens/errorPages/UnauthorizedPage'));
 
-/**
- * Resets scroll on navigation. Without this, moving from a scrolled listing to
- * a detail page lands the user halfway down the new page. Hash links and
- * browser back/forward (which restore their own position) are left alone.
- */
-const ScrollToTop = () => {
-  const { pathname, hash } = useLocation();
-
-  useEffect(() => {
-    if (hash) return;
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [pathname, hash]);
-
-  return null;
-};
+import ScrollToTop from './components/common/ScrollToTop';
 
 const ConditionalRoutes = () => {
-  return (
-    <Suspense fallback={<RouteProgress />}>
-      <ScrollToTop />
-      <Routes>
-        <Route path={APP_ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
-        <Route path={APP_ROUTES.HOME} element={<HomeScreen />} />
+  const { pathname } = useLocation();
 
+  return (
+    /*
+     * The boundary sits inside the router so `pathname` can reset it: without
+     * that, a render error left the fallback on screen even after the user
+     * navigated somewhere else, because the boundary has no reason to re-render
+     * its children once it has caught.
+     */
+    <ErrorBoundary resetKey={pathname}>
+      <Suspense fallback={<RouteProgress />}>
+        <ScrollToTop />
+        <Routes>
+        <Route path={APP_ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
         <Route element={<GuestRoute />}>
           <Route path={APP_ROUTES.AUTH} element={<AuthScreen />} />
         </Route>
+        <Route element={<MainLayout />}>
+          <Route path={APP_ROUTES.HOME} element={<HomeScreen />} />
 
-        <Route element={<ProtectedRoute />}>
-          <Route path="/customer/dashboard" element={<HomeScreen />} />
-          <Route path="/restaurant/:id" element={<RestaurantDetailScreen />} />
-          <Route path={APP_ROUTES.OFFERS} element={<OffersScreen />} />
-          <Route path={APP_ROUTES.TRACK_ORDER} element={<TrackOrderScreen />} />
-          <Route path={APP_ROUTES.ORDERS} element={<OrderHistoryScreen />} />
-          <Route path={APP_ROUTES.CHECKOUT} element={<CheckoutScreen />} />
-          <Route path="/payment-failed" element={<PaymentFailedScreen />} />
-          <Route path={APP_ROUTES.PROFILE} element={<ProfileScreen />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/customer/dashboard" element={<HomeScreen />} />
+            <Route path="/restaurant/:id" element={<RestaurantDetailScreen />} />
+            <Route path={APP_ROUTES.OFFERS} element={<OffersScreen />} />
+            <Route path={APP_ROUTES.TRACK_ORDER} element={<TrackOrderScreen />} />
+            <Route path={APP_ROUTES.ORDERS} element={<OrderHistoryScreen />} />
+            <Route path={APP_ROUTES.CHECKOUT} element={<CheckoutScreen />} />
+            <Route path="/payment-failed" element={<PaymentFailedScreen />} />
+            <Route path={APP_ROUTES.PROFILE} element={<ProfileScreen />} />
+          </Route>
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.RESTAURANT_ADMIN]} />}>
@@ -96,10 +94,10 @@ const ConditionalRoutes = () => {
           </Route>
         </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-
-      </Routes>
-    </Suspense>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 

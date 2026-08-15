@@ -3,19 +3,11 @@
  *
  * OSRM (Open Source Routing Machine) returns actual driving paths along real
  * roads. The public endpoint is free and requires no API key.
- *
- * Usage:
- *   import { fetchRoute } from '../helper/osrm';
- *   const { coords, distance, duration } = await fetchRoute(origin, destination);
- *   // coords → [[lat, lng], ...] ready for Leaflet <Polyline positions={coords} />
  */
 
 const OSRM_BASE = 'https://router.project-osrm.org/route/v1/driving';
 
-/**
- * Simple Haversine distance between two {lat, lng} points (metres).
- * Used externally to throttle route re-fetching.
- */
+
 export const haversineMetres = (a, b) => {
   if (!a || !b) return Infinity;
   const R = 6_371_000;
@@ -29,17 +21,13 @@ export const haversineMetres = (a, b) => {
   return R * 2 * Math.atan2(Math.sqrt(sin2), Math.sqrt(1 - sin2));
 };
 
-/**
- * Format a distance in metres to a human-readable string.
- */
+
 const fmtDistance = (metres) => {
   if (metres >= 1000) return `${(metres / 1000).toFixed(1)} km`;
   return `${Math.round(metres)} m`;
 };
 
-/**
- * Format a duration in seconds to a human-readable string.
- */
+
 const fmtDuration = (seconds) => {
   if (seconds < 60) return `${Math.round(seconds)} sec`;
   const mins = Math.round(seconds / 60);
@@ -49,10 +37,7 @@ const fmtDuration = (seconds) => {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 };
 
-/**
- * Decode a Google-encoded polyline (the format OSRM returns by default).
- * Returns [[lat, lng], ...] pairs.
- */
+
 const decodePolyline = (encoded) => {
   const points = [];
   let index = 0;

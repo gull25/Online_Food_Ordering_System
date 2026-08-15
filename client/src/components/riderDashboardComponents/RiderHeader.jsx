@@ -22,9 +22,7 @@ const RiderHeader = ({ profile, showStatusToggle = false }) => {
             <div className="flex items-center gap-4">
                 {showStatusToggle && profile && (
                     <div className="hidden md:flex items-center gap-2 bg-surface-container rounded-full px-4 py-1.5 border border-outline-variant">
-                        {/* The online dot used `text-secondary`, which is a grey
-                            in the light theme — so "Available" never actually
-                            read as green. Semantic success tracks both themes. */}
+        
                         <Icon name="fiber_manual_record" className={`text-[16px] ${profile.status === 'Available' ? 'text-success' : 'text-on-surface-variant'}`} filled />
                         <span className="font-inter text-xs font-bold leading-4 text-on-surface">
                             {profile.status === 'Available' ? 'ONLINE' : 'OFFLINE'}

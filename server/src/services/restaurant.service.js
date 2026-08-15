@@ -1,105 +1,180 @@
-const restaurantRepository = require('../repositories/restaurant.repository');
-const menuItemRepository = require('../repositories/menuItem.repository');
-const ApiError = require('../utils/ApiError');
-const { geocodeAddress } = require('../utils/geocoder');
+const mongoose = require("mongoose");
+
+const restaurantRepository = require("../repositories/restaurant.repository");
+const menuItemRepository = require("../repositories/menuItem.repository");
+const Category = require("../models/category.model");
+const Offer = require("../models/offer.model");
+const MenuItem = require("../models/menuItem.model");
+const ApiError = require("../utils/ApiError");
+const { geocodeAddress } = require("../utils/geocoder");
+const { deleteImage } = require("./upload.service");
 
 class RestaurantService {
-    async getFeaturedRestaurants(query = {}, options = { includeUnapproved: false }) {
-        return await restaurantRepository.findAll({ isFeatured: true, ...query }, options);
+    async getRestaurants(query, options) {
+        return restaurantRepository.findAll(query, options);
     }
 
-    async getRestaurants(query = {}, options = { includeUnapproved: false }) {
-        return await restaurantRepository.findAll(query, options);
-    }
-
-    async getRestaurantDetails(id) {
-        const restaurant = await restaurantRepository.findById(id);
-        if (!restaurant) {
-            throw new ApiError(404, `Restaurant not found with id of ${id}`);
-        }
+    /**
+     * Restaurant detail.
+     */
+    async getRestaurantDetails(id, options = {}) {
+        const restaurant = await restaurantRepository.findById(id, options);
+        if (!restaurant) throw new ApiError(404, "Restaurant not found");
         return restaurant;
     }
 
-    async getRestaurantMenu(id, options = { includeUnapproved: false }) {
-        const restaurant = await restaurantRepository.findById(id, options);
-        if (!restaurant) {
-            throw new ApiError(404, `Restaurant not found with id of ${id}`);
-        }
-        return await menuItemRepository.findByRestaurant(id);
+    async getRestaurantMenu(restaurantId, options = {}) {
+        const restaurant = await restaurantRepository.findById(restaurantId, options);
+        if (!restaurant) throw new ApiError(404, "Restaurant not found");
+
+        return menuItemRepository.findByRestaurant(restaurantId, options);
     }
 
-    async createRestaurant(data) {
-        if (data.address && data.city && data.state && data.zipCode) {
-            const fullAddress = `${data.address}, ${data.city}, ${data.state} ${data.zipCode}`;
-            const coords = await geocodeAddress(fullAddress);
-            if (coords) {
-                data.location = {
-                    type: 'Point',
-                    coordinates: [coords.lng, coords.lat] // GeoJSON expects [longitude, latitude]
-                };
+    /**
+     * Creates the caller's restaurant.
+     */
+    async createRestaurant(ownerId, data, images = {}) {
+        const existing = await restaurantRepository.findByOwner(ownerId);
+        if (existing) {
+            // One restaurant per owner: the whole admin surface resolves the
+            // owner's restaurant with `findOne({ owner })`, so a second one would
+            // be invisible and unmanageable.
+            throw new ApiError(409, "You already have a restaurant. Edit it from your dashboard.");
+        }
+
+        const location = await this.#geocode(data);
+
+        return restaurantRepository.create({
+            ...data,
+            owner: ownerId,
+            ...(Object.keys(images).length ? { images } : {}),
+            ...(location ? { location } : {}),
+        });
+    }
+
+    /**
+     * Updates a restaurant.
+     */
+    async updateRestaurant(id, data, images = {}) {
+        const existing = await restaurantRepository.findById(id, { includeUnapproved: true, includeInternal: true });
+        if (!existing) throw new ApiError(404, "Restaurant not found");
+
+        const location = await this.#geocode({ ...existing, ...data });
+
+        const update = { ...data, ...(location ? { location } : {}) };
+        for (const [key, value] of Object.entries(images)) {
+            update[`images.${key}`] = value;
+        }
+
+        const updated = await restaurantRepository.update(id, update);
+
+        // Replaced artwork is removed from the CDN afterwards — an orphaned asset
+        // per edit adds up, and this is safe to do only once the write succeeded.
+        for (const key of Object.keys(images)) {
+            const previous = existing.images?.[key];
+            if (previous && previous !== images[key] && previous !== "no-photo.jpg") {
+                deleteImage(previous).catch(() => {});
             }
         }
-        return await restaurantRepository.create(data);
+
+        return updated;
     }
 
-    async updateRestaurant(id, data, options = { includeUnapproved: false }) {
-        let restaurant = await restaurantRepository.findById(id, options);
-        if (!restaurant) {
-            throw new ApiError(404, `Restaurant not found with id of ${id}`);
-        }
-
-        if (data.address || data.city || data.state || data.zipCode) {
-            const addr = data.address || restaurant.address;
-            const city = data.city || restaurant.city;
-            const state = data.state || restaurant.state;
-            const zip = data.zipCode || restaurant.zipCode;
-            
-            const fullAddress = `${addr}, ${city}, ${state} ${zip}`;
-            const coords = await geocodeAddress(fullAddress);
-            if (coords) {
-                data.location = {
-                    type: 'Point',
-                    coordinates: [coords.lng, coords.lat]
-                };
-            }
-        }
-
-        return await restaurantRepository.update(id, data);
-    }
-
+    /**
+     * Deletes a restaurant and everything that belongs to it.
+     */
     async deleteRestaurant(id) {
-        let restaurant = await restaurantRepository.findById(id);
-        if (!restaurant) {
-            throw new ApiError(404, `Restaurant not found with id of ${id}`);
+        const restaurant = await restaurantRepository.findById(id, { includeUnapproved: true });
+        if (!restaurant) throw new ApiError(404, "Restaurant not found");
+
+        const session = await mongoose.startSession();
+        try {
+            await session.withTransaction(async () => {
+                await Promise.all([
+                    MenuItem.deleteMany({ restaurant: id }, { session }),
+                    Category.deleteMany({ restaurantId: id }, { session }),
+                    Offer.deleteMany({ restaurantId: id }, { session }),
+                ]);
+                await restaurantRepository.delete(id);
+            });
+        } catch (error) {
+            // Standalone mongod has no transaction support; fall back to a
+            // best-effort sequential cleanup rather than failing the request.
+            if (error.code === 20 || /Transaction numbers|replica set/i.test(error.message)) {
+                await Promise.all([
+                    MenuItem.deleteMany({ restaurant: id }),
+                    Category.deleteMany({ restaurantId: id }),
+                    Offer.deleteMany({ restaurantId: id }),
+                ]);
+                await restaurantRepository.delete(id);
+            } else {
+                throw error;
+            }
+        } finally {
+            await session.endSession();
         }
-        await restaurantRepository.delete(id);
+
         return {};
     }
 
-    async createMenuItem(restaurantId, data) {
-        const restaurant = await restaurantRepository.findById(restaurantId);
-        if (!restaurant) {
-            throw new ApiError(404, `Restaurant not found with id of ${restaurantId}`);
-        }
-        data.restaurant = restaurantId;
-        return await menuItemRepository.create(data);
+    async createMenuItem(restaurantId, data, image) {
+        const restaurant = await restaurantRepository.findById(restaurantId, { includeUnapproved: true });
+        if (!restaurant) throw new ApiError(404, "Restaurant not found");
+
+        // A menu item pointing at another restaurant's category would render
+        // under a heading the owner does not control.
+        await this.#assertCategoryBelongsTo(data.category, restaurantId);
+
+        return menuItemRepository.create({
+            ...data,
+            restaurant: restaurantId,
+            ...(image ? { image } : {}),
+        });
     }
 
-    async updateMenuItem(menuId, data) {
-        let menuItem = await menuItemRepository.findById(menuId);
-        if (!menuItem) {
-            throw new ApiError(404, `Menu item not found with id of ${menuId}`);
+    async updateMenuItem(menuId, data, image) {
+        const menuItem = await menuItemRepository.findById(menuId);
+        if (!menuItem) throw new ApiError(404, "Menu item not found");
+
+        if (data.category) {
+            await this.#assertCategoryBelongsTo(data.category, menuItem.restaurant);
         }
-        return await menuItemRepository.update(menuId, data);
+
+        const updated = await menuItemRepository.update(menuId, { ...data, ...(image ? { image } : {}) });
+
+        if (image && menuItem.image && menuItem.image !== "no-photo.jpg" && menuItem.image !== image) {
+            deleteImage(menuItem.image).catch(() => {});
+        }
+
+        return updated;
     }
 
     async deleteMenuItem(menuId) {
-        let menuItem = await menuItemRepository.findById(menuId);
-        if (!menuItem) {
-            throw new ApiError(404, `Menu item not found with id of ${menuId}`);
-        }
+        const menuItem = await menuItemRepository.findById(menuId);
+        if (!menuItem) throw new ApiError(404, "Menu item not found");
+
         await menuItemRepository.delete(menuId);
+
+        if (menuItem.image && menuItem.image !== "no-photo.jpg") {
+            deleteImage(menuItem.image).catch(() => {});
+        }
+
         return {};
+    }
+
+    async #assertCategoryBelongsTo(categoryId, restaurantId) {
+        const category = await Category.findOne({ _id: categoryId, restaurantId }).select("_id").lean();
+        if (!category) throw new ApiError(400, "That category does not belong to this restaurant");
+    }
+
+    async #geocode({ address, city, state, zipCode }) {
+        if (!address || !city) return null;
+
+        const coords = await geocodeAddress(`${address}, ${city}, ${state ?? ""} ${zipCode ?? ""}`.trim());
+        if (!coords) return null;
+
+        // GeoJSON is [longitude, latitude] — the opposite of how humans say it.
+        return { type: "Point", coordinates: [coords.lng, coords.lat] };
     }
 }
 
