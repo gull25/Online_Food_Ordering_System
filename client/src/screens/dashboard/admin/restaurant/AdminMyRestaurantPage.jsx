@@ -404,7 +404,7 @@ const AdminMyRestaurantPage = () => {
       {/* Item Editing Dialog Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 relative">
+          <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 relative">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-h3 text-h3 text-on-surface">{editingItem ? 'Edit Menu Item' : 'New Menu Item'}</h3>
               <button type="button" onClick={closeModal} aria-label="Close menu item form" className="p-2 hover:bg-surface-container rounded-full transition-colors">
