@@ -1,0 +1,41 @@
+export const exportToCSV = (data, filename) => {
+  if (!data || !data.length) {
+    return;
+  }
+
+  // Extract headers from the first object
+  const headers = Object.keys(data[0]);
+
+  // Convert objects to CSV rows
+  const csvRows = [];
+  csvRows.push(headers.join(','));
+
+  for (const row of data) {
+    const values = headers.map(header => {
+      const val = row[header];
+      const escaped = ('' + (val ?? '')).replace(/"/g, '""');
+      // Quote strings containing comma, newline, or double quotes
+      if (escaped.search(/("|,|\n)/g) >= 0) {
+        return `"${escaped}"`;
+      }
+      return escaped;
+    });
+    csvRows.push(values.join(','));
+  }
+
+  const csvString = csvRows.join('\n');
+  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  
+  // Create a link to download the blob
+  const link = document.createElement('a');
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+};

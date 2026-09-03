@@ -20,6 +20,7 @@ import LiveTracker from '../../../components/homeScreen/orderComponents/LiveTrac
 import { socket, connectSocket } from '../../../helper/socket';
 import api from '../../../api/axios';
 import { useApiAction } from '../../../hooks/useApiAction';
+import { exportToCSV } from '../../../helper/exportUtils';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -187,6 +188,27 @@ const AdminOrdersPage = () => {
       revenueSum,
     };
   }, [filteredOrders]);
+
+  const handleExportReport = () => {
+    if (filteredOrders.length === 0) {
+      toast.error('No orders to export');
+      return;
+    }
+    const dataToExport = filteredOrders.map(order => ({
+      'Order ID': order._id,
+      'Customer Name': order.user?.name || 'Unknown',
+      'Customer Phone': order.user?.phone || 'N/A',
+      'Items': order.items?.map(i => `${i.quantity}x ${i.name || i.menuItem?.name || 'Unknown'}`).join(' | ') || 'N/A',
+      'Total Amount': order.totalAmount,
+      'Status': order.status,
+      'Date': new Date(order.createdAt).toLocaleDateString(),
+      'Time': new Date(order.createdAt).toLocaleTimeString(),
+    }));
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    exportToCSV(dataToExport, `Orders_Report_${timestamp}`);
+    showToast('Orders exported successfully!');
+  };
 
   return (
     <div className="bg-surface text-on-surface min-h-screen relative flex">
@@ -376,14 +398,17 @@ const AdminOrdersPage = () => {
           actions={
             <div className="flex gap-4">
               <button
-                onClick={() => showToast('Orders details exported successfully!')}
+                onClick={handleExportReport}
                 className="bg-surface border border-outline-variant px-stack_md py-3 rounded-xl flex items-center gap-2 font-button text-button text-on-surface hover:bg-surface-container-low transition-all cursor-pointer"
               >
                 <Icon name="download" />
                 Export Report
               </button>
               <button
-                onClick={() => showToast('Orders list refreshed')}
+                onClick={() => {
+                  dispatch(fetchAdminOrders());
+                  showToast('Orders list refreshed');
+                }}
                 className="bg-primary text-on-primary px-stack_md py-3 rounded-xl font-button text-button hover:shadow-lg transition-all cursor-pointer"
               >
                 Refresh Orders

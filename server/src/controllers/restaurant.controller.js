@@ -29,7 +29,9 @@ const collectImages = async (files, folders) => {
 // @route   GET /api/restaurants
 // @access  Public
 exports.getRestaurants = asyncHandler(async (req, res) => {
+    console.log("getRestaurants req.query:", req.query);
     const { items, total, page, limit } = await restaurantService.getRestaurants(req.query);
+    console.log("getRestaurants items:", items.length);
 
     res.status(200).json({
         success: true,
